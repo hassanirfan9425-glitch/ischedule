@@ -12,7 +12,7 @@ function publicUser(row) {
     username: row.username,
     name: row.name,
     onboarded: !!row.onboarded,
-    theme: row.theme || 'green',
+    theme: row.theme || 'purple_pink',
   };
 }
 
@@ -36,8 +36,8 @@ router.post('/signup', async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const info = db
-    .prepare('INSERT INTO users (username, name, password_hash) VALUES (?, ?, ?)')
-    .run(username.trim(), name.trim(), passwordHash);
+    .prepare('INSERT INTO users (username, name, password_hash, theme) VALUES (?, ?, ?, ?)')
+    .run(username.trim(), name.trim(), passwordHash, 'purple_pink');
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   req.session.userId = user.id;

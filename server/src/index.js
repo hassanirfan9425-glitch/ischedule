@@ -11,6 +11,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import themesRoutes from './routes/themes.js';
 import manualExamsRoutes from './routes/manualExams.js';
 import materialsRoutes from './routes/materials.js';
+import academicsRoutes from './routes/academics.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -51,6 +52,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/themes', themesRoutes);
 app.use('/api/manual-exams', manualExamsRoutes);
 app.use('/api/materials', materialsRoutes);
+app.use('/api/academics', academicsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

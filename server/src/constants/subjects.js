@@ -31,7 +31,9 @@ export function applicableConditionalCoreSubjects(identity) {
 export const AUTO_SUBJECTS = [
   { key: 'ams', label: 'AMS', scheduleCode: 'AMS' },
   { key: 'grid_exam', label: 'Grid Exam', scheduleCode: 'Grid / Grid Standalone' },
-  { key: 'moes', label: 'MOES', scheduleCode: 'MOES' },
+  // "MOES" is the literal code printed on the schedule — every student takes it regardless of
+  // religion/nationality, unlike Islamic 1/2 above which already have their own separate codes.
+  { key: 'moral_education', label: 'Moral Education', scheduleCode: 'MOES' },
 ];
 
 // Part 2 of the quiz: optional — student selects which ones apply, then rates each.
@@ -155,3 +157,21 @@ export const WEEKDAYS = [
 ];
 
 export const WEEKDAY_OFFSET_BY_KEY = Object.fromEntries(WEEKDAYS.map((w) => [w.key, w.offset]));
+
+// Academics grade weighting — how much an AMS (weekly assessment) vs a periodic exam grade
+// counts toward a subject's average. Most subjects weight periodics 2x an AMS; a few exceptions
+// per the school's actual rubric (confirmed 2026-08, subject to trial-and-error refinement).
+const EQUAL_WEIGHT_SUBJECT_KEYS = new Set(['core_islamic_1', 'core_islamic_2', 'moral_education']);
+const BOOSTED_WEIGHT_SUBJECT_KEYS = new Set(['as_chemistry', 'as_biology', 'ap_physics_1']);
+
+export function gradeWeights(subjectKey) {
+  if (BOOSTED_WEIGHT_SUBJECT_KEYS.has(subjectKey)) return { ams: 1.5, periodic: 2.5 };
+  if (EQUAL_WEIGHT_SUBJECT_KEYS.has(subjectKey)) return { ams: 1, periodic: 1 };
+  return { ams: 1, periodic: 2 };
+}
+
+// A subcourse row is an AMS (weekly) entry if it's literally labeled "AMS" — anything else
+// (e.g. "Composition", "Pure Mathematics", "Chemistry") is a periodic exam entry for that subject.
+export function isAmsSubcourse(subcourseLabel) {
+  return typeof subcourseLabel === 'string' && subcourseLabel.trim().toUpperCase() === 'AMS';
+}

@@ -38,6 +38,7 @@ export const api = {
   },
 
   getDashboard: () => request('/dashboard'),
+  deleteSchedule: () => request('/schedule', { method: 'DELETE' }),
 
   getManualExams: () => request('/manual-exams'),
   addManualExam: (exam) => request('/manual-exams', { method: 'POST', body: JSON.stringify(exam) }),
@@ -51,4 +52,14 @@ export const api = {
   },
   addManualMaterial: (examId, { quizzes, questions }) =>
     request(`/materials/${examId}/manual`, { method: 'POST', body: JSON.stringify({ quizzes, questions }) }),
+
+  getAcademics: () => request('/academics'),
+  uploadGrades: (file) => {
+    const form = new FormData();
+    form.append('grades', file);
+    return request('/academics/upload', { method: 'POST', body: form });
+  },
+  addGradeManual: (entry) => request('/academics/manual', { method: 'POST', body: JSON.stringify(entry) }),
+  deleteGradeEntry: (id) => request(`/academics/${id}`, { method: 'DELETE' }),
+  deleteAllGrades: () => request('/academics', { method: 'DELETE' }),
 };

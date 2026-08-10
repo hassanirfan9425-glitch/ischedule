@@ -49,7 +49,7 @@ export default function Settings({ user, onBack, onUserUpdated }) {
         </button>
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">iSchedule</span>
+          <span className="brand-name">SabisHub</span>
         </div>
         <h1>Settings</h1>
 

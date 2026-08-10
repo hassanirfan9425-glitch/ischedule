@@ -180,7 +180,7 @@ export default function Quiz({ onComplete, retake }) {
         )}
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">iSchedule</span>
+          <span className="brand-name">SabisHub</span>
         </div>
         <h1>A couple quick things first</h1>
         <p className="subtle">This helps us ask about the right subjects for you.</p>

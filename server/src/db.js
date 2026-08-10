@@ -97,6 +97,19 @@ db.exec(`
     questions TEXT NOT NULL DEFAULT '[]',
     uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS grade_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    term INTEGER NOT NULL,
+    subject_key TEXT,
+    subject_label TEXT NOT NULL,
+    subcourse_label TEXT NOT NULL,
+    week_number INTEGER,
+    grade REAL NOT NULL,
+    source TEXT NOT NULL DEFAULT 'manual',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Idempotent migration for columns added after the table already existed on disk.
@@ -109,5 +122,5 @@ function ensureColumn(table, column, ddl) {
 ensureColumn('exams', 'exam_type', "exam_type TEXT NOT NULL DEFAULT 'weekly'");
 ensureColumn('exams', 'time', 'time TEXT');
 ensureColumn('users', 'periodic_day', 'periodic_day TEXT');
-ensureColumn('users', 'theme', "theme TEXT NOT NULL DEFAULT 'green'");
+ensureColumn('users', 'theme', "theme TEXT NOT NULL DEFAULT 'purple_pink'");
 ensureColumn('exams', 'source', "source TEXT NOT NULL DEFAULT 'ai'");

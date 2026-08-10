@@ -145,4 +145,16 @@ router.get('/status', requireAuth, (req, res) => {
   res.json({ upload: latest || null });
 });
 
+// Wipes the whole schedule (both AI-parsed and manually-entered exams, plus holidays) back to
+// empty — exam_materials cascade-delete with their exams. Doesn't touch onboarded/quiz answers.
+router.delete('/', requireAuth, (req, res) => {
+  const userId = req.session.userId;
+  const deleteAll = transaction(() => {
+    db.prepare('DELETE FROM exams WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM holidays WHERE user_id = ?').run(userId);
+  });
+  deleteAll();
+  res.json({ ok: true });
+});
+
 export default router;

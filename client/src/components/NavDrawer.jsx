@@ -8,7 +8,7 @@ export default function NavDrawer({ open, onClose, items }) {
         <div className="nav-drawer-header">
           <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
             <CalendarIcon size={24} />
-            <span className="brand-name">iSchedule</span>
+            <span className="brand-name">SabisHub</span>
           </div>
           <button type="button" className="drawer-close" onClick={onClose} aria-label="Close menu">
             ✕

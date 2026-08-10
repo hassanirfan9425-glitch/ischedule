@@ -4,13 +4,14 @@ import AuthPage from './pages/AuthPage.jsx';
 import Quiz from './pages/Quiz.jsx';
 import Upload from './pages/Upload.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Academics from './pages/Academics.jsx';
 import Settings from './pages/Settings.jsx';
 import ManualEntry from './pages/ManualEntry.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [onboardStage, setOnboardStage] = useState('quiz'); // 'quiz' | 'upload'
+  const [activeTab, setActiveTab] = useState('schedule'); // 'schedule' | 'academics'
   const [reuploading, setReuploading] = useState(false);
   const [retakingQuiz, setRetakingQuiz] = useState(false);
   const [viewingSettings, setViewingSettings] = useState(false);
@@ -24,7 +25,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', user?.theme || 'green');
+    document.documentElement.setAttribute('data-theme', user?.theme || 'purple_pink');
   }, [user?.theme]);
 
   if (loading) {
@@ -48,22 +49,20 @@ export default function App() {
           setViewingManualEntry(false);
           setReuploading(false);
         }}
-        onCancel={user.onboarded ? () => setViewingManualEntry(false) : undefined}
+        onCancel={() => setViewingManualEntry(false)}
       />
     );
   }
 
+  // The quiz is the only mandatory onboarding step — schedule and academics are both optional,
+  // reachable via their own "+" prompts once the student's in the main app.
   if (!user.onboarded) {
-    if (onboardStage === 'quiz') {
-      return <Quiz onComplete={() => setOnboardStage('upload')} />;
-    }
     return (
-      <Upload
+      <Quiz
         onComplete={async () => {
           const data = await api.me();
           setUser(data.user);
         }}
-        onManualEntry={() => setViewingManualEntry(true)}
       />
     );
   }
@@ -96,23 +95,25 @@ export default function App() {
     );
   }
 
-  return (
-    <Dashboard
-      user={user}
-      onLogout={async () => {
-        await api.logout();
-        setUser(null);
-        setOnboardStage('quiz');
-      }}
-      onReupload={() => setReuploading(true)}
-      onRetakeQuiz={() => setRetakingQuiz(true)}
-      onSettings={() => setViewingSettings(true)}
-      onManualEntry={() => setViewingManualEntry(true)}
-      onDeleteAccount={async () => {
-        await api.deleteAccount();
-        setUser(null);
-        setOnboardStage('quiz');
-      }}
-    />
-  );
+  const sharedProps = {
+    user,
+    activeTab,
+    onSwitchTab: setActiveTab,
+    onLogout: async () => {
+      await api.logout();
+      setUser(null);
+      setActiveTab('schedule');
+    },
+    onReupload: () => setReuploading(true),
+    onRetakeQuiz: () => setRetakingQuiz(true),
+    onSettings: () => setViewingSettings(true),
+    onManualEntry: () => setViewingManualEntry(true),
+    onDeleteAccount: async () => {
+      await api.deleteAccount();
+      setUser(null);
+      setActiveTab('schedule');
+    },
+  };
+
+  return activeTab === 'academics' ? <Academics {...sharedProps} /> : <Dashboard {...sharedProps} />;
 }

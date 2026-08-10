@@ -71,7 +71,9 @@ router.post('/mine', requireAuth, (req, res) => {
     for (const entry of entries) {
       insert.run(userId, entry.subjectKey, entry.difficulty);
     }
-    db.prepare('UPDATE users SET periodic_day = ? WHERE id = ?').run(periodicDay, userId);
+    // The quiz is the only mandatory onboarding step now — schedule/academics are both optional,
+    // reachable via their own "+" prompts once the student's in the app.
+    db.prepare('UPDATE users SET periodic_day = ?, onboarded = 1 WHERE id = ?').run(periodicDay, userId);
   });
   replaceAll(subjects);
 

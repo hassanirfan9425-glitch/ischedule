@@ -47,7 +47,7 @@ export default function AuthPage({ onAuth }) {
       <div className="auth-card">
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">iSchedule</span>
+          <span className="brand-name">SabisHub</span>
         </div>
         <h1>{mode === 'login' ? 'Welcome back!' : 'Create your account'}</h1>
         <p className="subtle">Track upcoming exams and holidays from your school schedule.</p>

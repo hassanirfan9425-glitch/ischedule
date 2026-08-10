@@ -1,8 +1,8 @@
-export default function MaterialChoiceDialog({ exam, onChooseAuto, onChooseManual, onCancel }) {
+export default function AddChoiceDialog({ message, onChooseAuto, onChooseManual, onCancel }) {
   return (
     <div className="confirm-backdrop" onClick={onCancel}>
       <div className="confirm-dialog material-choice-dialog" onClick={(e) => e.stopPropagation()}>
-        <p>How would you like to add material for {exam.subjectLabel}?</p>
+        <p>{message}</p>
         <div className="confirm-actions material-choice-actions">
           <button type="button" className="primary-btn" onClick={onChooseAuto}>
             Add Automatically

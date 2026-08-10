@@ -7,9 +7,10 @@ import NavDrawer from '../components/NavDrawer.jsx';
 import CalendarIcon from '../components/CalendarIcon.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import MaterialPopup from '../components/MaterialPopup.jsx';
-import MaterialChoiceDialog from '../components/MaterialChoiceDialog.jsx';
+import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
 import MaterialUpload from './MaterialUpload.jsx';
 import ManualMaterialEntry from './ManualMaterialEntry.jsx';
+import TabBar from '../components/TabBar.jsx';
 
 function EmptyState({ title, hint }) {
   return (
@@ -71,6 +72,8 @@ export default function Dashboard({
   onSettings,
   onManualEntry,
   onDeleteAccount,
+  activeTab,
+  onSwitchTab,
 }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -79,6 +82,9 @@ export default function Dashboard({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [confirmingDeleteSchedule, setConfirmingDeleteSchedule] = useState(false);
+  const [deletingSchedule, setDeletingSchedule] = useState(false);
+  const [deleteScheduleError, setDeleteScheduleError] = useState('');
   const [choosingMaterialExam, setChoosingMaterialExam] = useState(null);
   const [attachingMaterialExam, setAttachingMaterialExam] = useState(null);
   const [manualMaterialExam, setManualMaterialExam] = useState(null);
@@ -104,6 +110,21 @@ export default function Dashboard({
     }
   };
 
+  const handleDeleteSchedule = async () => {
+    setDeletingSchedule(true);
+    setDeleteScheduleError('');
+    try {
+      await api.deleteSchedule();
+      const fresh = await api.getDashboard();
+      setData(fresh);
+      setConfirmingDeleteSchedule(false);
+    } catch (err) {
+      setDeleteScheduleError(err.message);
+    } finally {
+      setDeletingSchedule(false);
+    }
+  };
+
   const handleExamClick = (exam) => {
     if (exam.material) {
       setViewingMaterialExam(exam);
@@ -125,6 +146,9 @@ export default function Dashboard({
       setLoading(false);
     }
   };
+
+  const hasAnyScheduleData =
+    data && (data.periodicExams.length > 0 || data.finalExams.length > 0 || data.holidays.length > 0);
 
   const allUpcoming = data ? [...data.periodicExams, ...data.finalExams] : [];
   const nextExam = allUpcoming.reduce((closest, exam) => {
@@ -159,6 +183,7 @@ export default function Dashboard({
     { label: 'Update Schedule', onClick: onReupload },
     { label: 'Enter Schedule Manually', onClick: onManualEntry },
     { label: 'Settings', onClick: onSettings },
+    { label: 'Delete Schedule', onClick: () => setConfirmingDeleteSchedule(true) },
     { label: 'Log Out', onClick: onLogout },
     { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
   ];
@@ -187,6 +212,8 @@ export default function Dashboard({
         </div>
       </header>
 
+      <TabBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
+
       {loading && (
         <div className="centered-screen">
           <div className="spinner" />
@@ -195,7 +222,25 @@ export default function Dashboard({
 
       {error && <p className="error-text">{error}</p>}
 
-      {data && (
+      {data && !hasAnyScheduleData && (
+        <div className="empty-landing">
+          <div className="plus-button" onClick={onReupload} role="button" tabIndex={0}>
+            +
+          </div>
+          <div className="empty-landing-title">Add your school schedule</div>
+          <p className="empty-landing-hint">
+            Upload a PDF or image of your exam &amp; holiday schedule, or enter it manually, to
+            build your dashboard.
+          </p>
+          {onManualEntry && (
+            <button type="button" className="back-link" onClick={onManualEntry}>
+              Enter schedule manually.
+            </button>
+          )}
+        </div>
+      )}
+
+      {data && hasAnyScheduleData && (
         <>
           {allUpcoming.length > 0 && (
             <div className="stats-strip">
@@ -262,9 +307,11 @@ export default function Dashboard({
         </>
       )}
 
-      <button type="button" className="fab-btn" onClick={onReupload} title="Update your schedule">
-        +
-      </button>
+      {hasAnyScheduleData && (
+        <button type="button" className="fab-btn" onClick={onReupload} title="Update your schedule">
+          +
+        </button>
+      )}
 
       {confirmingDelete && (
         <ConfirmDialog
@@ -281,6 +328,21 @@ export default function Dashboard({
         />
       )}
 
+      {confirmingDeleteSchedule && (
+        <ConfirmDialog
+          message="Are you sure you want to delete your entire schedule? This removes every exam and holiday, including manually-entered ones. This cannot be undone."
+          confirmLabel="Delete Schedule"
+          danger
+          busy={deletingSchedule}
+          error={deleteScheduleError}
+          onCancel={() => {
+            setConfirmingDeleteSchedule(false);
+            setDeleteScheduleError('');
+          }}
+          onConfirm={handleDeleteSchedule}
+        />
+      )}
+
       {viewingMaterialExam && (
         <MaterialPopup
           exam={viewingMaterialExam}
@@ -293,8 +355,8 @@ export default function Dashboard({
       )}
 
       {choosingMaterialExam && (
-        <MaterialChoiceDialog
-          exam={choosingMaterialExam}
+        <AddChoiceDialog
+          message={`How would you like to add material for ${choosingMaterialExam.subjectLabel}?`}
           onChooseAuto={() => {
             setAttachingMaterialExam(choosingMaterialExam);
             setChoosingMaterialExam(null);
