@@ -108,6 +108,11 @@ export default function App() {
       onRetakeQuiz={() => setRetakingQuiz(true)}
       onSettings={() => setViewingSettings(true)}
       onManualEntry={() => setViewingManualEntry(true)}
+      onDeleteAccount={async () => {
+        await api.deleteAccount();
+        setUser(null);
+        setOnboardStage('quiz');
+      }}
     />
   );
 }

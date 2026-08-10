@@ -2,6 +2,21 @@ import { useState } from 'react';
 import { api } from '../api.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
 
+const FEATURES = [
+  'AI-powered schedule parsing',
+  'Priority alerts for exams that matter',
+  'Manual entry any time the AI gets it wrong',
+];
+
+function FeatureCheck() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="7" cy="7" r="7" fill="var(--brand-500)" />
+      <path d="M4 7.2L6 9.2L10 4.8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function AuthPage({ onAuth }) {
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [username, setUsername] = useState('');
@@ -36,6 +51,15 @@ export default function AuthPage({ onAuth }) {
         </div>
         <h1>{mode === 'login' ? 'Welcome back!' : 'Create your account'}</h1>
         <p className="subtle">Track upcoming exams and holidays from your school schedule.</p>
+
+        <ul className="auth-features">
+          {FEATURES.map((feature) => (
+            <li key={feature}>
+              <FeatureCheck />
+              {feature}
+            </li>
+          ))}
+        </ul>
 
         <div className="tab-switch">
           <button

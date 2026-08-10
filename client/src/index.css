@@ -221,6 +221,23 @@ h2 {
   font-size: 0.94rem;
 }
 
+.auth-features {
+  list-style: none;
+  margin: 16px 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-features li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -348,7 +365,8 @@ label {
   color: var(--text-subtle);
 }
 
-input {
+input,
+textarea {
   font: inherit;
   padding: 12px 14px;
   border-radius: 14px;
@@ -358,7 +376,13 @@ input {
   transition: border-color 0.15s;
 }
 
-input:focus {
+textarea {
+  resize: vertical;
+  font-family: var(--font-family);
+}
+
+input:focus,
+textarea:focus {
   outline: none;
   border-color: var(--brand-500);
 }
@@ -421,6 +445,149 @@ input:focus {
 
 .secondary-btn:active {
   transform: scale(0.97);
+}
+
+.primary-btn.danger-btn {
+  background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+  box-shadow: 0 6px 0 var(--danger-dark), 0 10px 20px rgba(255, 93, 162, 0.25);
+}
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+  animation: fadeInUp 0.15s ease-out both;
+}
+
+.confirm-dialog {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 22px;
+  padding: 26px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--glass-shadow);
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.confirm-actions .secondary-btn,
+.confirm-actions .primary-btn {
+  margin-top: 0;
+}
+
+.material-choice-dialog {
+  max-width: 420px;
+  padding: 32px 30px;
+}
+
+.material-choice-dialog p {
+  font-size: 1.05rem;
+}
+
+.material-choice-actions {
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.material-choice-actions .primary-btn,
+.material-choice-actions .secondary-btn {
+  padding: 15px 16px;
+}
+
+.material-choice-cancel {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin: 18px 0 0;
+}
+
+.material-popup {
+  position: relative;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 26px;
+  padding: 30px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--glass-shadow);
+  animation: bubbleIn 0.2s ease-out both;
+}
+
+.material-popup .drawer-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.material-popup-header {
+  padding-right: 30px;
+  margin-bottom: 8px;
+}
+
+.material-popup-subject {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.material-popup-date {
+  font-size: 0.9rem;
+  color: var(--text-subtle);
+  margin-top: 2px;
+}
+
+.material-group {
+  margin-top: 18px;
+}
+
+.material-group h3 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--brand-600);
+}
+
+.material-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.material-group li {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+  color: var(--text);
 }
 
 .error-text {
@@ -841,6 +1008,108 @@ input:focus {
   color: var(--danger-dark);
 }
 
+.stats-strip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 6px 0 4px;
+}
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--brand-600);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-chip-highlight {
+  background: var(--grad-brand);
+  border-color: transparent;
+}
+
+.stat-chip-highlight .stat-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.stat-value-inline {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.see-all-btn {
+  align-self: center;
+  margin-left: auto;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  color: var(--brand-600);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s;
+}
+
+.see-all-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--brand-500);
+}
+
+.see-all-btn:active {
+  transform: scale(0.97);
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  border: 1.5px dashed var(--glass-border);
+}
+
+.empty-state svg {
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.empty-state-title {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.empty-state-hint {
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+  margin-top: 2px;
+}
+
 .bubble-grid {
   display: grid;
   gap: 16px;
@@ -876,6 +1145,11 @@ input:focus {
 .bubble-grid > *:nth-child(n+10) { animation-delay: 360ms; }
 
 .exam-bubble {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-family);
+  cursor: pointer;
   border-radius: 20px;
   padding: 18px;
   border: 1.5px solid var(--glass-border);
@@ -889,6 +1163,15 @@ input:focus {
 
 .exam-bubble:hover {
   transform: translateY(-3px) rotate(-0.4deg);
+}
+
+.exam-bubble-material-hint {
+  margin-top: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
 }
 
 .exam-bubble.priority-flash {
@@ -947,6 +1230,19 @@ input:focus {
   font-size: 0.75rem;
   margin-top: 6px;
   opacity: 0.75;
+}
+
+.exam-bubble-difficulty {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.68rem;
 }
 
 .holiday-bubble {

@@ -82,6 +82,17 @@ router.get('/me', (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
+router.delete('/account', requireAuth, (req, res) => {
+  const userId = req.session.userId;
+  // Foreign keys are declared ON DELETE CASCADE (and PRAGMA foreign_keys is on in db.js), so this
+  // also removes the user's subjects, schedule uploads, exams, and holidays.
+  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  req.session.destroy(() => {
+    res.clearCookie('connect.sid');
+    res.json({ ok: true });
+  });
+});
+
 router.patch('/profile', requireAuth, async (req, res) => {
   const { username, name, theme } = req.body || {};
   const userId = req.session.userId;

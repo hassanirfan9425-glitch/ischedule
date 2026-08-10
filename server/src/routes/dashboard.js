@@ -74,6 +74,16 @@ router.get('/', requireAuth, (req, res) => {
     )
     .all(userId, todayIso);
 
+  const materialByExamId = Object.fromEntries(
+    db
+      .prepare('SELECT exam_id, periodic_code, quizzes, questions FROM exam_materials WHERE user_id = ?')
+      .all(userId)
+      .map((r) => [
+        r.exam_id,
+        { periodicCode: r.periodic_code, quizzes: JSON.parse(r.quizzes), questions: JSON.parse(r.questions) },
+      ])
+  );
+
   const allExams = examRows
     .map((row) => {
       const difficulty = row.subject_key ? difficultyByKey[row.subject_key] : null;
@@ -112,6 +122,7 @@ router.get('/', requireAuth, (req, res) => {
         color: difficultyColor(difficulty),
         priority: isPriority(difficulty, examDaysUntil),
         isExactDate: !!exactDate,
+        material: materialByExamId[row.id] || null,
       };
     })
     // A weekly exam pinned to an exact date that's already passed this week is done — drop it.
@@ -152,6 +163,13 @@ router.get('/', requireAuth, (req, res) => {
     scopeToCurrentTerm(dedupedExams.filter((e) => e.examType === 'final'), currentTerm)
   );
 
+  // Unlike the sections above, this isn't scoped to the current term — it's every future exam
+  // across all terms, for students who want to plan further ahead. Plain chronological order (not
+  // priority-sorted) since the point here is "what's coming up over time", not "what's urgent now".
+  const allUpcomingExams = [...dedupedExams]
+    .filter((e) => e.examType === 'final' || isCurrentlyTracked(e.subjectKey))
+    .sort((a, b) => (a.daysUntil ?? 0) - (b.daysUntil ?? 0));
+
   const holidayRows = db
     .prepare('SELECT * FROM holidays WHERE user_id = ? AND date_end >= ? ORDER BY date_start ASC')
     .all(userId, todayIso);
@@ -166,7 +184,7 @@ router.get('/', requireAuth, (req, res) => {
     daysUntil: daysUntil(row.date_start, todayUtc),
   }));
 
-  res.json({ periodicExams, finalExams, holidays, today: todayIso });
+  res.json({ periodicExams, finalExams, allUpcomingExams, holidays, today: todayIso });
 });
 
 export default router;

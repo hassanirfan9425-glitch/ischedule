@@ -84,6 +84,19 @@ db.exec(`
     term INTEGER,
     week_number INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS exam_materials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_id INTEGER NOT NULL UNIQUE REFERENCES exams(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    source TEXT NOT NULL DEFAULT 'ai',
+    filename TEXT,
+    original_name TEXT,
+    periodic_code TEXT,
+    quizzes TEXT NOT NULL DEFAULT '[]',
+    questions TEXT NOT NULL DEFAULT '[]',
+    uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Idempotent migration for columns added after the table already existed on disk.

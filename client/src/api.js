@@ -21,6 +21,7 @@ export const api = {
   signup: (username, name, password) =>
     request('/auth/signup', { method: 'POST', body: JSON.stringify({ username, name, password }) }),
   logout: () => request('/auth/logout', { method: 'POST' }),
+  deleteAccount: () => request('/auth/account', { method: 'DELETE' }),
   updateProfile: (fields) => request('/auth/profile', { method: 'PATCH', body: JSON.stringify(fields) }),
 
   getThemes: () => request('/themes'),
@@ -42,4 +43,12 @@ export const api = {
   addManualExam: (exam) => request('/manual-exams', { method: 'POST', body: JSON.stringify(exam) }),
   deleteManualExam: (id) => request(`/manual-exams/${id}`, { method: 'DELETE' }),
   finishManualEntry: () => request('/manual-exams/finish', { method: 'POST' }),
+
+  uploadMaterial: (examId, file) => {
+    const form = new FormData();
+    form.append('material', file);
+    return request(`/materials/${examId}`, { method: 'POST', body: form });
+  },
+  addManualMaterial: (examId, { quizzes, questions }) =>
+    request(`/materials/${examId}/manual`, { method: 'POST', body: JSON.stringify({ quizzes, questions }) }),
 };

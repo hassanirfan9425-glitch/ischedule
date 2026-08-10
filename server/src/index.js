@@ -10,6 +10,7 @@ import scheduleRoutes from './routes/schedule.js';
 import dashboardRoutes from './routes/dashboard.js';
 import themesRoutes from './routes/themes.js';
 import manualExamsRoutes from './routes/manualExams.js';
+import materialsRoutes from './routes/materials.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -49,6 +50,7 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/themes', themesRoutes);
 app.use('/api/manual-exams', manualExamsRoutes);
+app.use('/api/materials', materialsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
