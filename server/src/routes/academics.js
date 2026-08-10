@@ -12,7 +12,7 @@ import { generateSuggestions } from '../services/suggestionGenerator.js';
 
 // How much the overall average has to move (in either direction) since the last generated batch
 // of suggestions before it's worth spending an AI call on fresh ones.
-const SUGGESTION_CHANGE_THRESHOLD = 5;
+const SUGGESTION_CHANGE_THRESHOLD = 2.5;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
