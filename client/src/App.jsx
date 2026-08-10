@@ -5,13 +5,14 @@ import Quiz from './pages/Quiz.jsx';
 import Upload from './pages/Upload.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Academics from './pages/Academics.jsx';
+import Home from './pages/Home.jsx';
 import Settings from './pages/Settings.jsx';
 import ManualEntry from './pages/ManualEntry.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('schedule'); // 'schedule' | 'academics'
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'schedule' | 'academics'
   const [reuploading, setReuploading] = useState(false);
   const [retakingQuiz, setRetakingQuiz] = useState(false);
   const [viewingSettings, setViewingSettings] = useState(false);
@@ -102,7 +103,7 @@ export default function App() {
     onLogout: async () => {
       await api.logout();
       setUser(null);
-      setActiveTab('schedule');
+      setActiveTab('home');
     },
     onReupload: () => setReuploading(true),
     onRetakeQuiz: () => setRetakingQuiz(true),
@@ -111,9 +112,11 @@ export default function App() {
     onDeleteAccount: async () => {
       await api.deleteAccount();
       setUser(null);
-      setActiveTab('schedule');
+      setActiveTab('home');
     },
   };
 
-  return activeTab === 'academics' ? <Academics {...sharedProps} /> : <Dashboard {...sharedProps} />;
+  if (activeTab === 'academics') return <Academics {...sharedProps} />;
+  if (activeTab === 'schedule') return <Dashboard {...sharedProps} />;
+  return <Home {...sharedProps} />;
 }

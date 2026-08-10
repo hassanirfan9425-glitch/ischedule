@@ -8,6 +8,11 @@ import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { SUBJECT_BY_KEY, gradeWeights, isAmsSubcourse } from '../constants/subjects.js';
 import { parseGrades } from '../services/gradeParser.js';
+import { generateSuggestions } from '../services/suggestionGenerator.js';
+
+// How much the overall average has to move (in either direction) since the last generated batch
+// of suggestions before it's worth spending an AI call on fresh ones.
+const SUGGESTION_CHANGE_THRESHOLD = 5;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
@@ -121,6 +126,53 @@ function calculateTermSummary(entries) {
   return { subjectAverages, overallAverage };
 }
 
+// Regenerates suggestions the first time a term ever has entries, or whenever the overall average
+// has moved by SUGGESTION_CHANGE_THRESHOLD points (up or down) since the last batch — not on every
+// single edit, so this doesn't burn an AI call per keystroke. Failure here shouldn't break whatever
+// grade action triggered it, so errors are swallowed (logged only).
+async function maybeRegenerateSuggestions(userId, term) {
+  try {
+    const rawEntries = db.prepare('SELECT * FROM grade_entries WHERE user_id = ? AND term = ?').all(userId, term);
+
+    if (rawEntries.length === 0) {
+      db.prepare('DELETE FROM grade_suggestions WHERE user_id = ? AND term = ?').run(userId, term);
+      return;
+    }
+
+    const { subjectAverages, overallAverage } = calculateTermSummary(rawEntries);
+    const validAverages = subjectAverages.filter((s) => s.average !== null);
+    if (validAverages.length === 0 || overallAverage === null) return;
+
+    const existing = db
+      .prepare('SELECT * FROM grade_suggestions WHERE user_id = ? AND term = ?')
+      .get(userId, term);
+
+    const shouldRegenerate =
+      !existing || Math.abs(overallAverage - existing.baseline_average) >= SUGGESTION_CHANGE_THRESHOLD;
+    if (!shouldRegenerate) return;
+
+    const difficultyByKey = Object.fromEntries(
+      db
+        .prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?')
+        .all(userId)
+        .map((r) => [r.subject_key, r.difficulty])
+    );
+
+    const suggestions = await generateSuggestions({ subjectAverages: validAverages, difficultyByKey });
+
+    db.prepare(
+      `INSERT INTO grade_suggestions (user_id, term, suggestions, baseline_average, generated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(user_id, term) DO UPDATE SET
+         suggestions = excluded.suggestions,
+         baseline_average = excluded.baseline_average,
+         generated_at = excluded.generated_at`
+    ).run(userId, term, JSON.stringify(suggestions), overallAverage);
+  } catch (err) {
+    console.error('Suggestion generation failed:', err.message || err);
+  }
+}
+
 router.get('/', requireAuth, (req, res) => {
   const userId = req.session.userId;
   const todayIso = (process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10));
@@ -146,17 +198,24 @@ router.get('/', requireAuth, (req, res) => {
 
   const terms = [...new Set([...Object.keys(byTerm).map(Number), currentTerm])].sort((a, b) => a - b);
 
+  const suggestionRows = db
+    .prepare('SELECT term, suggestions FROM grade_suggestions WHERE user_id = ?')
+    .all(userId);
+  const suggestionsByTerm = Object.fromEntries(
+    suggestionRows.map((r) => [r.term, JSON.parse(r.suggestions)])
+  );
+
   const result = terms.map((term) => {
     const entries = byTerm[term] || [];
     const rawEntries = rows.filter((r) => r.term === term);
     const { subjectAverages, overallAverage } = calculateTermSummary(rawEntries);
-    return { term, entries, subjectAverages, overallAverage };
+    return { term, entries, subjectAverages, overallAverage, suggestions: suggestionsByTerm[term] || [] };
   });
 
   res.json({ terms: result, currentTerm });
 });
 
-router.post('/manual', requireAuth, (req, res) => {
+router.post('/manual', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { subjectKey, subjectLabel, subcourseLabel, weekNumber, grade, term } = req.body || {};
 
@@ -189,6 +248,8 @@ router.post('/manual', requireAuth, (req, res) => {
       Number.isInteger(weekNumber) ? weekNumber : null,
       gradeNum
     );
+
+  await maybeRegenerateSuggestions(userId, resolvedTerm);
 
   res.json({ ok: true, id: info.lastInsertRowid, term: resolvedTerm });
 });
@@ -240,6 +301,8 @@ router.post('/upload', requireAuth, (req, res) => {
         return res.status(422).json({ error: 'No valid grades were found in this file. Nothing was added.' });
       }
 
+      await maybeRegenerateSuggestions(userId, term);
+
       res.json({ ok: true, inserted, term });
     } catch (parseErr) {
       res.status(500).json({ error: `Could not analyze the grades: ${parseErr.message || parseErr}` });
@@ -248,17 +311,21 @@ router.post('/upload', requireAuth, (req, res) => {
 });
 
 router.delete('/', requireAuth, (req, res) => {
-  db.prepare('DELETE FROM grade_entries WHERE user_id = ?').run(req.session.userId);
+  const userId = req.session.userId;
+  db.prepare('DELETE FROM grade_entries WHERE user_id = ?').run(userId);
+  db.prepare('DELETE FROM grade_suggestions WHERE user_id = ?').run(userId);
   res.json({ ok: true });
 });
 
-router.delete('/:entryId', requireAuth, (req, res) => {
+router.delete('/:entryId', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const entryId = Number(req.params.entryId);
-  const result = db.prepare('DELETE FROM grade_entries WHERE id = ? AND user_id = ?').run(entryId, userId);
-  if (result.changes === 0) {
+  const entry = db.prepare('SELECT term FROM grade_entries WHERE id = ? AND user_id = ?').get(entryId, userId);
+  if (!entry) {
     return res.status(404).json({ error: 'Grade entry not found.' });
   }
+  db.prepare('DELETE FROM grade_entries WHERE id = ? AND user_id = ?').run(entryId, userId);
+  await maybeRegenerateSuggestions(userId, entry.term);
   res.json({ ok: true });
 });
 

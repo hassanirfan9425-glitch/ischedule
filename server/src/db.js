@@ -110,6 +110,16 @@ db.exec(`
     source TEXT NOT NULL DEFAULT 'manual',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS grade_suggestions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    term INTEGER NOT NULL,
+    suggestions TEXT NOT NULL DEFAULT '[]',
+    baseline_average REAL,
+    generated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, term)
+  );
 `);
 
 // Idempotent migration for columns added after the table already existed on disk.

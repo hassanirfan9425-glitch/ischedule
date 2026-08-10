@@ -3,6 +3,13 @@ export default function TabBar({ activeTab, onSwitchTab }) {
     <div className="page-tab-bar">
       <button
         type="button"
+        className={activeTab === 'home' ? 'page-tab active' : 'page-tab'}
+        onClick={() => onSwitchTab('home')}
+      >
+        Home
+      </button>
+      <button
+        type="button"
         className={activeTab === 'schedule' ? 'page-tab active' : 'page-tab'}
         onClick={() => onSwitchTab('schedule')}
       >
