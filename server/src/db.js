@@ -1,136 +1,193 @@
-import { DatabaseSync } from 'node:sqlite';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import pg from 'pg';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, '..', 'data');
-const dbPath = path.join(dataDir, 'app.db');
+const { Pool } = pg;
 
-// DatabaseSync doesn't create missing parent directories itself — on a fresh deploy (data/ is
-// gitignored, so it never exists in a new checkout) that fails with "unable to open database file".
-fs.mkdirSync(dataDir, { recursive: true });
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set. Add it to server/.env (see server/.env.example).');
+}
 
-export const db = new DatabaseSync(dbPath);
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
-// node:sqlite has no built-in transaction helper — wrap statements manually.
+// Lets db.prepare(...) calls made *inside* a transaction() callback transparently reuse the same
+// checked-out client, instead of each grabbing a separate connection from the pool — without this,
+// BEGIN/COMMIT/ROLLBACK on one connection wouldn't actually wrap statements run on others.
+const txContext = new AsyncLocalStorage();
+
+// The rest of the codebase was written against node:sqlite's `?` placeholder style — translate to
+// Postgres's `$1, $2, ...` here rather than touching every query string across every route file.
+function toPgParams(sql) {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
+
+// node:sqlite's `.run()` returns `lastInsertRowid` directly; Postgres needs `RETURNING id` on the
+// INSERT itself. Every table in this app has an `id` primary key, so it's safe to append this
+// automatically rather than editing every INSERT statement by hand.
+function withReturningId(sql) {
+  const trimmed = sql.trim();
+  if (/^insert/i.test(trimmed) && !/returning/i.test(trimmed)) {
+    return `${sql}\nRETURNING id`;
+  }
+  return sql;
+}
+
+async function runQuery(sql, params) {
+  const client = txContext.getStore();
+  const pgSql = toPgParams(sql);
+  const executor = client || pool;
+  return executor.query(pgSql, params);
+}
+
+export const db = {
+  prepare(sql) {
+    return {
+      async get(...params) {
+        const result = await runQuery(sql, params);
+        return result.rows[0];
+      },
+      async all(...params) {
+        const result = await runQuery(sql, params);
+        return result.rows;
+      },
+      async run(...params) {
+        const result = await runQuery(withReturningId(sql), params);
+        return {
+          lastInsertRowid: result.rows[0]?.id,
+          changes: result.rowCount,
+        };
+      },
+    };
+  },
+  async exec(sql) {
+    const client = txContext.getStore();
+    const executor = client || pool;
+    await executor.query(sql);
+  },
+};
+
+// Runs `fn` (which may call db.prepare(...) any number of times) inside a single Postgres
+// transaction. Usage stays the same shape as before: `const doIt = transaction(async () => {...});
+// await doIt();` — every db call inside fn now needs an `await`, since the whole stack is async.
 export function transaction(fn) {
-  return (...args) => {
-    db.exec('BEGIN');
+  return async (...args) => {
+    const client = await pool.connect();
     try {
-      const result = fn(...args);
-      db.exec('COMMIT');
+      await client.query('BEGIN');
+      const result = await txContext.run(client, () => fn(...args));
+      await client.query('COMMIT');
       return result;
     } catch (err) {
-      db.exec('ROLLBACK');
+      await client.query('ROLLBACK');
       throw err;
+    } finally {
+      client.release();
     }
   };
 }
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    name TEXT NOT NULL,
-    password_hash TEXT NOT NULL,
-    onboarded INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+export async function initDb() {
+  // citext gives case-insensitive username matching/uniqueness "for free" on every `= ?` query,
+  // matching the old COLLATE NOCASE behavior without rewriting every query that filters by it.
+  await pool.query('CREATE EXTENSION IF NOT EXISTS citext');
 
-  CREATE TABLE IF NOT EXISTS user_subjects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    subject_key TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
-    UNIQUE(user_id, subject_key)
-  );
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username CITEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      onboarded INTEGER NOT NULL DEFAULT 0,
+      periodic_day TEXT,
+      theme TEXT NOT NULL DEFAULT 'purple_pink',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
 
-  CREATE TABLE IF NOT EXISTS schedule_uploads (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    filename TEXT NOT NULL,
-    original_name TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'processing',
-    error TEXT,
-    uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+    CREATE TABLE IF NOT EXISTS user_subjects (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subject_key TEXT NOT NULL,
+      difficulty TEXT NOT NULL,
+      UNIQUE(user_id, subject_key)
+    );
 
-  CREATE TABLE IF NOT EXISTS exams (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    upload_id INTEGER REFERENCES schedule_uploads(id) ON DELETE CASCADE,
-    subject_key TEXT,
-    subject_label TEXT NOT NULL,
-    exam_type TEXT NOT NULL DEFAULT 'weekly',
-    term INTEGER,
-    week_number INTEGER,
-    date TEXT,
-    date_start TEXT,
-    date_end TEXT,
-    time TEXT,
-    notes TEXT
-  );
+    CREATE TABLE IF NOT EXISTS schedule_uploads (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      filename TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'processing',
+      error TEXT,
+      uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
 
-  CREATE TABLE IF NOT EXISTS holidays (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    upload_id INTEGER REFERENCES schedule_uploads(id) ON DELETE CASCADE,
-    label TEXT,
-    date_start TEXT NOT NULL,
-    date_end TEXT NOT NULL,
-    term INTEGER,
-    week_number INTEGER
-  );
+    CREATE TABLE IF NOT EXISTS exams (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      upload_id INTEGER REFERENCES schedule_uploads(id) ON DELETE CASCADE,
+      subject_key TEXT,
+      subject_label TEXT NOT NULL,
+      exam_type TEXT NOT NULL DEFAULT 'weekly',
+      term INTEGER,
+      week_number INTEGER,
+      date TEXT,
+      date_start TEXT,
+      date_end TEXT,
+      time TEXT,
+      notes TEXT,
+      source TEXT NOT NULL DEFAULT 'ai'
+    );
 
-  CREATE TABLE IF NOT EXISTS exam_materials (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    exam_id INTEGER NOT NULL UNIQUE REFERENCES exams(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    source TEXT NOT NULL DEFAULT 'ai',
-    filename TEXT,
-    original_name TEXT,
-    periodic_code TEXT,
-    quizzes TEXT NOT NULL DEFAULT '[]',
-    questions TEXT NOT NULL DEFAULT '[]',
-    uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+    CREATE TABLE IF NOT EXISTS holidays (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      upload_id INTEGER REFERENCES schedule_uploads(id) ON DELETE CASCADE,
+      label TEXT,
+      date_start TEXT NOT NULL,
+      date_end TEXT NOT NULL,
+      term INTEGER,
+      week_number INTEGER
+    );
 
-  CREATE TABLE IF NOT EXISTS grade_entries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    term INTEGER NOT NULL,
-    subject_key TEXT,
-    subject_label TEXT NOT NULL,
-    subcourse_label TEXT NOT NULL,
-    week_number INTEGER,
-    grade REAL NOT NULL,
-    source TEXT NOT NULL DEFAULT 'manual',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+    CREATE TABLE IF NOT EXISTS exam_materials (
+      id SERIAL PRIMARY KEY,
+      exam_id INTEGER NOT NULL UNIQUE REFERENCES exams(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      source TEXT NOT NULL DEFAULT 'ai',
+      filename TEXT,
+      original_name TEXT,
+      periodic_code TEXT,
+      quizzes TEXT NOT NULL DEFAULT '[]',
+      questions TEXT NOT NULL DEFAULT '[]',
+      uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
 
-  CREATE TABLE IF NOT EXISTS grade_suggestions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    term INTEGER NOT NULL,
-    suggestions TEXT NOT NULL DEFAULT '[]',
-    baseline_average REAL,
-    generated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(user_id, term)
-  );
-`);
+    CREATE TABLE IF NOT EXISTS grade_entries (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      term INTEGER NOT NULL,
+      subject_key TEXT,
+      subject_label TEXT NOT NULL,
+      subcourse_label TEXT NOT NULL,
+      week_number INTEGER,
+      grade REAL NOT NULL,
+      source TEXT NOT NULL DEFAULT 'manual',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
 
-// Idempotent migration for columns added after the table already existed on disk.
-function ensureColumn(table, column, ddl) {
-  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
-  if (!cols.some((c) => c.name === column)) {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
-  }
+    CREATE TABLE IF NOT EXISTS grade_suggestions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      term INTEGER NOT NULL,
+      suggestions TEXT NOT NULL DEFAULT '[]',
+      baseline_average REAL,
+      generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, term)
+    );
+  `);
 }
-ensureColumn('exams', 'exam_type', "exam_type TEXT NOT NULL DEFAULT 'weekly'");
-ensureColumn('exams', 'time', 'time TEXT');
-ensureColumn('users', 'periodic_day', 'periodic_day TEXT');
-ensureColumn('users', 'theme', "theme TEXT NOT NULL DEFAULT 'purple_pink'");
-ensureColumn('exams', 'source', "source TEXT NOT NULL DEFAULT 'ai'");
+
+export { pool };

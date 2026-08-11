@@ -29,17 +29,17 @@ router.post('/signup', async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters.' });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username.trim());
+  const existing = await db.prepare('SELECT id FROM users WHERE username = ?').get(username.trim());
   if (existing) {
     return res.status(409).json({ error: 'That username is already taken.' });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const info = db
+  const info = await db
     .prepare('INSERT INTO users (username, name, password_hash, theme) VALUES (?, ?, ?, ?)')
     .run(username.trim(), name.trim(), passwordHash, 'purple_pink');
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
+  const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   req.session.userId = user.id;
   res.json({ user: publicUser(user) });
 });
@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Username and password are required.' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.trim());
+  const user = await db.prepare('SELECT * FROM users WHERE username = ?').get(username.trim());
   if (!user) {
     return res.status(401).json({ error: 'Invalid username or password.' });
   }
@@ -71,22 +71,22 @@ router.post('/logout', (req, res) => {
   });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   if (!req.session.userId) {
     return res.json({ user: null });
   }
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);
+  const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);
   if (!user) {
     return res.json({ user: null });
   }
   res.json({ user: publicUser(user) });
 });
 
-router.delete('/account', requireAuth, (req, res) => {
+router.delete('/account', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  // Foreign keys are declared ON DELETE CASCADE (and PRAGMA foreign_keys is on in db.js), so this
-  // also removes the user's subjects, schedule uploads, exams, and holidays.
-  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  // Foreign keys are declared ON DELETE CASCADE, so this also removes the user's subjects,
+  // schedule uploads, exams, and holidays.
+  await db.prepare('DELETE FROM users WHERE id = ?').run(userId);
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
     res.json({ ok: true });
@@ -96,7 +96,7 @@ router.delete('/account', requireAuth, (req, res) => {
 router.patch('/profile', requireAuth, async (req, res) => {
   const { username, name, theme } = req.body || {};
   const userId = req.session.userId;
-  const current = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const current = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 
   const nextUsername = username !== undefined ? String(username).trim() : current.username;
   const nextName = name !== undefined ? String(name).trim() : current.name;
@@ -113,20 +113,20 @@ router.patch('/profile', requireAuth, async (req, res) => {
   }
 
   if (nextUsername.toLowerCase() !== current.username.toLowerCase()) {
-    const clash = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(nextUsername, userId);
+    const clash = await db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(nextUsername, userId);
     if (clash) {
       return res.status(409).json({ error: 'That username is already taken.' });
     }
   }
 
-  db.prepare('UPDATE users SET username = ?, name = ?, theme = ? WHERE id = ?').run(
+  await db.prepare('UPDATE users SET username = ?, name = ?, theme = ? WHERE id = ?').run(
     nextUsername,
     nextName,
     nextTheme,
     userId
   );
 
-  const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const updated = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   res.json({ user: publicUser(updated) });
 });
 

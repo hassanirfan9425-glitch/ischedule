@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
 import cors from 'cors';
-import './db.js';
+import { initDb, pool } from './db.js';
 
 import authRoutes from './routes/auth.js';
 import subjectsRoutes from './routes/subjects.js';
@@ -28,8 +29,13 @@ app.use(
   })
 );
 app.use(express.json());
+
+// Sessions live in Postgres now (not server memory) — so a Render restart/sleep-wake cycle no
+// longer logs everyone out along with wiping their data.
+const PgSession = connectPgSimple(session);
 app.use(
   session({
+    store: new PgSession({ pool, tableName: 'user_sessions', createTableIfMissing: true }),
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
@@ -55,6 +61,8 @@ app.use('/api/materials', materialsRoutes);
 app.use('/api/academics', academicsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+await initDb();
 
 const server = app.listen(PORT, () => {
   console.log(`exam-tracker server listening on http://localhost:${PORT}`);

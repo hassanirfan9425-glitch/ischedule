@@ -48,7 +48,7 @@ function sortByPriority(list) {
   });
 }
 
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   // Testing-only override — set FAKE_TODAY=YYYY-MM-DD in server/.env to pretend "today" is a
   // different date (e.g. to test against a schedule for a year that hasn't started yet). Remove
@@ -57,17 +57,16 @@ router.get('/', requireAuth, (req, res) => {
   const todayUtc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
   const todayIso = todayUtc.toISOString().slice(0, 10);
 
-  const user = db.prepare('SELECT periodic_day FROM users WHERE id = ?').get(userId);
+  const user = await db.prepare('SELECT periodic_day FROM users WHERE id = ?').get(userId);
   const periodicOffset = user?.periodic_day ? WEEKDAY_OFFSET_BY_KEY[user.periodic_day] : null;
 
   const difficultyByKey = Object.fromEntries(
-    db
-      .prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?')
-      .all(userId)
-      .map((r) => [r.subject_key, r.difficulty])
+    (await db.prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?').all(userId)).map(
+      (r) => [r.subject_key, r.difficulty]
+    )
   );
 
-  const examRows = db
+  const examRows = await db
     .prepare(
       `SELECT * FROM exams WHERE user_id = ? AND COALESCE(date, date_end, date_start) >= ?
        ORDER BY COALESCE(date, date_start) ASC`
@@ -75,13 +74,12 @@ router.get('/', requireAuth, (req, res) => {
     .all(userId, todayIso);
 
   const materialByExamId = Object.fromEntries(
-    db
-      .prepare('SELECT exam_id, periodic_code, quizzes, questions FROM exam_materials WHERE user_id = ?')
-      .all(userId)
-      .map((r) => [
+    (await db.prepare('SELECT exam_id, periodic_code, quizzes, questions FROM exam_materials WHERE user_id = ?').all(userId)).map(
+      (r) => [
         r.exam_id,
         { periodicCode: r.periodic_code, quizzes: JSON.parse(r.quizzes), questions: JSON.parse(r.questions) },
-      ])
+      ]
+    )
   );
 
   const allExams = examRows
@@ -170,7 +168,7 @@ router.get('/', requireAuth, (req, res) => {
     .filter((e) => e.examType === 'final' || isCurrentlyTracked(e.subjectKey))
     .sort((a, b) => (a.daysUntil ?? 0) - (b.daysUntil ?? 0));
 
-  const holidayRows = db
+  const holidayRows = await db
     .prepare('SELECT * FROM holidays WHERE user_id = ? AND date_end >= ? ORDER BY date_start ASC')
     .all(userId, todayIso);
 

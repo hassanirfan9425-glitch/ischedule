@@ -10,8 +10,8 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 // subject wouldn't come close to this.
 const MAX_MANUAL_EXAMS = 150;
 
-router.get('/', requireAuth, (req, res) => {
-  const rows = db
+router.get('/', requireAuth, async (req, res) => {
+  const rows = await db
     .prepare("SELECT * FROM exams WHERE user_id = ? AND source = 'manual' ORDER BY date ASC")
     .all(req.session.userId);
   res.json({
@@ -27,7 +27,7 @@ router.get('/', requireAuth, (req, res) => {
   });
 });
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { subjectKey, examType, date, time, notes } = req.body || {};
 
@@ -43,28 +43,28 @@ router.post('/', requireAuth, (req, res) => {
 
   // Must be a subject this student actually takes: a fixed core subject, an auto-included one, or
   // something they rated in the quiz (covers conditional-core and electives alike).
-  const isRated = !!db
+  const isRated = !!(await db
     .prepare('SELECT 1 FROM user_subjects WHERE user_id = ? AND subject_key = ?')
-    .get(userId, subjectKey);
+    .get(userId, subjectKey));
   if (!CORE_SUBJECT_KEYS.has(subjectKey) && !AUTO_SUBJECT_KEYS.has(subjectKey) && !isRated) {
     return res.status(400).json({ error: 'That subject is not on your current list.' });
   }
 
-  const { count } = db
+  const { count } = await db
     .prepare("SELECT COUNT(*) as count FROM exams WHERE user_id = ? AND source = 'manual'")
     .get(userId);
   if (count >= MAX_MANUAL_EXAMS) {
     return res.status(400).json({ error: `You've reached the ${MAX_MANUAL_EXAMS}-entry manual limit.` });
   }
 
-  const duplicate = db
+  const duplicate = await db
     .prepare("SELECT 1 FROM exams WHERE user_id = ? AND source = 'manual' AND subject_key = ? AND date = ?")
     .get(userId, subjectKey, date);
   if (duplicate) {
     return res.status(409).json({ error: 'You already added an exam for that subject on that date.' });
   }
 
-  const info = db
+  const info = await db
     .prepare(
       `INSERT INTO exams (user_id, subject_key, subject_label, exam_type, date, time, notes, source)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'manual')`
@@ -74,8 +74,8 @@ router.post('/', requireAuth, (req, res) => {
   res.json({ id: info.lastInsertRowid });
 });
 
-router.delete('/:id', requireAuth, (req, res) => {
-  const info = db
+router.delete('/:id', requireAuth, async (req, res) => {
+  const info = await db
     .prepare("DELETE FROM exams WHERE id = ? AND user_id = ? AND source = 'manual'")
     .run(req.params.id, req.session.userId);
   if (info.changes === 0) {
@@ -86,8 +86,8 @@ router.delete('/:id', requireAuth, (req, res) => {
 
 // Marks the account onboarded — used when manual entry is the path taken instead of (or after) an
 // AI schedule upload, so the student can reach the dashboard the first time too.
-router.post('/finish', requireAuth, (req, res) => {
-  db.prepare('UPDATE users SET onboarded = 1 WHERE id = ?').run(req.session.userId);
+router.post('/finish', requireAuth, async (req, res) => {
+  await db.prepare('UPDATE users SET onboarded = 1 WHERE id = ?').run(req.session.userId);
   res.json({ ok: true });
 });
 

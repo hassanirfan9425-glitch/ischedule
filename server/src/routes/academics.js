@@ -55,8 +55,8 @@ function daysBetween(isoA, isoB) {
 // term's exams span) plus today's date — used to tag new grade entries with the right term
 // without asking the student to pick one. Falls back to the nearest term if today lands in a
 // gap (e.g. a holiday between terms), and to term 1 if there's no schedule at all yet.
-function determineCurrentTerm(userId, todayIso) {
-  const rows = db
+async function determineCurrentTerm(userId, todayIso) {
+  const rows = await db
     .prepare(
       `SELECT term, COALESCE(date, date_start) AS d1, COALESCE(date, date_end, date_start) AS d2
        FROM exams WHERE user_id = ? AND term IS NOT NULL`
@@ -132,10 +132,10 @@ function calculateTermSummary(entries) {
 // grade action triggered it, so errors are swallowed (logged only).
 async function maybeRegenerateSuggestions(userId, term) {
   try {
-    const rawEntries = db.prepare('SELECT * FROM grade_entries WHERE user_id = ? AND term = ?').all(userId, term);
+    const rawEntries = await db.prepare('SELECT * FROM grade_entries WHERE user_id = ? AND term = ?').all(userId, term);
 
     if (rawEntries.length === 0) {
-      db.prepare('DELETE FROM grade_suggestions WHERE user_id = ? AND term = ?').run(userId, term);
+      await db.prepare('DELETE FROM grade_suggestions WHERE user_id = ? AND term = ?').run(userId, term);
       return;
     }
 
@@ -143,7 +143,7 @@ async function maybeRegenerateSuggestions(userId, term) {
     const validAverages = subjectAverages.filter((s) => s.average !== null);
     if (validAverages.length === 0 || overallAverage === null) return;
 
-    const existing = db
+    const existing = await db
       .prepare('SELECT * FROM grade_suggestions WHERE user_id = ? AND term = ?')
       .get(userId, term);
 
@@ -152,33 +152,34 @@ async function maybeRegenerateSuggestions(userId, term) {
     if (!shouldRegenerate) return;
 
     const difficultyByKey = Object.fromEntries(
-      db
-        .prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?')
-        .all(userId)
-        .map((r) => [r.subject_key, r.difficulty])
+      (await db.prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?').all(userId)).map(
+        (r) => [r.subject_key, r.difficulty]
+      )
     );
 
     const suggestions = await generateSuggestions({ subjectAverages: validAverages, difficultyByKey });
 
-    db.prepare(
-      `INSERT INTO grade_suggestions (user_id, term, suggestions, baseline_average, generated_at)
-       VALUES (?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(user_id, term) DO UPDATE SET
-         suggestions = excluded.suggestions,
-         baseline_average = excluded.baseline_average,
-         generated_at = excluded.generated_at`
-    ).run(userId, term, JSON.stringify(suggestions), overallAverage);
+    await db
+      .prepare(
+        `INSERT INTO grade_suggestions (user_id, term, suggestions, baseline_average, generated_at)
+         VALUES (?, ?, ?, ?, NOW())
+         ON CONFLICT(user_id, term) DO UPDATE SET
+           suggestions = excluded.suggestions,
+           baseline_average = excluded.baseline_average,
+           generated_at = excluded.generated_at`
+      )
+      .run(userId, term, JSON.stringify(suggestions), overallAverage);
   } catch (err) {
     console.error('Suggestion generation failed:', err.message || err);
   }
 }
 
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const todayIso = (process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10));
-  const currentTerm = determineCurrentTerm(userId, todayIso);
+  const currentTerm = await determineCurrentTerm(userId, todayIso);
 
-  const rows = db
+  const rows = await db
     .prepare('SELECT * FROM grade_entries WHERE user_id = ? ORDER BY term ASC, subject_label ASC, week_number ASC')
     .all(userId);
 
@@ -198,7 +199,7 @@ router.get('/', requireAuth, (req, res) => {
 
   const terms = [...new Set([...Object.keys(byTerm).map(Number), currentTerm])].sort((a, b) => a - b);
 
-  const suggestionRows = db
+  const suggestionRows = await db
     .prepare('SELECT term, suggestions FROM grade_suggestions WHERE user_id = ?')
     .all(userId);
   const suggestionsByTerm = Object.fromEntries(
@@ -232,9 +233,9 @@ router.post('/manual', requireAuth, async (req, res) => {
   }
 
   const todayIso = process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10);
-  const resolvedTerm = Number.isInteger(term) ? term : determineCurrentTerm(userId, todayIso);
+  const resolvedTerm = Number.isInteger(term) ? term : await determineCurrentTerm(userId, todayIso);
 
-  const info = db
+  const info = await db
     .prepare(
       `INSERT INTO grade_entries (user_id, term, subject_key, subject_label, subcourse_label, week_number, grade, source)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'manual')`
@@ -265,7 +266,7 @@ router.post('/upload', requireAuth, (req, res) => {
 
     const userId = req.session.userId;
     const todayIso = process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10);
-    const term = determineCurrentTerm(userId, todayIso);
+    const term = await determineCurrentTerm(userId, todayIso);
 
     try {
       const result = await parseGrades({ filePath: req.file.path, mimeType: req.file.mimetype });
@@ -285,7 +286,7 @@ router.post('/upload', requireAuth, (req, res) => {
         if (!e.subcourse || !Number.isFinite(gradeNum)) continue;
         const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
         const subjectLabel = subjectKey ? SUBJECT_BY_KEY[subjectKey].label : e.course || 'Unknown Subject';
-        insert.run(
+        await insert.run(
           userId,
           term,
           subjectKey,
@@ -310,21 +311,21 @@ router.post('/upload', requireAuth, (req, res) => {
   });
 });
 
-router.delete('/', requireAuth, (req, res) => {
+router.delete('/', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  db.prepare('DELETE FROM grade_entries WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM grade_suggestions WHERE user_id = ?').run(userId);
+  await db.prepare('DELETE FROM grade_entries WHERE user_id = ?').run(userId);
+  await db.prepare('DELETE FROM grade_suggestions WHERE user_id = ?').run(userId);
   res.json({ ok: true });
 });
 
 router.delete('/:entryId', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const entryId = Number(req.params.entryId);
-  const entry = db.prepare('SELECT term FROM grade_entries WHERE id = ? AND user_id = ?').get(entryId, userId);
+  const entry = await db.prepare('SELECT term FROM grade_entries WHERE id = ? AND user_id = ?').get(entryId, userId);
   if (!entry) {
     return res.status(404).json({ error: 'Grade entry not found.' });
   }
-  db.prepare('DELETE FROM grade_entries WHERE id = ? AND user_id = ?').run(entryId, userId);
+  await db.prepare('DELETE FROM grade_entries WHERE id = ? AND user_id = ?').run(entryId, userId);
   await maybeRegenerateSuggestions(userId, entry.term);
   res.json({ ok: true });
 });

@@ -50,7 +50,7 @@ router.post('/:examId', requireAuth, (req, res) => {
 
     const userId = req.session.userId;
     const examId = Number(req.params.examId);
-    const exam = db.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?').get(examId, userId);
+    const exam = await db.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?').get(examId, userId);
     if (!exam) {
       return res.status(404).json({ error: 'Exam not found.' });
     }
@@ -71,27 +71,29 @@ router.post('/:examId', requireAuth, (req, res) => {
         });
       }
 
-      db.prepare(
-        `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions)
-         VALUES (?, ?, 'ai', ?, ?, ?, ?, ?)
-         ON CONFLICT(exam_id) DO UPDATE SET
-           user_id = excluded.user_id,
-           source = 'ai',
-           filename = excluded.filename,
-           original_name = excluded.original_name,
-           periodic_code = excluded.periodic_code,
-           quizzes = excluded.quizzes,
-           questions = excluded.questions,
-           uploaded_at = datetime('now')`
-      ).run(
-        examId,
-        userId,
-        req.file.filename,
-        req.file.originalname,
-        result.periodicCode,
-        JSON.stringify(result.quizzes),
-        JSON.stringify(result.questions)
-      );
+      await db
+        .prepare(
+          `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions)
+           VALUES (?, ?, 'ai', ?, ?, ?, ?, ?)
+           ON CONFLICT(exam_id) DO UPDATE SET
+             user_id = excluded.user_id,
+             source = 'ai',
+             filename = excluded.filename,
+             original_name = excluded.original_name,
+             periodic_code = excluded.periodic_code,
+             quizzes = excluded.quizzes,
+             questions = excluded.questions,
+             uploaded_at = NOW()`
+        )
+        .run(
+          examId,
+          userId,
+          req.file.filename,
+          req.file.originalname,
+          result.periodicCode,
+          JSON.stringify(result.quizzes),
+          JSON.stringify(result.questions)
+        );
 
       res.json({
         ok: true,
@@ -105,10 +107,10 @@ router.post('/:examId', requireAuth, (req, res) => {
   });
 });
 
-router.post('/:examId/manual', requireAuth, (req, res) => {
+router.post('/:examId/manual', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const examId = Number(req.params.examId);
-  const exam = db.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?').get(examId, userId);
+  const exam = await db.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?').get(examId, userId);
   if (!exam) {
     return res.status(404).json({ error: 'Exam not found.' });
   }
@@ -122,19 +124,21 @@ router.post('/:examId/manual', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Type at least one course practice quiz or course question.' });
   }
 
-  db.prepare(
-    `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions)
-     VALUES (?, ?, 'manual', NULL, NULL, NULL, ?, ?)
-     ON CONFLICT(exam_id) DO UPDATE SET
-       user_id = excluded.user_id,
-       source = 'manual',
-       filename = NULL,
-       original_name = NULL,
-       periodic_code = NULL,
-       quizzes = excluded.quizzes,
-       questions = excluded.questions,
-       uploaded_at = datetime('now')`
-  ).run(examId, userId, JSON.stringify(quizzes), JSON.stringify(questions));
+  await db
+    .prepare(
+      `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions)
+       VALUES (?, ?, 'manual', NULL, NULL, NULL, ?, ?)
+       ON CONFLICT(exam_id) DO UPDATE SET
+         user_id = excluded.user_id,
+         source = 'manual',
+         filename = NULL,
+         original_name = NULL,
+         periodic_code = NULL,
+         quizzes = excluded.quizzes,
+         questions = excluded.questions,
+         uploaded_at = NOW()`
+    )
+    .run(examId, userId, JSON.stringify(quizzes), JSON.stringify(questions));
 
   res.json({ ok: true, quizzes, questions });
 });

@@ -27,15 +27,15 @@ router.get('/', (_req, res) => {
   });
 });
 
-router.get('/mine', requireAuth, (req, res) => {
-  const rows = db
+router.get('/mine', requireAuth, async (req, res) => {
+  const rows = await db
     .prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?')
     .all(req.session.userId);
-  const user = db.prepare('SELECT periodic_day FROM users WHERE id = ?').get(req.session.userId);
+  const user = await db.prepare('SELECT periodic_day FROM users WHERE id = ?').get(req.session.userId);
   res.json({ subjects: rows, periodicDay: user?.periodic_day ?? null });
 });
 
-router.post('/mine', requireAuth, (req, res) => {
+router.post('/mine', requireAuth, async (req, res) => {
   const { subjects, periodicDay } = req.body || {};
   if (!Array.isArray(subjects)) {
     return res.status(400).json({ error: 'subjects must be an array.' });
@@ -63,19 +63,19 @@ router.post('/mine', requireAuth, (req, res) => {
   }
 
   const userId = req.session.userId;
-  const replaceAll = transaction((entries) => {
-    db.prepare('DELETE FROM user_subjects WHERE user_id = ?').run(userId);
+  const replaceAll = transaction(async (entries) => {
+    await db.prepare('DELETE FROM user_subjects WHERE user_id = ?').run(userId);
     const insert = db.prepare(
       'INSERT INTO user_subjects (user_id, subject_key, difficulty) VALUES (?, ?, ?)'
     );
     for (const entry of entries) {
-      insert.run(userId, entry.subjectKey, entry.difficulty);
+      await insert.run(userId, entry.subjectKey, entry.difficulty);
     }
     // The quiz is the only mandatory onboarding step now — schedule/academics are both optional,
     // reachable via their own "+" prompts once the student's in the app.
-    db.prepare('UPDATE users SET periodic_day = ?, onboarded = 1 WHERE id = ?').run(periodicDay, userId);
+    await db.prepare('UPDATE users SET periodic_day = ?, onboarded = 1 WHERE id = ?').run(periodicDay, userId);
   });
-  replaceAll(subjects);
+  await replaceAll(subjects);
 
   res.json({ ok: true });
 });
