@@ -1,0 +1,12 @@
+{
+  "appId": "com.sabishub.app",
+  "appName": "SabisHub",
+  "webDir": "dist",
+  "server": {
+    "url": "https://ischeduleschool.netlify.app",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

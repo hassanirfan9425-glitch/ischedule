@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { api } from '../api.js';
-import { countdownText } from '../utils.js';
+import { countdownText, APK_DOWNLOAD_URL } from '../utils.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import TabBar from '../components/TabBar.jsx';
+import { useBackHandler } from '../hooks/useBackButton.js';
 
 export default function Home({
   user,
+  greeting,
   onLogout,
-  onReupload,
   onRetakeQuiz,
+  onEditElectives,
   onSettings,
-  onManualEntry,
   onDeleteAccount,
   activeTab,
   onSwitchTab,
@@ -24,12 +26,6 @@ export default function Home({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [confirmingDeleteSchedule, setConfirmingDeleteSchedule] = useState(false);
-  const [deletingSchedule, setDeletingSchedule] = useState(false);
-  const [deleteScheduleError, setDeleteScheduleError] = useState('');
-  const [confirmingDeleteGrades, setConfirmingDeleteGrades] = useState(false);
-  const [deletingGrades, setDeletingGrades] = useState(false);
-  const [deleteGradesError, setDeleteGradesError] = useState('');
 
   useEffect(() => {
     Promise.all([api.getDashboard(), api.getAcademics()])
@@ -51,45 +47,25 @@ export default function Home({
     }
   };
 
-  const handleDeleteSchedule = async () => {
-    setDeletingSchedule(true);
-    setDeleteScheduleError('');
-    try {
-      await api.deleteSchedule();
-      const fresh = await api.getDashboard();
-      setDashboardData(fresh);
-      setConfirmingDeleteSchedule(false);
-    } catch (err) {
-      setDeleteScheduleError(err.message);
-    } finally {
-      setDeletingSchedule(false);
+  useBackHandler(drawerOpen || confirmingDelete, () => {
+    if (confirmingDelete) {
+      setConfirmingDelete(false);
+      setDeleteError('');
+      return;
     }
-  };
-
-  const handleDeleteAllGrades = async () => {
-    setDeletingGrades(true);
-    setDeleteGradesError('');
-    try {
-      await api.deleteAllGrades();
-      const fresh = await api.getAcademics();
-      setAcademicsData(fresh);
-      setConfirmingDeleteGrades(false);
-    } catch (err) {
-      setDeleteGradesError(err.message);
-    } finally {
-      setDeletingGrades(false);
-    }
-  };
+    setDrawerOpen(false);
+  });
 
   const navItems = [
     { label: 'Retake Quiz', onClick: onRetakeQuiz },
-    { label: 'Update Schedule', onClick: onReupload },
-    { label: 'Enter Schedule Manually', onClick: onManualEntry },
+    { label: 'Change Externals', onClick: onEditElectives },
     { label: 'Settings', onClick: onSettings },
-    { label: 'Delete Schedule', onClick: () => setConfirmingDeleteSchedule(true) },
-    { label: 'Delete All Grades', onClick: () => setConfirmingDeleteGrades(true) },
     { label: 'Log Out', onClick: onLogout },
     { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
+    // Pointless (and slightly odd) to offer downloading the app from inside the app itself.
+    ...(Capacitor.isNativePlatform()
+      ? []
+      : [{ label: 'Download App', onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
   ];
 
   const upcomingExams = dashboardData
@@ -98,9 +74,15 @@ export default function Home({
         .slice(0, 3)
     : [];
 
-  const currentTermData = academicsData
-    ? academicsData.terms.find((t) => t.term === academicsData.currentTerm)
-    : null;
+  // Show every term that actually has grades, not just whichever term the schedule says is
+  // "current" — that inference can be wrong (or there's no schedule at all yet), and a term with
+  // real entries shouldn't just silently not show up here.
+  const termsWithGrades = academicsData
+    ? academicsData.terms.filter((t) => t.overallAverage !== null).sort((a, b) => a.term - b.term)
+    : [];
+  // Suggestions, unlike averages, only make sense for the most recent term — showing advice for
+  // an old term next to the current one is just noise.
+  const latestTermWithGrades = termsWithGrades.length > 0 ? termsWithGrades[termsWithGrades.length - 1] : null;
 
   return (
     <div className="dashboard">
@@ -109,14 +91,14 @@ export default function Home({
       </button>
       <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} items={navItems} />
 
-      <header className="dashboard-header" style={{ paddingLeft: 76 }}>
+      <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
           <CalendarIcon />
           <div>
             <div className="brand-name" style={{ fontSize: '1.1rem' }}>
-              SabisHub
+              Home
             </div>
-            <h1 style={{ fontSize: '1.4rem' }}>Hey {user.name}</h1>
+            <h1 style={{ fontSize: '1.4rem' }}>{greeting}</h1>
           </div>
         </div>
       </header>
@@ -134,7 +116,7 @@ export default function Home({
           <button type="button" className="preview-card" onClick={() => onSwitchTab('schedule')}>
             <div className="preview-card-title">Schedule</div>
             {upcomingExams.length === 0 ? (
-              <div className="preview-card-empty">No upcoming exams yet — tap to add your schedule.</div>
+              <div className="preview-card-empty">No upcoming exams yet. Tap to add your schedule.</div>
             ) : (
               upcomingExams.map((exam) => (
                 <div className="preview-exam-row" key={exam.id}>
@@ -147,21 +129,25 @@ export default function Home({
 
           <button type="button" className="preview-card" onClick={() => onSwitchTab('academics')}>
             <div className="preview-card-title">Academics</div>
-            {!currentTermData || currentTermData.overallAverage === null ? (
-              <div className="preview-card-empty">No grades yet — tap to add your grade report.</div>
+            {termsWithGrades.length === 0 ? (
+              <div className="preview-card-empty">No grades yet. Tap to add your grade report.</div>
             ) : (
-              <div className="preview-average">
-                <span className="preview-average-value">{Math.round(currentTermData.overallAverage)}</span>
-                <span className="preview-average-label">Term {currentTermData.term} average</span>
+              <div className="preview-average-list">
+                {termsWithGrades.map((t) => (
+                  <div className="preview-average" key={t.term}>
+                    <span className="preview-average-value">{Math.round(t.overallAverage)}</span>
+                    <span className="preview-average-label">Term {t.term} average</span>
+                  </div>
+                ))}
               </div>
             )}
           </button>
 
-          {currentTermData && currentTermData.suggestions.length > 0 && (
+          {latestTermWithGrades && latestTermWithGrades.suggestions.length > 0 && (
             <div className="suggestions-section">
               <div className="preview-card-title">Suggestions</div>
               <ul>
-                {currentTermData.suggestions.map((s, i) => (
+                {latestTermWithGrades.suggestions.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ul>
@@ -182,36 +168,6 @@ export default function Home({
             setDeleteError('');
           }}
           onConfirm={handleDeleteAccount}
-        />
-      )}
-
-      {confirmingDeleteSchedule && (
-        <ConfirmDialog
-          message="Are you sure you want to delete your entire schedule? This removes every exam and holiday, including manually-entered ones. This cannot be undone."
-          confirmLabel="Delete Schedule"
-          danger
-          busy={deletingSchedule}
-          error={deleteScheduleError}
-          onCancel={() => {
-            setConfirmingDeleteSchedule(false);
-            setDeleteScheduleError('');
-          }}
-          onConfirm={handleDeleteSchedule}
-        />
-      )}
-
-      {confirmingDeleteGrades && (
-        <ConfirmDialog
-          message="Are you sure you want to delete all your grades? This removes every entry across every term. This cannot be undone."
-          confirmLabel="Delete All Grades"
-          danger
-          busy={deletingGrades}
-          error={deleteGradesError}
-          onCancel={() => {
-            setConfirmingDeleteGrades(false);
-            setDeleteGradesError('');
-          }}
-          onConfirm={handleDeleteAllGrades}
         />
       )}
     </div>

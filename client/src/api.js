@@ -52,6 +52,7 @@ export const api = {
   },
   addManualMaterial: (examId, { quizzes, questions }) =>
     request(`/materials/${examId}/manual`, { method: 'POST', body: JSON.stringify({ quizzes, questions }) }),
+  deleteMaterial: (examId) => request(`/materials/${examId}`, { method: 'DELETE' }),
 
   getAcademics: () => request('/academics'),
   uploadGrades: (file) => {
@@ -61,5 +62,7 @@ export const api = {
   },
   addGradeManual: (entry) => request('/academics/manual', { method: 'POST', body: JSON.stringify(entry) }),
   deleteGradeEntry: (id) => request(`/academics/${id}`, { method: 'DELETE' }),
-  deleteAllGrades: () => request('/academics', { method: 'DELETE' }),
+  deleteGradesByTerm: (term) => request(`/academics/term/${term}`, { method: 'DELETE' }),
+  changeGradeTerm: (fromTerm, toTerm) =>
+    request('/academics/term', { method: 'PATCH', body: JSON.stringify({ fromTerm, toTerm }) }),
 };

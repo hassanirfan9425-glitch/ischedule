@@ -1,42 +1,91 @@
 import { useState } from 'react';
 
 const WEEKS = Array.from({ length: 14 }, (_, i) => i + 1);
+const SUBCOURSE_ORDER = ['Periodic', 'AMS'];
 
-function pivotEntries(entries) {
-  const rowMap = new Map();
+function subjectIdentity(subjectKey, subjectLabel) {
+  return subjectKey || `label:${subjectLabel}`;
+}
+
+// Every subject always gets both a Periodic and an AMS row, even if one has no grades yet — a
+// screenshot only showing periodic entries (or only AMS) shouldn't hide the other section.
+// `defaultSubjects` (core subjects + whatever electives this student rated in the quiz) seed the
+// table unconditionally, so a subject with zero entries this term still shows up blank instead of
+// disappearing — a screenshot that doesn't mention Chemistry shouldn't remove Chemistry.
+function buildRows(entries, defaultSubjects, placeholderSubjects) {
+  const subjectsByIdentity = new Map();
+  const cellsByRowKey = new Map();
+
+  for (const s of defaultSubjects) {
+    const identity = subjectIdentity(s.key, s.label);
+    if (!subjectsByIdentity.has(identity)) {
+      subjectsByIdentity.set(identity, { subjectKey: s.key, subjectLabel: s.label });
+    }
+  }
+
   for (const e of entries) {
-    const key = `${e.subjectLabel}::${e.subcourseLabel}`;
-    if (!rowMap.has(key)) {
-      rowMap.set(key, {
-        key,
-        subjectKey: e.subjectKey,
-        subjectLabel: e.subjectLabel,
-        subcourseLabel: e.subcourseLabel,
-        cells: new Map(),
+    const identity = subjectIdentity(e.subjectKey, e.subjectLabel);
+    if (!subjectsByIdentity.has(identity)) {
+      subjectsByIdentity.set(identity, { subjectKey: e.subjectKey, subjectLabel: e.subjectLabel });
+    }
+    const subcourseLabel = e.subcourseLabel === 'AMS' ? 'AMS' : 'Periodic';
+    const rowKey = `${identity}::${subcourseLabel}`;
+    if (!cellsByRowKey.has(rowKey)) cellsByRowKey.set(rowKey, new Map());
+    cellsByRowKey.get(rowKey).set(e.weekNumber, e);
+  }
+
+  for (const p of placeholderSubjects) {
+    const identity = subjectIdentity(p.subjectKey, p.subjectLabel);
+    if (!subjectsByIdentity.has(identity)) {
+      subjectsByIdentity.set(identity, { subjectKey: p.subjectKey, subjectLabel: p.subjectLabel });
+    }
+  }
+
+  const rows = [];
+  for (const [identity, { subjectKey, subjectLabel }] of subjectsByIdentity) {
+    for (const subcourseLabel of SUBCOURSE_ORDER) {
+      const rowKey = `${identity}::${subcourseLabel}`;
+      rows.push({
+        key: rowKey,
+        subjectIdentity: identity,
+        subjectKey,
+        subjectLabel,
+        subcourseLabel,
+        cells: cellsByRowKey.get(rowKey) || new Map(),
       });
     }
-    rowMap.get(key).cells.set(e.weekNumber, e);
   }
-  return rowMap;
+  return rows;
 }
 
 export default function GradeTable({
   termData,
   subjects,
+  defaultSubjects,
   displayedAverage,
   delta,
   recalculating,
   onRecalculate,
   onAddEntry,
   onDeleteEntry,
+  onChangeTerm,
+  onDeleteTerm,
 }) {
   const { term, entries } = termData;
-  const realRows = pivotEntries(entries);
 
-  // Rows a student has started (via "+ Add Subject Row") but hasn't entered a grade for yet —
-  // once their first cell is saved, the row shows up via realRows instead and this drops out.
-  const [placeholderRows, setPlaceholderRows] = useState([]);
-  const rows = [...realRows.values(), ...placeholderRows.filter((p) => !realRows.has(p.key))];
+  // Subjects a student has started (via "+ Add Subject", for something outside their default
+  // list) but hasn't entered a grade for yet — once a real entry lands for that subject, it shows
+  // up via `entries` instead and this drops out.
+  const [placeholderSubjects, setPlaceholderSubjects] = useState([]);
+  const existingIdentities = new Set([
+    ...entries.map((e) => subjectIdentity(e.subjectKey, e.subjectLabel)),
+    ...defaultSubjects.map((s) => subjectIdentity(s.key, s.label)),
+  ]);
+  const rows = buildRows(
+    entries,
+    defaultSubjects,
+    placeholderSubjects.filter((p) => !existingIdentities.has(subjectIdentity(p.subjectKey, p.subjectLabel)))
+  );
 
   const [editingCell, setEditingCell] = useState(null); // { rowKey, week }
   const [editValue, setEditValue] = useState('');
@@ -46,8 +95,12 @@ export default function GradeTable({
   const [addingRow, setAddingRow] = useState(false);
   const [newRowSubjectKey, setNewRowSubjectKey] = useState('');
   const [newRowCustomSubject, setNewRowCustomSubject] = useState('');
-  const [newRowSubcourse, setNewRowSubcourse] = useState('AMS');
   const [addRowError, setAddRowError] = useState('');
+
+  const [editingTerm, setEditingTerm] = useState(false);
+  const [termValue, setTermValue] = useState(String(term));
+  const [termError, setTermError] = useState('');
+  const [savingTerm, setSavingTerm] = useState(false);
 
   function startEdit(row, week) {
     setEditingCell({ rowKey: row.key, week });
@@ -94,30 +147,82 @@ export default function GradeTable({
       setAddRowError('Pick or type a subject.');
       return;
     }
-    const key = `${subjectLabel}::${newRowSubcourse}`;
-    if (realRows.has(key) || placeholderRows.some((p) => p.key === key)) {
-      setAddRowError('That row already exists.');
+    const identity = subjectIdentity(newRowSubjectKey || null, subjectLabel);
+    if (
+      existingIdentities.has(identity) ||
+      placeholderSubjects.some((p) => subjectIdentity(p.subjectKey, p.subjectLabel) === identity)
+    ) {
+      setAddRowError('That subject is already in the table.');
       return;
     }
-    setPlaceholderRows((prev) => [
-      ...prev,
-      {
-        key,
-        subjectKey: newRowSubjectKey || null,
-        subjectLabel,
-        subcourseLabel: newRowSubcourse,
-        cells: new Map(),
-      },
-    ]);
+    setPlaceholderSubjects((prev) => [...prev, { subjectKey: newRowSubjectKey || null, subjectLabel }]);
     setNewRowSubjectKey('');
     setNewRowCustomSubject('');
-    setNewRowSubcourse('AMS');
     setAddingRow(false);
+  }
+
+  async function commitTermChange() {
+    setTermError('');
+    const toTerm = Number(termValue);
+    if (!Number.isInteger(toTerm) || toTerm < 1 || toTerm > 6) {
+      setTermError('Term must be a whole number between 1 and 6.');
+      return;
+    }
+    if (toTerm === term) {
+      setEditingTerm(false);
+      return;
+    }
+    setSavingTerm(true);
+    try {
+      await onChangeTerm(term, toTerm);
+      setEditingTerm(false);
+    } catch (err) {
+      setTermError(err.message);
+    } finally {
+      setSavingTerm(false);
+    }
   }
 
   return (
     <section className="grade-table-section">
-      <h2>Term {term}</h2>
+      {editingTerm ? (
+        <div className="term-edit-row">
+          <label className="term-edit-label">
+            Term
+            <input
+              type="number"
+              min="1"
+              max="6"
+              value={termValue}
+              disabled={savingTerm}
+              onChange={(e) => setTermValue(e.target.value)}
+              autoFocus
+            />
+          </label>
+          <button type="button" className="secondary-btn" onClick={() => setEditingTerm(false)} disabled={savingTerm}>
+            Cancel
+          </button>
+          <button type="button" className="primary-btn" onClick={commitTermChange} disabled={savingTerm}>
+            {savingTerm ? 'Saving…' : 'Save'}
+          </button>
+          {termError && <p className="error-text">{termError}</p>}
+        </div>
+      ) : (
+        <div className="term-heading-row">
+          <h2>Term {term}</h2>
+          <button
+            type="button"
+            className="back-link"
+            onClick={() => {
+              setTermValue(String(term));
+              setTermError('');
+              setEditingTerm(true);
+            }}
+          >
+            Wrong term? Change it
+          </button>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <p className="subtle">No grades added for this term yet.</p>
@@ -136,7 +241,7 @@ export default function GradeTable({
             <tbody>
               {rows.map((row) => (
                 <tr key={row.key}>
-                  <td>{row.subjectLabel}</td>
+                  <td>{row.subcourseLabel === 'Periodic' ? row.subjectLabel : ''}</td>
                   <td>{row.subcourseLabel}</td>
                   {WEEKS.map((w) => {
                     const cellEntry = row.cells.get(w);
@@ -189,7 +294,7 @@ export default function GradeTable({
                             onClick={() => startEdit(row, w)}
                             aria-label={`Add grade for ${row.subjectLabel} ${row.subcourseLabel} week ${w}`}
                           >
-                            —
+                            -
                           </button>
                         )}
                       </td>
@@ -204,41 +309,48 @@ export default function GradeTable({
 
       {!addingRow ? (
         <button type="button" className="secondary-btn" onClick={() => setAddingRow(true)}>
-          + Add Subject Row
+          + Add Subject
         </button>
       ) : (
         <form onSubmit={handleAddRow} className="grade-add-form">
-          <label>
-            Subject
-            <select value={newRowSubjectKey} onChange={(e) => setNewRowSubjectKey(e.target.value)}>
-              <option value="">Other / type below</option>
-              {subjects.map((s) => (
-                <option key={s.key} value={s.key}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <p className="subtle" style={{ margin: 0 }}>
+            Pick a subject: it'll get both a Periodic and an AMS section in the table.
+          </p>
+          <div className="manual-subject-list">
+            {subjects.map((s) => (
+              <button
+                type="button"
+                key={s.key}
+                className={newRowSubjectKey === s.key ? 'manual-subject-row active' : 'manual-subject-row'}
+                onClick={() => {
+                  setNewRowSubjectKey(s.key);
+                  setNewRowCustomSubject('');
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={!newRowSubjectKey ? 'manual-subject-row active' : 'manual-subject-row'}
+              onClick={() => setNewRowSubjectKey('')}
+            >
+              Other / not listed
+            </button>
+          </div>
           {!newRowSubjectKey && (
             <label>
               Subject name
               <input value={newRowCustomSubject} onChange={(e) => setNewRowCustomSubject(e.target.value)} />
             </label>
           )}
-          <label>
-            Type
-            <select value={newRowSubcourse} onChange={(e) => setNewRowSubcourse(e.target.value)}>
-              <option value="AMS">AMS (weekly)</option>
-              <option value="Periodic">Periodic (exam)</option>
-            </select>
-          </label>
           {addRowError && <p className="error-text">{addRowError}</p>}
           <div className="grade-add-actions">
             <button type="button" className="secondary-btn" onClick={() => setAddingRow(false)}>
               Cancel
             </button>
             <button type="submit" className="primary-btn">
-              Add Row
+              Add Subject
             </button>
           </div>
         </form>
@@ -263,8 +375,17 @@ export default function GradeTable({
         )}
       </div>
       <p className="grade-disclaimer">
-        This is a rough estimate based on the entries you've added — not your exact official average.
+        This is a rough estimate based on the entries you've added, not your exact official average.
       </p>
+      <p className="grade-disclaimer">Calculation Method by Shahzaib</p>
+
+      <button
+        type="button"
+        className="secondary-btn danger-hover-btn grade-delete-term-btn"
+        onClick={() => onDeleteTerm(term)}
+      >
+        Delete Grades
+      </button>
     </section>
   );
 }

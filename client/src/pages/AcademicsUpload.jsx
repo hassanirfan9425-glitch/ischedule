@@ -36,7 +36,7 @@ export default function AcademicsUpload({ onComplete, onCancel }) {
         <CalendarIcon size={40} />
         <div className="spinner" style={{ marginTop: 16 }} />
         <p className="subtle" style={{ marginTop: 16, textAlign: 'center', maxWidth: 320 }}>
-          Reading your grade report — pulling out every entry…
+          Reading your grade report, pulling out every entry…
         </p>
       </div>
     );

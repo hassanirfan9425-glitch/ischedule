@@ -36,7 +36,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
         <CalendarIcon size={40} />
         <div className="spinner" style={{ marginTop: 16 }} />
         <p className="subtle" style={{ marginTop: 16, textAlign: 'center', maxWidth: 320 }}>
-          Analyzing your schedule — this can take a few minutes while the agent works through the grid…
+          Analyzing your schedule. This can take a few minutes while the agent works through the grid…
         </p>
       </div>
     );

@@ -197,7 +197,11 @@ router.get('/', requireAuth, async (req, res) => {
     });
   }
 
-  const terms = [...new Set([...Object.keys(byTerm).map(Number), currentTerm])].sort((a, b) => a - b);
+  // Only show tables for terms that actually have entries — once a term is empty (nothing ever
+  // added, or everything moved out via the term-change control), it drops off the list. Before
+  // the student has entered anything at all, default to a single empty Term 1 table.
+  const termsWithEntries = [...new Set(rows.map((r) => r.term))].sort((a, b) => a - b);
+  const terms = termsWithEntries.length > 0 ? termsWithEntries : [1];
 
   const suggestionRows = await db
     .prepare('SELECT term, suggestions FROM grade_suggestions WHERE user_id = ?')
@@ -265,8 +269,6 @@ router.post('/upload', requireAuth, (req, res) => {
     }
 
     const userId = req.session.userId;
-    const todayIso = process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10);
-    const term = await determineCurrentTerm(userId, todayIso);
 
     try {
       const result = await parseGrades({ filePath: req.file.path, mimeType: req.file.mimetype });
@@ -276,6 +278,26 @@ router.post('/upload', requireAuth, (req, res) => {
         return res.status(422).json({ error: 'No grades were found in this file. Nothing was added.' });
       }
 
+      // Prefer the term printed on the report itself — only fall back to inferring it from the
+      // schedule when the report doesn't clearly show one. The user can always correct it after.
+      let term;
+      if (Number.isInteger(result.term) && result.term >= 1 && result.term <= 6) {
+        term = result.term;
+      } else {
+        const todayIso = process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10);
+        term = await determineCurrentTerm(userId, todayIso);
+      }
+
+      // The AI has no way to know whether "Islamic Education" on a report means Islamic 1 (Arab)
+      // or Islamic 2 (non-Arab) — that's determined by the student's own arab/muslim quiz answers,
+      // not anything printed on the report. Whichever of the two is actually in their subject list
+      // is the ground truth, so any Islamic match gets forced to that one regardless of what the
+      // AI guessed from the report text.
+      const islamicRow = await db
+        .prepare("SELECT subject_key FROM user_subjects WHERE user_id = ? AND subject_key IN ('core_islamic_1', 'core_islamic_2')")
+        .get(userId);
+      const correctIslamicKey = islamicRow?.subject_key || null;
+
       const insert = db.prepare(
         `INSERT INTO grade_entries (user_id, term, subject_key, subject_label, subcourse_label, week_number, grade, source)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'ai')`
@@ -284,7 +306,10 @@ router.post('/upload', requireAuth, (req, res) => {
       for (const e of entries) {
         const gradeNum = Number(e.grade);
         if (!e.subcourse || !Number.isFinite(gradeNum)) continue;
-        const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
+        let subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
+        if (correctIslamicKey && (subjectKey === 'core_islamic_1' || subjectKey === 'core_islamic_2')) {
+          subjectKey = correctIslamicKey;
+        }
         const subjectLabel = subjectKey ? SUBJECT_BY_KEY[subjectKey].label : e.course || 'Unknown Subject';
         await insert.run(
           userId,
@@ -311,10 +336,36 @@ router.post('/upload', requireAuth, (req, res) => {
   });
 });
 
-router.delete('/', requireAuth, async (req, res) => {
+// Lets the student correct the term a whole table's entries got tagged with — e.g. the AI missed
+// a term number on the report, or inferred the wrong one from the schedule.
+router.patch('/term', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  await db.prepare('DELETE FROM grade_entries WHERE user_id = ?').run(userId);
-  await db.prepare('DELETE FROM grade_suggestions WHERE user_id = ?').run(userId);
+  const { fromTerm, toTerm } = req.body || {};
+
+  if (!Number.isInteger(fromTerm) || !Number.isInteger(toTerm) || toTerm < 1 || toTerm > 6) {
+    return res.status(400).json({ error: 'toTerm must be an integer between 1 and 6.' });
+  }
+  if (fromTerm === toTerm) {
+    return res.json({ ok: true });
+  }
+
+  await db.prepare('UPDATE grade_entries SET term = ? WHERE user_id = ? AND term = ?').run(toTerm, userId, fromTerm);
+  // The moved-to term's suggestions are now stale (different entries feed into it) — drop both
+  // and let the next grade action regenerate fresh ones for the merged term.
+  await db.prepare('DELETE FROM grade_suggestions WHERE user_id = ? AND term IN (?, ?)').run(userId, fromTerm, toTerm);
+  await maybeRegenerateSuggestions(userId, toTerm);
+
+  res.json({ ok: true });
+});
+
+router.delete('/term/:term', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const term = Number(req.params.term);
+  if (!Number.isInteger(term)) {
+    return res.status(400).json({ error: 'Invalid term.' });
+  }
+  await db.prepare('DELETE FROM grade_entries WHERE user_id = ? AND term = ?').run(userId, term);
+  await db.prepare('DELETE FROM grade_suggestions WHERE user_id = ? AND term = ?').run(userId, term);
   res.json({ ok: true });
 });
 

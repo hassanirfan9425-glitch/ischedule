@@ -36,7 +36,7 @@ export default function MaterialUpload({ exam, onComplete, onCancel }) {
         <CalendarIcon size={40} />
         <div className="spinner" style={{ marginTop: 16 }} />
         <p className="subtle" style={{ marginTop: 16, textAlign: 'center', maxWidth: 320 }}>
-          Analyzing your material — pulling out the quizzes and questions…
+          Analyzing your material, pulling out the quizzes and questions…
         </p>
       </div>
     );

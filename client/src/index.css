@@ -1,11 +1,17 @@
 :root {
-  --font-family: 'Franklin Gothic Medium', 'Franklin Gothic', 'Arial Narrow', Arial, sans-serif;
+  /* Body/data text: IBM Plex Sans — distinctive without sacrificing legibility in the dense
+     grade/schedule tables. Headings use --font-display instead (see h1/h2/h3/.brand-name below). */
+  --font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  /* Used once, deliberately, for the exam countdown badge — the one number a student would
+     actually circle on a paper planner. Not used anywhere else. */
+  --font-signature: 'Kalam', cursive;
 
-  --bg: #fdf3ff;
+  --bg: #f7f3ea;
   --surface: #ffffff;
-  --text: #142016;
-  --text-subtle: #5c6b60;
-  --border: #eab8ff;
+  --text: #1f1b16;
+  --text-subtle: #6b6255;
+  --border: #d8cdb8;
 
   /* Brand scale (theme-controlled) — default "purple & pink" theme */
   --brand-50: #faf5ff;
@@ -17,20 +23,17 @@
   --brand-700: #7e22ce;
   --brand-rgb: 168, 85, 247;
 
-  --blob-1: rgba(168, 85, 247, 0.36);
-  --blob-2: rgba(236, 72, 153, 0.3);
-  --blob-3: rgba(192, 132, 252, 0.28);
-  --blob-4: rgba(244, 114, 182, 0.28);
-
   --grad-brand: linear-gradient(135deg, var(--brand-400), var(--brand-600));
   --shadow-brand: 0 6px 0 var(--brand-700), 0 10px 20px rgba(var(--brand-rgb), 0.25);
 
-  /* Frosted-glass panel treatment — panels let the colorful background blur through. */
-  --glass-bg: rgba(255, 255, 255, 0.48);
-  --glass-bg-strong: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-blur: 20px;
-  --glass-shadow: 0 8px 32px rgba(31, 60, 45, 0.18);
+  /* Index-card panel treatment — solid paper surface, crisp ink border, small offset shadow
+     (like a card sitting on a desk), instead of frosted glass. --glass-blur stays at 0 so every
+     existing backdrop-filter: blur(var(--glass-blur)) call site becomes a no-op automatically. */
+  --glass-bg: rgba(255, 255, 255, 0.97);
+  --glass-bg-strong: #ffffff;
+  --glass-border: var(--border);
+  --glass-blur: 0px;
+  --glass-shadow: 2px 3px 0 rgba(31, 27, 22, 0.06), 0 6px 16px rgba(31, 27, 22, 0.06);
 
   /* Fixed danger/error accent — stays consistent no matter the theme */
   --danger: #ff5da2;
@@ -73,8 +76,8 @@
 }
 
 [data-theme='red_blue'] {
-  --bg: #fef1f1;
-  --border: #fbb6b6;
+  --bg: #fdf1ec;
+  --border: #edc2b0;
   --brand-50: #fef2f2;
   --brand-100: #fee2e2;
   --brand-300: #fca5a5;
@@ -83,16 +86,11 @@
   --brand-600: #dc2626;
   --brand-700: #b91c1c;
   --brand-rgb: 239, 68, 68;
-
-  --blob-1: rgba(239, 68, 68, 0.32);
-  --blob-2: rgba(59, 130, 246, 0.28);
-  --blob-3: rgba(248, 113, 113, 0.22);
-  --blob-4: rgba(96, 165, 250, 0.24);
 }
 
 [data-theme='green'] {
-  --bg: #f2fdf6;
-  --border: #bdeed0;
+  --bg: #f3f4e9;
+  --border: #c9d3ad;
   --brand-50: #eefdf3;
   --brand-100: #d7f9e3;
   --brand-300: #7de3a3;
@@ -101,16 +99,11 @@
   --brand-600: #16a34a;
   --brand-700: #0f7a38;
   --brand-rgb: 34, 197, 94;
-
-  --blob-1: rgba(74, 222, 128, 0.5);
-  --blob-2: rgba(255, 93, 162, 0.34);
-  --blob-3: rgba(255, 210, 63, 0.42);
-  --blob-4: rgba(56, 189, 248, 0.36);
 }
 
 [data-theme='black_grey'] {
-  --bg: #f4f4f5;
-  --border: #b8b8bd;
+  --bg: #f2f0ea;
+  --border: #c7c2b6;
   --brand-50: #fafafa;
   --brand-100: #f4f4f5;
   --brand-300: #a1a1aa;
@@ -119,16 +112,11 @@
   --brand-600: #3f3f46;
   --brand-700: #27272a;
   --brand-rgb: 82, 82, 91;
-
-  --blob-1: rgba(82, 82, 91, 0.26);
-  --blob-2: rgba(161, 161, 170, 0.24);
-  --blob-3: rgba(39, 39, 42, 0.2);
-  --blob-4: rgba(212, 212, 216, 0.26);
 }
 
 [data-theme='gold_navy'] {
-  --bg: #fefaea;
-  --border: #f9d879;
+  --bg: #f9f3e2;
+  --border: #e3cd8f;
   --brand-50: #fefce8;
   --brand-100: #fef9c3;
   --brand-300: #fde047;
@@ -137,16 +125,11 @@
   --brand-600: #ca8a04;
   --brand-700: #a16207;
   --brand-rgb: 234, 179, 8;
-
-  --blob-1: rgba(234, 179, 8, 0.32);
-  --blob-2: rgba(30, 58, 138, 0.28);
-  --blob-3: rgba(250, 204, 21, 0.24);
-  --blob-4: rgba(59, 130, 246, 0.2);
 }
 
 [data-theme='blue_white'] {
-  --bg: #eef6ff;
-  --border: #a9cdfc;
+  --bg: #eef2ee;
+  --border: #b9c9c2;
   --brand-50: #eff6ff;
   --brand-100: #dbeafe;
   --brand-300: #93c5fd;
@@ -155,11 +138,6 @@
   --brand-600: #2563eb;
   --brand-700: #1d4ed8;
   --brand-rgb: 59, 130, 246;
-
-  --blob-1: rgba(59, 130, 246, 0.3);
-  --blob-2: rgba(147, 197, 253, 0.28);
-  --blob-3: rgba(191, 219, 254, 0.24);
-  --blob-4: rgba(219, 234, 254, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -179,11 +157,12 @@
     --shadow-brand: 0 6px 0 var(--brand-700), 0 10px 24px rgba(0, 0, 0, 0.45);
     --error-bg: #3a1428;
 
-    /* Dark glass: tint panels with the dark surface itself, not white, so light text stays legible */
-    --glass-bg: rgba(27, 27, 32, 0.55);
-    --glass-bg-strong: rgba(27, 27, 32, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.14);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    /* Dark index-card panels: solid dark surface, crisp border, small offset shadow — matches
+       the light-mode paper-card treatment instead of frosted glass. */
+    --glass-bg: #1b1b20;
+    --glass-bg-strong: #202027;
+    --glass-border: var(--border);
+    --glass-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.35);
   }
 }
 
@@ -195,13 +174,17 @@ body {
   margin: 0;
   background: var(--bg);
   background-image:
-    radial-gradient(circle at 8% 12%, var(--blob-1), transparent 32%),
-    radial-gradient(circle at 92% 18%, var(--blob-2), transparent 30%),
-    radial-gradient(circle at 15% 88%, var(--blob-3), transparent 34%),
-    radial-gradient(circle at 88% 90%, var(--blob-4), transparent 32%);
+    radial-gradient(circle at 8% 10%, rgba(var(--brand-rgb), 0.4), transparent 40%),
+    radial-gradient(circle at 92% 15%, rgba(255, 93, 162, 0.32), transparent 38%),
+    radial-gradient(circle at 12% 92%, rgba(var(--brand-rgb), 0.3), transparent 42%),
+    radial-gradient(circle at 90% 90%, rgba(255, 93, 162, 0.28), transparent 40%);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-family);
+}
+
+h1, h2, h3, .brand-name {
+  font-family: var(--font-display);
 }
 
 h1 {
@@ -305,7 +288,7 @@ h2 {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 28px;
+  border-radius: 14px;
   padding: 34px;
   width: 100%;
   max-width: 440px;
@@ -397,7 +380,7 @@ h2 {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 22px;
+  border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
   color: inherit;
@@ -445,6 +428,12 @@ h2 {
   white-space: nowrap;
 }
 
+.preview-average-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .preview-average {
   display: flex;
   align-items: baseline;
@@ -467,7 +456,7 @@ h2 {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 22px;
+  border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
 }
@@ -482,11 +471,15 @@ h2 {
 }
 
 .suggestions-section li {
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  font-size: 0.9rem;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--brand-50);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-500);
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 500;
+  line-height: 1.4;
   color: var(--text);
 }
 
@@ -506,9 +499,39 @@ h2 {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 22px;
+  border-radius: 12px;
   padding: 22px;
   margin-bottom: 20px;
+}
+
+.term-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.term-heading-row h2 {
+  margin: 0;
+}
+
+.term-edit-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.term-edit-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+
+.term-edit-label input {
+  width: 70px;
+  padding: 8px 10px;
 }
 
 .grade-table-wrap {
@@ -610,7 +633,7 @@ h2 {
   padding: 16px;
   background: var(--glass-bg-strong);
   border: 1.5px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: 10px;
 }
 
 .grade-add-actions {
@@ -671,6 +694,24 @@ h2 {
   font-size: 0.75rem;
   color: var(--text-subtle);
   opacity: 0.8;
+}
+
+.grade-delete-term-btn {
+  margin-top: 18px;
+}
+
+.schedule-delete-btn {
+  margin-top: 18px;
+}
+
+.danger-hover-btn {
+  transition: border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.danger-hover-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger-dark);
+  transform: translateY(-1px);
 }
 
 .tab {
@@ -811,7 +852,7 @@ textarea:focus {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 22px;
+  border-radius: 12px;
   padding: 26px;
   width: 100%;
   max-width: 380px;
@@ -868,7 +909,7 @@ textarea:focus {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 26px;
+  border-radius: 14px;
   padding: 30px;
   width: 100%;
   max-width: 460px;
@@ -924,11 +965,15 @@ textarea:focus {
 }
 
 .material-group li {
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  font-size: 0.9rem;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--brand-50);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-500);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
   color: var(--text);
 }
 
@@ -968,7 +1013,7 @@ textarea:focus {
 
 .subject-row {
   border: 2.5px solid var(--border);
-  border-radius: 18px;
+  border-radius: 10px;
   padding: 4px;
   transition: border-color 0.15s, background 0.15s;
   background: var(--surface);
@@ -1099,7 +1144,7 @@ textarea:focus {
   gap: 6px;
   padding: 4px;
   border: 2px solid var(--border);
-  border-radius: 16px;
+  border-radius: 10px;
   margin: 10px 0 20px;
 }
 
@@ -1138,7 +1183,7 @@ textarea:focus {
   backdrop-filter: blur(calc(var(--glass-blur) / 2));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) / 2));
   border: 1.5px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: 10px;
   margin-bottom: 20px;
   animation: fadeInUp 0.25s ease-out both;
 }
@@ -1226,7 +1271,7 @@ textarea:focus {
 .drop-zone {
   margin: 20px 0;
   border: 3px dashed var(--brand-300);
-  border-radius: 24px;
+  border-radius: 12px;
   padding: 44px 20px;
   text-align: center;
   cursor: pointer;
@@ -1286,13 +1331,24 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1.5px solid var(--glass-border);
-  border-radius: 22px;
-  padding: 18px 22px;
-  margin-bottom: 8px;
+  /* Full-bleed site chrome, not another floating card — a solid bar with a bold brand-colored
+     underline reads as real navigation, not another panel on the page. */
+  width: auto;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-top: -32px;
+  margin-bottom: 24px;
+  background: var(--glass-bg-strong);
+  border: none;
+  border-bottom: 4px solid var(--brand-500);
+  border-radius: 0;
+  /* On the wrapped Android app the WebView can render edge-to-edge under the status bar — the
+     safe-area env() adds the extra clearance the site itself never needs (it's 0 in a browser). */
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: 20px;
+  padding-left: max(20px, calc(50vw - 470px), calc(20px + env(safe-area-inset-left)));
+  padding-right: max(20px, calc(50vw - 470px), calc(20px + env(safe-area-inset-right)));
+  box-shadow: 0 4px 24px rgba(31, 27, 22, 0.1);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -1363,7 +1419,7 @@ textarea:focus {
   align-items: flex-start;
   gap: 2px;
   padding: 12px 18px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -1431,7 +1487,7 @@ textarea:focus {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  border-radius: 18px;
+  border-radius: 10px;
   background: var(--glass-bg);
   border: 1.5px dashed var(--glass-border);
 }
@@ -1492,7 +1548,7 @@ textarea:focus {
   text-align: left;
   font-family: var(--font-family);
   cursor: pointer;
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 18px;
   border: 1.5px solid var(--glass-border);
   backdrop-filter: blur(var(--glass-blur));
@@ -1548,11 +1604,13 @@ textarea:focus {
 }
 
 .exam-bubble-days {
-  font-weight: 800;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  opacity: 0.9;
+  display: inline-block;
+  font-family: var(--font-signature);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  transform: rotate(-2deg);
+  opacity: 0.95;
 }
 
 .exam-bubble-subject {
@@ -1588,7 +1646,7 @@ textarea:focus {
 }
 
 .holiday-bubble {
-  border-radius: 18px;
+  border-radius: 10px;
   padding: 15px;
   background: var(--blue-glass);
   backdrop-filter: blur(var(--glass-blur));
@@ -1623,8 +1681,8 @@ textarea:focus {
 
 .fab-btn {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  right: calc(24px + env(safe-area-inset-right));
+  bottom: calc(24px + env(safe-area-inset-bottom));
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -1650,8 +1708,8 @@ textarea:focus {
 
 .hamburger-btn {
   position: fixed;
-  left: 20px;
-  top: 20px;
+  left: calc(20px + env(safe-area-inset-left));
+  top: calc(20px + env(safe-area-inset-top));
   width: 48px;
   height: 48px;
   border-radius: 14px;
@@ -1700,7 +1758,8 @@ textarea:focus {
   transform: translateX(-100%);
   transition: transform 0.25s ease;
   z-index: 50;
-  padding: 20px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom))
+    calc(20px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
 }

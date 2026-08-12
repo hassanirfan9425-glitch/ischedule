@@ -25,12 +25,22 @@ Do not mix the two up — a "Course Practice" chapter entry is a quiz, a "Course
 entry is a set of questions. If the document doesn't have one of the two kinds, return an empty list for it
 rather than inventing one.
 
+Some subjects' materials don't use either format at all — instead of chapter-based practice/questions, they
+describe what the exam itself covers (e.g. "Unseen SAT MCQ", "Prose Essay (Short Story Fluke)", a required
+reading, an essay prompt, a book/text name). If you find NO "Course Practice" and NO "Course Questions
+Material" content anywhere in the document, do not return empty lists and stop — instead read whatever the
+document actually says about the exam/material and summarize it as plain, student-readable bullet points in
+"details" (e.g. "IGCSE Literature students: Prose Essay on Short Story Fluke", "AP & SAT/IELTS students:
+Unseen AP Lang. MCQ"). One bullet per distinct course-combination/requirement is fine. Only use "details" as
+this fallback — if quizzes or questions were found, leave "details" empty.
+
 Respond with ONLY a single JSON object — no markdown fence, no commentary — with this exact shape:
 
 {
   "periodicCode": string or null,
   "quizzes": [string, ...],
-  "questions": [string, ...]
+  "questions": [string, ...],
+  "details": [string, ...]
 }
 
 Each string in "quizzes" and "questions" should be a short, human-readable label a student would recognize,
@@ -106,5 +116,6 @@ export async function parseMaterial({ filePath, mimeType, subjectLabel }) {
     questions: Array.isArray(result.questions)
       ? result.questions.filter((q) => typeof q === 'string' && q.trim())
       : [],
+    details: Array.isArray(result.details) ? result.details.filter((d) => typeof d === 'string' && d.trim()) : [],
   };
 }

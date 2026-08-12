@@ -49,7 +49,7 @@ export default function ManualMaterialEntry({ exam, onComplete, onCancel }) {
         </div>
         <h1>Enter material for {exam.subjectLabel}</h1>
         <p className="subtle">
-          Type in the course practice quizzes and/or course questions. One item per line — you only
+          Type in the course practice quizzes and/or course questions. One item per line. You only
           need to fill in one of the two.
         </p>
 

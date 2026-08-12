@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { api } from '../api.js';
+import { APK_DOWNLOAD_URL } from '../utils.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
@@ -7,35 +9,33 @@ import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
 import TabBar from '../components/TabBar.jsx';
 import GradeTable from '../components/GradeTable.jsx';
 import AcademicsUpload from './AcademicsUpload.jsx';
+import { useBackHandler } from '../hooks/useBackButton.js';
 
 export default function Academics({
   user,
+  greeting,
   onLogout,
-  onReupload,
   onRetakeQuiz,
+  onEditElectives,
   onSettings,
-  onManualEntry,
   onDeleteAccount,
   activeTab,
   onSwitchTab,
 }) {
   const [data, setData] = useState(null);
   const [subjects, setSubjects] = useState([]);
+  const [defaultSubjects, setDefaultSubjects] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [confirmingDeleteSchedule, setConfirmingDeleteSchedule] = useState(false);
-  const [deletingSchedule, setDeletingSchedule] = useState(false);
-  const [deleteScheduleError, setDeleteScheduleError] = useState('');
-  const [confirmingDeleteGrades, setConfirmingDeleteGrades] = useState(false);
+  const [confirmingDeleteTerm, setConfirmingDeleteTerm] = useState(null);
   const [deletingGrades, setDeletingGrades] = useState(false);
   const [deleteGradesError, setDeleteGradesError] = useState('');
   const [choosingAdd, setChoosingAdd] = useState(false);
   const [uploadingGrades, setUploadingGrades] = useState(false);
-  const [forceShowTables, setForceShowTables] = useState(false);
   const [displayedAverages, setDisplayedAverages] = useState({});
   const [deltas, setDeltas] = useState({});
   const [recalculatingTerm, setRecalculatingTerm] = useState(null);
@@ -56,8 +56,21 @@ export default function Academics({
       .catch((err) => setError(err.message));
 
   useEffect(() => {
-    Promise.all([loadData(), api.getSubjectCatalog().then((cat) => setSubjects([...cat.coreSubjects, ...cat.subjects]))])
-      .finally(() => setLoading(false));
+    Promise.all([
+      loadData(),
+      Promise.all([api.getSubjectCatalog(), api.getMySubjects()]).then(([catalog, mine]) => {
+        setSubjects([...catalog.coreSubjects, ...catalog.subjects]);
+        // Every student takes the core subjects, plus Moral Education (auto-included school-wide)
+        // — everything else only counts if the student actually rated it in the quiz.
+        const ratedKeys = new Set(mine.subjects.map((s) => s.subject_key));
+        setDefaultSubjects([
+          ...catalog.coreSubjects,
+          ...catalog.conditionalCoreSubjects.filter((s) => ratedKeys.has(s.key)),
+          ...catalog.subjects.filter((s) => ratedKeys.has(s.key)),
+          ...catalog.autoSubjects.filter((s) => s.key === 'moral_education'),
+        ]);
+      }),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const handleDeleteAccount = async () => {
@@ -71,29 +84,20 @@ export default function Academics({
     }
   };
 
-  const handleDeleteSchedule = async () => {
-    setDeletingSchedule(true);
-    setDeleteScheduleError('');
-    try {
-      await api.deleteSchedule();
-      setConfirmingDeleteSchedule(false);
-    } catch (err) {
-      setDeleteScheduleError(err.message);
-    } finally {
-      setDeletingSchedule(false);
-    }
-  };
-
-  const handleDeleteAllGrades = async () => {
+  const handleDeleteTermGrades = async () => {
+    const term = confirmingDeleteTerm;
     setDeletingGrades(true);
     setDeleteGradesError('');
     try {
-      await api.deleteAllGrades();
+      await api.deleteGradesByTerm(term);
       await loadData();
-      setForceShowTables(false);
-      setDisplayedAverages({});
-      setDeltas({});
-      setConfirmingDeleteGrades(false);
+      setDisplayedAverages((prev) => {
+        const next = { ...prev };
+        delete next[term];
+        return next;
+      });
+      setDeltas((prev) => ({ ...prev, [term]: null }));
+      setConfirmingDeleteTerm(null);
     } catch (err) {
       setDeleteGradesError(err.message);
     } finally {
@@ -108,6 +112,18 @@ export default function Academics({
 
   const handleDeleteEntry = async (id) => {
     await api.deleteGradeEntry(id);
+    await loadData();
+  };
+
+  const handleChangeTerm = async (fromTerm, toTerm) => {
+    await api.changeGradeTerm(fromTerm, toTerm);
+    setDisplayedAverages((prev) => {
+      const next = { ...prev };
+      delete next[fromTerm];
+      delete next[toTerm];
+      return next;
+    });
+    setDeltas((prev) => ({ ...prev, [fromTerm]: null, [toTerm]: null }));
     await loadData();
   };
 
@@ -135,12 +151,36 @@ export default function Academics({
     }
   };
 
+  useBackHandler(
+    Boolean(uploadingGrades || confirmingDelete || confirmingDeleteTerm !== null || choosingAdd || drawerOpen),
+    () => {
+      if (uploadingGrades) {
+        setUploadingGrades(false);
+        return;
+      }
+      if (confirmingDelete) {
+        setConfirmingDelete(false);
+        setDeleteError('');
+        return;
+      }
+      if (confirmingDeleteTerm !== null) {
+        setConfirmingDeleteTerm(null);
+        setDeleteGradesError('');
+        return;
+      }
+      if (choosingAdd) {
+        setChoosingAdd(false);
+        return;
+      }
+      setDrawerOpen(false);
+    }
+  );
+
   if (uploadingGrades) {
     return (
       <AcademicsUpload
         onComplete={async () => {
           setUploadingGrades(false);
-          setForceShowTables(true);
           setLoading(true);
           await loadData();
           setLoading(false);
@@ -152,16 +192,14 @@ export default function Academics({
 
   const navItems = [
     { label: 'Retake Quiz', onClick: onRetakeQuiz },
-    { label: 'Update Schedule', onClick: onReupload },
-    { label: 'Enter Schedule Manually', onClick: onManualEntry },
+    { label: 'Change Externals', onClick: onEditElectives },
     { label: 'Settings', onClick: onSettings },
-    { label: 'Delete Schedule', onClick: () => setConfirmingDeleteSchedule(true) },
-    { label: 'Delete All Grades', onClick: () => setConfirmingDeleteGrades(true) },
     { label: 'Log Out', onClick: onLogout },
     { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
+    ...(Capacitor.isNativePlatform()
+      ? []
+      : [{ label: 'Download App', onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
   ];
-
-  const hasAnyGrades = data && data.terms.some((t) => t.entries.length > 0);
 
   return (
     <div className="dashboard">
@@ -170,14 +208,14 @@ export default function Academics({
       </button>
       <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} items={navItems} />
 
-      <header className="dashboard-header" style={{ paddingLeft: 76 }}>
+      <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
           <CalendarIcon />
           <div>
             <div className="brand-name" style={{ fontSize: '1.1rem' }}>
               iGrade
             </div>
-            <h1 style={{ fontSize: '1.4rem' }}>Academics</h1>
+            <h1 style={{ fontSize: '1.4rem' }}>{greeting}</h1>
           </div>
         </div>
       </header>
@@ -192,24 +230,7 @@ export default function Academics({
 
       {error && <p className="error-text">{error}</p>}
 
-      {data && !hasAnyGrades && !forceShowTables && (
-        <div className="empty-landing">
-          <div className="plus-button" onClick={() => setChoosingAdd(true)} role="button" tabIndex={0}>
-            +
-          </div>
-          <div className="empty-landing-title">Add your grades</div>
-          <p className="empty-landing-hint">
-            Upload a photo or PDF of your grade report, or enter grades manually, to build your
-            academics table.
-          </p>
-          <div className="empty-landing-disclaimer">
-            It's recommended to add your schedule first — grades get tagged to the right term based
-            on it.
-          </div>
-        </div>
-      )}
-
-      {data && (hasAnyGrades || forceShowTables) && (
+      {data && (
         <>
           <button type="button" className="see-all-btn" style={{ marginBottom: 12 }} onClick={() => setChoosingAdd(true)}>
             + Add grades
@@ -219,6 +240,7 @@ export default function Academics({
               key={termData.term}
               termData={termData}
               subjects={subjects}
+              defaultSubjects={defaultSubjects}
               displayedAverage={
                 termData.term in displayedAverages ? displayedAverages[termData.term] : termData.overallAverage
               }
@@ -227,6 +249,8 @@ export default function Academics({
               onRecalculate={() => handleRecalculate(termData.term)}
               onAddEntry={handleAddEntry}
               onDeleteEntry={handleDeleteEntry}
+              onChangeTerm={handleChangeTerm}
+              onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
             />
           ))}
         </>
@@ -247,33 +271,18 @@ export default function Academics({
         />
       )}
 
-      {confirmingDeleteSchedule && (
+      {confirmingDeleteTerm !== null && (
         <ConfirmDialog
-          message="Are you sure you want to delete your entire schedule? This removes every exam and holiday, including manually-entered ones. This cannot be undone."
-          confirmLabel="Delete Schedule"
-          danger
-          busy={deletingSchedule}
-          error={deleteScheduleError}
-          onCancel={() => {
-            setConfirmingDeleteSchedule(false);
-            setDeleteScheduleError('');
-          }}
-          onConfirm={handleDeleteSchedule}
-        />
-      )}
-
-      {confirmingDeleteGrades && (
-        <ConfirmDialog
-          message="Are you sure you want to delete all your grades? This removes every entry across every term. This cannot be undone."
-          confirmLabel="Delete All Grades"
+          message={`Are you sure you want to delete all grades for Term ${confirmingDeleteTerm}? This cannot be undone.`}
+          confirmLabel="Delete Grades"
           danger
           busy={deletingGrades}
           error={deleteGradesError}
           onCancel={() => {
-            setConfirmingDeleteGrades(false);
+            setConfirmingDeleteTerm(null);
             setDeleteGradesError('');
           }}
-          onConfirm={handleDeleteAllGrades}
+          onConfirm={handleDeleteTermGrades}
         />
       )}
 
@@ -284,10 +293,7 @@ export default function Academics({
             setChoosingAdd(false);
             setUploadingGrades(true);
           }}
-          onChooseManual={() => {
-            setChoosingAdd(false);
-            setForceShowTables(true);
-          }}
+          onChooseManual={() => setChoosingAdd(false)}
           onCancel={() => setChoosingAdd(false)}
         />
       )}

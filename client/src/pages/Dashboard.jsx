@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { api } from '../api.js';
-import { countdownText } from '../utils.js';
+import { countdownText, APK_DOWNLOAD_URL } from '../utils.js';
 import ExamBubble from '../components/ExamBubble.jsx';
 import HolidayBubble from '../components/HolidayBubble.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
@@ -11,6 +12,7 @@ import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
 import MaterialUpload from './MaterialUpload.jsx';
 import ManualMaterialEntry from './ManualMaterialEntry.jsx';
 import TabBar from '../components/TabBar.jsx';
+import { useBackHandler } from '../hooks/useBackButton.js';
 
 function EmptyState({ title, hint }) {
   return (
@@ -66,9 +68,11 @@ function AllExamsSection({ exams, onExamClick, onBack }) {
 
 export default function Dashboard({
   user,
+  greeting,
   onLogout,
   onReupload,
   onRetakeQuiz,
+  onEditElectives,
   onSettings,
   onManualEntry,
   onDeleteAccount,
@@ -90,6 +94,7 @@ export default function Dashboard({
   const [manualMaterialExam, setManualMaterialExam] = useState(null);
   const [viewingMaterialExam, setViewingMaterialExam] = useState(null);
   const [viewingAllExams, setViewingAllExams] = useState(false);
+  const [choosingScheduleAdd, setChoosingScheduleAdd] = useState(false);
 
   useEffect(() => {
     api
@@ -147,6 +152,64 @@ export default function Dashboard({
     }
   };
 
+  const handleDeleteMaterial = async (examId) => {
+    await api.deleteMaterial(examId);
+    setViewingMaterialExam(null);
+    const fresh = await api.getDashboard();
+    setData(fresh);
+  };
+
+  useBackHandler(
+    Boolean(
+      attachingMaterialExam ||
+        manualMaterialExam ||
+        confirmingDelete ||
+        confirmingDeleteSchedule ||
+        viewingMaterialExam ||
+        choosingMaterialExam ||
+        choosingScheduleAdd ||
+        viewingAllExams ||
+        drawerOpen
+    ),
+    () => {
+      if (attachingMaterialExam) {
+        setAttachingMaterialExam(null);
+        return;
+      }
+      if (manualMaterialExam) {
+        setManualMaterialExam(null);
+        return;
+      }
+      if (confirmingDelete) {
+        setConfirmingDelete(false);
+        setDeleteError('');
+        return;
+      }
+      if (confirmingDeleteSchedule) {
+        setConfirmingDeleteSchedule(false);
+        setDeleteScheduleError('');
+        return;
+      }
+      if (viewingMaterialExam) {
+        setViewingMaterialExam(null);
+        return;
+      }
+      if (choosingMaterialExam) {
+        setChoosingMaterialExam(null);
+        return;
+      }
+      if (choosingScheduleAdd) {
+        setChoosingScheduleAdd(false);
+        return;
+      }
+      if (viewingAllExams) {
+        setViewingAllExams(false);
+        return;
+      }
+      setDrawerOpen(false);
+    }
+  );
+
   const hasAnyScheduleData =
     data && (data.periodicExams.length > 0 || data.finalExams.length > 0 || data.holidays.length > 0);
 
@@ -180,12 +243,13 @@ export default function Dashboard({
   // Add more entries here any time — the drawer just renders whatever's in this list.
   const navItems = [
     { label: 'Retake Quiz', onClick: onRetakeQuiz },
-    { label: 'Update Schedule', onClick: onReupload },
-    { label: 'Enter Schedule Manually', onClick: onManualEntry },
+    { label: 'Change Externals', onClick: onEditElectives },
     { label: 'Settings', onClick: onSettings },
-    { label: 'Delete Schedule', onClick: () => setConfirmingDeleteSchedule(true) },
     { label: 'Log Out', onClick: onLogout },
     { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
+    ...(Capacitor.isNativePlatform()
+      ? []
+      : [{ label: 'Download App', onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
   ];
 
   return (
@@ -200,14 +264,14 @@ export default function Dashboard({
       </button>
       <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} items={navItems} />
 
-      <header className="dashboard-header" style={{ paddingLeft: 76 }}>
+      <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
           <CalendarIcon />
           <div>
             <div className="brand-name" style={{ fontSize: '1.1rem' }}>
               iSchedule
             </div>
-            <h1 style={{ fontSize: '1.4rem' }}>Hey {user.name}</h1>
+            <h1 style={{ fontSize: '1.4rem' }}>{greeting}</h1>
           </div>
         </div>
       </header>
@@ -224,7 +288,7 @@ export default function Dashboard({
 
       {data && !hasAnyScheduleData && (
         <div className="empty-landing">
-          <div className="plus-button" onClick={onReupload} role="button" tabIndex={0}>
+          <div className="plus-button" onClick={() => setChoosingScheduleAdd(true)} role="button" tabIndex={0}>
             +
           </div>
           <div className="empty-landing-title">Add your school schedule</div>
@@ -232,11 +296,6 @@ export default function Dashboard({
             Upload a PDF or image of your exam &amp; holiday schedule, or enter it manually, to
             build your dashboard.
           </p>
-          {onManualEntry && (
-            <button type="button" className="back-link" onClick={onManualEntry}>
-              Enter schedule manually.
-            </button>
-          )}
         </div>
       )}
 
@@ -308,7 +367,17 @@ export default function Dashboard({
       )}
 
       {hasAnyScheduleData && (
-        <button type="button" className="fab-btn" onClick={onReupload} title="Update your schedule">
+        <button
+          type="button"
+          className="secondary-btn danger-hover-btn schedule-delete-btn"
+          onClick={() => setConfirmingDeleteSchedule(true)}
+        >
+          Delete Schedule
+        </button>
+      )}
+
+      {hasAnyScheduleData && (
+        <button type="button" className="fab-btn" onClick={() => setChoosingScheduleAdd(true)} title="Update your schedule">
           +
         </button>
       )}
@@ -351,6 +420,7 @@ export default function Dashboard({
             setChoosingMaterialExam(viewingMaterialExam);
             setViewingMaterialExam(null);
           }}
+          onDelete={() => handleDeleteMaterial(viewingMaterialExam.id)}
         />
       )}
 
@@ -366,6 +436,21 @@ export default function Dashboard({
             setChoosingMaterialExam(null);
           }}
           onCancel={() => setChoosingMaterialExam(null)}
+        />
+      )}
+
+      {choosingScheduleAdd && (
+        <AddChoiceDialog
+          message="How would you like to add your schedule?"
+          onChooseAuto={() => {
+            setChoosingScheduleAdd(false);
+            onReupload();
+          }}
+          onChooseManual={() => {
+            setChoosingScheduleAdd(false);
+            onManualEntry();
+          }}
+          onCancel={() => setChoosingScheduleAdd(false)}
         />
       )}
     </div>

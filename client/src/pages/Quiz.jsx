@@ -55,6 +55,9 @@ export default function Quiz({ onComplete, retake }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Core subjects (+ identity/periodic-day questions) come first, then the optional externals —
+  // one screen at a time instead of one long scroll.
+  const [step, setStep] = useState('core');
 
   useEffect(() => {
     async function load() {
@@ -131,11 +134,16 @@ export default function Quiz({ onComplete, retake }) {
   const missingElectiveDifficulty = selectedKeys.some((k) => !selections[k]);
   const missingCoreDifficulty = allCoreSubjects.some((s) => !coreDifficulty[s.key]);
 
-  async function handleSubmit() {
+  function handleNext() {
     if (missingCoreDifficulty) {
       setError('Rate every core subject before continuing.');
       return;
     }
+    setError('');
+    setStep('electives');
+  }
+
+  async function handleSubmit() {
     if (missingElectiveDifficulty) {
       setError('Pick a difficulty for every subject you selected.');
       return;
@@ -173,7 +181,7 @@ export default function Quiz({ onComplete, retake }) {
   return (
     <div className="page-screen">
       <div className="quiz-card">
-        {retake && (
+        {retake && step === 'core' && (
           <button type="button" className="back-link" onClick={onComplete}>
             ← Back to dashboard
           </button>
@@ -182,57 +190,76 @@ export default function Quiz({ onComplete, retake }) {
           <CalendarIcon />
           <span className="brand-name">SabisHub</span>
         </div>
-        <h1>A couple quick things first</h1>
-        <p className="subtle">This helps us ask about the right subjects for you.</p>
 
-        <IdentityQuestion
-          question="Are you Arab?"
-          value={identity.arab}
-          onChange={(arab) => setIdentity((prev) => ({ ...prev, arab }))}
-        />
-        <IdentityQuestion
-          question="Are you Muslim?"
-          value={identity.muslim}
-          onChange={(muslim) => setIdentity((prev) => ({ ...prev, muslim }))}
-        />
-        <WeekdayQuestion weekdays={weekdays} value={periodicDay} onChange={setPeriodicDay} />
-
-        {readyForSubjects && (
+        {step === 'core' && (
           <>
-            <h1 style={{ marginTop: 32 }}>How's it going in each subject?</h1>
-            <p className="subtle">Everyone takes these — rate how each one feels for you.</p>
+            <h1>A couple quick things first</h1>
+            <p className="subtle">This helps us ask about the right subjects for you.</p>
 
-            <div className="subject-group">
-              <div className="subject-list">
-                {allCoreSubjects.map((subject) => (
-                  <div key={subject.key} className="subject-row selected">
-                    <div className="subject-chip" style={{ cursor: 'default' }}>
-                      {subject.label}
-                    </div>
-                    <div className="difficulty-picker">
-                      {difficulties.map((d) => (
-                        <button
-                          type="button"
-                          key={d.key}
-                          className={
-                            coreDifficulty[subject.key] === d.key
-                              ? `difficulty-btn ${d.key} active`
-                              : `difficulty-btn ${d.key}`
-                          }
-                          onClick={() => setCoreDifficulty((prev) => ({ ...prev, [subject.key]: d.key }))}
-                        >
-                          {d.label}
-                        </button>
-                      ))}
-                    </div>
+            <IdentityQuestion
+              question="Are you Arab?"
+              value={identity.arab}
+              onChange={(arab) => setIdentity((prev) => ({ ...prev, arab }))}
+            />
+            <IdentityQuestion
+              question="Are you Muslim?"
+              value={identity.muslim}
+              onChange={(muslim) => setIdentity((prev) => ({ ...prev, muslim }))}
+            />
+            <WeekdayQuestion weekdays={weekdays} value={periodicDay} onChange={setPeriodicDay} />
+
+            {readyForSubjects && (
+              <>
+                <h1 style={{ marginTop: 32 }}>How's it going in each subject?</h1>
+                <p className="subtle">Everyone takes these. Rate how each one feels for you.</p>
+
+                <div className="subject-group">
+                  <div className="subject-list">
+                    {allCoreSubjects.map((subject) => (
+                      <div key={subject.key} className="subject-row selected">
+                        <div className="subject-chip" style={{ cursor: 'default' }}>
+                          {subject.label}
+                        </div>
+                        <div className="difficulty-picker">
+                          {difficulties.map((d) => (
+                            <button
+                              type="button"
+                              key={d.key}
+                              className={
+                                coreDifficulty[subject.key] === d.key
+                                  ? `difficulty-btn ${d.key} active`
+                                  : `difficulty-btn ${d.key}`
+                              }
+                              onClick={() => setCoreDifficulty((prev) => ({ ...prev, [subject.key]: d.key }))}
+                            >
+                              {d.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            <h1 style={{ marginTop: 32 }}>Anything else?</h1>
+                {error && <p className="error-text">{error}</p>}
+
+                <button type="button" className="primary-btn" onClick={handleNext}>
+                  Next
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        {step === 'electives' && (
+          <>
+            <button type="button" className="back-link" onClick={() => setStep('core')}>
+              ← Back
+            </button>
+
+            <h1 style={{ marginTop: 16 }}>Anything else?</h1>
             <p className="subtle">
-              Select any extra courses you take — none are required. For each one you pick, tell us how it
+              Select any extra courses you take (none are required). For each one you pick, tell us how it
               feels for you.
             </p>
 

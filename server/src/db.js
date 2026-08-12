@@ -162,8 +162,11 @@ export async function initDb() {
       periodic_code TEXT,
       quizzes TEXT NOT NULL DEFAULT '[]',
       questions TEXT NOT NULL DEFAULT '[]',
+      details TEXT NOT NULL DEFAULT '[]',
       uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE exam_materials ADD COLUMN IF NOT EXISTS details TEXT NOT NULL DEFAULT '[]';
 
     CREATE TABLE IF NOT EXISTS grade_entries (
       id SERIAL PRIMARY KEY,

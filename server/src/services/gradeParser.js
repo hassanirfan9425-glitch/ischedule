@@ -20,6 +20,10 @@ const COURSE_NAME_ALIASES = [
 const SYSTEM_PROMPT = `You are an expert academic-transcript analyst. You will be shown a school grade
 report (an image or PDF) for one student, and must extract every individual grade entry from its table.
 
+The report header usually shows a "Term" number somewhere near the top (e.g. "Term 2", "Total Avg
+Term 2"). If you can clearly see a term number, extract it as a plain integer. If there's no visible term
+number anywhere, set "term" to null — do not guess.
+
 The table's structure: a "Course" column groups one or more "Subcourse" rows beneath it, each subcourse
 having its own running Avg. To the right of the Avg column, there are further columns — one per week —
 each holding that subcourse's specific grade for that week (a plain number). A blank week cell means no
@@ -47,6 +51,7 @@ ${ALL_SUBJECTS.map((s) => `- ${s.label} (key: ${s.key})`).join('\n')}
 Respond with ONLY a single JSON object — no markdown fence, no commentary — with this exact shape:
 
 {
+  "term": number or null,
   "entries": [
     { "course": string, "matchedSubjectKey": string or null, "subcourse": string, "week": number or null, "grade": number }
   ]
@@ -113,6 +118,7 @@ export async function parseGrades({ filePath, mimeType }) {
   const result = extractJson(text);
 
   return {
+    term: Number.isInteger(result.term) ? result.term : null,
     entries: Array.isArray(result.entries) ? result.entries : [],
   };
 }

@@ -63,18 +63,18 @@ router.post('/:examId', requireAuth, (req, res) => {
       });
 
       // A fresh upload replaces any existing material for this exam — UNLESS this analysis found
-      // nothing at all, in which case leave whatever's already stored untouched rather than
-      // wiping out good data with an empty result.
-      if (result.quizzes.length === 0 && result.questions.length === 0) {
+      // nothing at all (no quizzes, no questions, no fallback details), in which case leave
+      // whatever's already stored untouched rather than wiping out good data with an empty result.
+      if (result.quizzes.length === 0 && result.questions.length === 0 && result.details.length === 0) {
         return res.status(422).json({
-          error: 'No quizzes or questions were found in this material. Nothing was changed.',
+          error: 'No material could be found in this file. Nothing was changed.',
         });
       }
 
       await db
         .prepare(
-          `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions)
-           VALUES (?, ?, 'ai', ?, ?, ?, ?, ?)
+          `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions, details)
+           VALUES (?, ?, 'ai', ?, ?, ?, ?, ?, ?)
            ON CONFLICT(exam_id) DO UPDATE SET
              user_id = excluded.user_id,
              source = 'ai',
@@ -83,6 +83,7 @@ router.post('/:examId', requireAuth, (req, res) => {
              periodic_code = excluded.periodic_code,
              quizzes = excluded.quizzes,
              questions = excluded.questions,
+             details = excluded.details,
              uploaded_at = NOW()`
         )
         .run(
@@ -92,7 +93,8 @@ router.post('/:examId', requireAuth, (req, res) => {
           req.file.originalname,
           result.periodicCode,
           JSON.stringify(result.quizzes),
-          JSON.stringify(result.questions)
+          JSON.stringify(result.questions),
+          JSON.stringify(result.details)
         );
 
       res.json({
@@ -100,6 +102,7 @@ router.post('/:examId', requireAuth, (req, res) => {
         periodicCode: result.periodicCode,
         quizzes: result.quizzes,
         questions: result.questions,
+        details: result.details,
       });
     } catch (parseErr) {
       res.status(500).json({ error: `Could not analyze the material: ${parseErr.message || parseErr}` });
@@ -126,8 +129,8 @@ router.post('/:examId/manual', requireAuth, async (req, res) => {
 
   await db
     .prepare(
-      `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions)
-       VALUES (?, ?, 'manual', NULL, NULL, NULL, ?, ?)
+      `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions, details)
+       VALUES (?, ?, 'manual', NULL, NULL, NULL, ?, ?, '[]')
        ON CONFLICT(exam_id) DO UPDATE SET
          user_id = excluded.user_id,
          source = 'manual',
@@ -136,11 +139,22 @@ router.post('/:examId/manual', requireAuth, async (req, res) => {
          periodic_code = NULL,
          quizzes = excluded.quizzes,
          questions = excluded.questions,
+         details = '[]',
          uploaded_at = NOW()`
     )
     .run(examId, userId, JSON.stringify(quizzes), JSON.stringify(questions));
 
   res.json({ ok: true, quizzes, questions });
+});
+
+router.delete('/:examId', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const examId = Number(req.params.examId);
+  const info = await db.prepare('DELETE FROM exam_materials WHERE exam_id = ? AND user_id = ?').run(examId, userId);
+  if (info.changes === 0) {
+    return res.status(404).json({ error: 'No material found for that exam.' });
+  }
+  res.json({ ok: true });
 });
 
 export default router;
