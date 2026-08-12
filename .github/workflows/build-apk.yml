@@ -17,6 +17,13 @@ on:
 permissions:
   contents: write
 
+env:
+  # Not a secret in the security sense — this key only exists to keep every build's signature
+  # consistent so Android accepts each new APK as an update to the last one, not a different app.
+  RELEASE_KEYSTORE_PASSWORD: sabishub-android-release
+  RELEASE_KEY_ALIAS: sabishub
+  RELEASE_KEY_PASSWORD: sabishub-android-release
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -46,14 +53,32 @@ jobs:
         working-directory: client
         run: npx cap sync android
 
-      - name: Build debug APK
+      - name: Restore or create persistent release keystore
+        id: keystore-cache
+        uses: actions/cache@v4
+        with:
+          path: client/android/app/release.keystore
+          key: release-keystore-v1
+
+      - name: Generate release keystore (first run only)
+        if: steps.keystore-cache.outputs.cache-hit != 'true'
+        run: |
+          keytool -genkeypair -v \
+            -keystore client/android/app/release.keystore \
+            -alias "$RELEASE_KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$RELEASE_KEYSTORE_PASSWORD" -keypass "$RELEASE_KEY_PASSWORD" \
+            -dname "CN=SabisHub, OU=SabisHub, O=SabisHub, L=Dubai, S=Dubai, C=AE"
+
+      - name: Build release APK
         working-directory: client/android
+        env:
+          RELEASE_KEYSTORE_PATH: release.keystore
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK
-        run: cp client/android/app/build/outputs/apk/debug/app-debug.apk sabishub.apk
+        run: cp client/android/app/build/outputs/apk/release/app-release.apk sabishub.apk
 
       - name: Publish to release
         uses: softprops/action-gh-release@v2
