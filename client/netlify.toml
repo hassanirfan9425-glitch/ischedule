@@ -1,3 +1,6 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # Skip the deploy entirely when a push only touches Android/CI files that don't affect the
+  # website itself (each deploy costs a flat credit amount regardless of size or content).
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':!android' ':!capacitor.config.json' ':!scripts/generate-icon-sources.mjs' ':!assets' ':!../.github'"
