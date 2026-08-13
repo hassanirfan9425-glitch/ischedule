@@ -46,6 +46,10 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', user?.theme || 'purple_pink');
   }, [user?.theme]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-ui-style', user?.uiStyle || 'classic');
+  }, [user?.uiStyle]);
+
   // Only relevant inside the wrapped Android app — a plain browser tab has no hardware back button.
   // Without this, Capacitor's default behavior is to exit the app immediately on back, with no
   // concept of the in-app navigation state above. Overlays (drawers, dialogs, sub-views owned by
@@ -186,6 +190,9 @@ export default function App() {
 
   if (activeTab === 'academics') return <Academics {...sharedProps} />;
   if (activeTab === 'schedule') return <Dashboard {...sharedProps} />;
-  if (activeTab === 'more') return <More {...sharedProps} />;
+  // 'more' is a Technical-only tab — Classic mode has no route for it (it uses the hamburger
+  // drawer instead), so a mid-session switch away from Technical while parked on that tab falls
+  // back to Home rather than rendering the Technical-only page under Classic tokens.
+  if (activeTab === 'more' && user.uiStyle === 'technical') return <More {...sharedProps} />;
   return <Home {...sharedProps} />;
 }

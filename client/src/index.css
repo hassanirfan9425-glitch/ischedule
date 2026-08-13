@@ -1,21 +1,171 @@
 :root {
-  /* Fully monospace, deliberately — Space Mono for headings (it has real display character,
-     unusual proportions), JetBrains Mono for everything else including body copy, not just
-     numbers. This app never looks like a normal app font-wise; that's the point. */
+  /* Classic — the default UI style. Body/data text: Karla; headings use --font-display
+     (Fraunces). See the [data-ui-style='technical'] block further down for the other option. */
+  --font-family: 'Karla', 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', 'Karla', serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  --bg: #f7f3ea;
+  --surface: #ffffff;
+  --text: #1f1b16;
+  --text-subtle: #6b6255;
+  --border: #d8cdb8;
+
+  /* Brand scale (theme-controlled) — default "purple & pink" theme. Saturated and vivid, just flat
+     (see --brand-fill below) instead of blended into a gradient. */
+  --brand-50: #faf5ff;
+  --brand-100: #f3e8ff;
+  --brand-300: #d8b4fe;
+  --brand-400: #c084fc;
+  --brand-500: #a855f7;
+  --brand-600: #9333ea;
+  --brand-700: #7e22ce;
+  --brand-rgb: 168, 85, 247;
+
+  --brand-fill: var(--brand-600);
+  --shadow-brand: 0 6px 0 var(--brand-700), 0 8px 16px rgba(31, 27, 22, 0.16);
+
+  --brand-text: var(--brand-600);
+  --brand-text-hover: var(--brand-700);
+
+  --glass-bg: rgba(255, 255, 255, 0.97);
+  --glass-bg-strong: #ffffff;
+  --glass-border: var(--border);
+  --glass-blur: 0px;
+  --glass-shadow: 2px 3px 0 rgba(31, 27, 22, 0.06), 0 6px 16px rgba(31, 27, 22, 0.06);
+
+  --danger: #ff5da2;
+  --danger-dark: #e0388a;
+  --error-bg: #ffe4f0;
+
+  /* Exam-difficulty colors are semantic (hard=red, medium=orange, easy=green) and never change
+     with the theme — swapping them per-theme would break the color-coding the app is built on. */
+  --red-bg: #cf4a3d;
+  --red-text: #ffffff;
+  --red-border: #a83a2f;
+
+  --orange-bg: #c9790f;
+  --orange-text: #ffffff;
+  --orange-border: #a3620c;
+
+  --green-bg: #3f8f52;
+  --green-text: #ffffff;
+  --green-border: #326f42;
+
+  --gray-bg: #7d7a72;
+  --gray-text: #ffffff;
+  --gray-border: #635f58;
+
+  --blue-bg: #3d7fa3;
+  --blue-text: #ffffff;
+  --blue-border: #2f6480;
+}
+
+[data-theme='red_blue'] {
+  --bg: #fdf1ec;
+  --border: #edc2b0;
+  --brand-50: #fef2f2;
+  --brand-100: #fee2e2;
+  --brand-300: #fca5a5;
+  --brand-400: #f87171;
+  --brand-500: #ef4444;
+  --brand-600: #dc2626;
+  --brand-700: #b91c1c;
+  --brand-rgb: 239, 68, 68;
+}
+
+[data-theme='green'] {
+  --bg: #f3f4e9;
+  --border: #c9d3ad;
+  --brand-50: #eefdf3;
+  --brand-100: #d7f9e3;
+  --brand-300: #7de3a3;
+  --brand-400: #4ade80;
+  --brand-500: #22c55e;
+  --brand-600: #16a34a;
+  --brand-700: #0f7a38;
+  --brand-rgb: 34, 197, 94;
+}
+
+[data-theme='black_grey'] {
+  --bg: #f2f0ea;
+  --border: #c7c2b6;
+  --brand-50: #fafafa;
+  --brand-100: #f4f4f5;
+  --brand-300: #a1a1aa;
+  --brand-400: #71717a;
+  --brand-500: #52525b;
+  --brand-600: #3f3f46;
+  --brand-700: #27272a;
+  --brand-rgb: 82, 82, 91;
+  --brand-text: #71717a;
+  --brand-text-hover: #52525b;
+}
+
+[data-theme='gold_navy'] {
+  --bg: #f9f3e2;
+  --border: #e3cd8f;
+  --brand-50: #fefce8;
+  --brand-100: #fef9c3;
+  --brand-300: #fde047;
+  --brand-400: #facc15;
+  --brand-500: #eab308;
+  --brand-600: #ca8a04;
+  --brand-700: #a16207;
+  --brand-rgb: 234, 179, 8;
+}
+
+[data-theme='blue_white'] {
+  --bg: #eef2ee;
+  --border: #b9c9c2;
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-rgb: 59, 130, 246;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Classic only — Technical is always-dark by design and overrides all of this below anyway. */
+  :root {
+    --bg: #101013;
+    --surface: #1b1b20;
+    --text: #f1f1f4;
+    --text-subtle: #a3a3ad;
+    --border: #33333c;
+    --brand-50: rgba(255, 255, 255, 0.07);
+    --brand-100: rgba(255, 255, 255, 0.12);
+    --shadow-brand: 0 6px 0 var(--brand-700), 0 10px 24px rgba(0, 0, 0, 0.45);
+    --error-bg: #3a1428;
+    --glass-bg: #1b1b20;
+    --glass-bg-strong: #202027;
+    --glass-border: var(--border);
+    --glass-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ============================================================
+   Technical Theme — a full alternate UI style, selected in Settings.
+   Fully monospace, always dark regardless of system light/dark
+   preference (a deliberate terminal aesthetic, not a dark mode),
+   each brand theme becomes a different phosphor color. Placed after
+   the dark-mode media query above so it always wins regardless of
+   the visitor's system preference. */
+[data-ui-style='technical'] {
   --font-family: 'JetBrains Mono', 'Consolas', monospace;
   --font-display: 'Space Mono', 'JetBrains Mono', monospace;
   --font-mono: 'JetBrains Mono', 'Consolas', monospace;
 
-  /* Always dark — this is a deliberate terminal aesthetic, not a light theme with a dark-mode
-     fallback, so these are set directly on :root rather than gated behind a media query. */
   --bg: #0a0e0c;
   --surface: #101512;
   --text: #c8f7d0;
   --text-subtle: #6b8f74;
   --border: #1f3324;
 
-  /* Brand scale (theme-controlled) — each theme is a different phosphor color, not a different
-     hue mood. Default "purple & pink" theme = magenta phosphor. */
+  /* Default "purple & pink" theme = magenta phosphor. */
   --brand-50: rgba(192, 38, 211, 0.1);
   --brand-100: rgba(192, 38, 211, 0.18);
   --brand-300: #e879f9;
@@ -31,7 +181,6 @@
   --brand-text: var(--brand-600);
   --brand-text-hover: var(--brand-700);
 
-  /* Dark bezel panel treatment, glowing border instead of a soft shadow. */
   --glass-bg: var(--surface);
   --glass-bg-strong: #151b17;
   --glass-border: var(--border);
@@ -42,10 +191,9 @@
   --danger-dark: #d1104f;
   --error-bg: rgba(255, 45, 117, 0.12);
 
-  /* Exam-difficulty colors are semantic and never change with the theme. Bright enough to read as
-     LED indicator colors against the black background; the "-text" pairing (near-black) is only
-     used where a color fills a solid chip (the difficulty picker), never for the ledger rows,
-     which use these as a glowing border instead of a fill. */
+  /* Bright enough to read as LED indicator colors against black; "-text" (near-black) is only
+     used where a color fills a solid chip (the difficulty picker), not the ledger rows, which
+     use these as a glowing border instead of a fill. */
   --red-bg: #ff3b3b;
   --red-text: #0a0e0c;
   --red-border: #ff3b3b;
@@ -67,7 +215,7 @@
   --blue-border: #00c2e0;
 }
 
-[data-theme='red_blue'] {
+[data-ui-style='technical'][data-theme='red_blue'] {
   /* Red phosphor */
   --brand-50: rgba(239, 28, 28, 0.1);
   --brand-100: rgba(239, 28, 28, 0.18);
@@ -79,7 +227,7 @@
   --brand-rgb: 239, 28, 28;
 }
 
-[data-theme='green'] {
+[data-ui-style='technical'][data-theme='green'] {
   /* Classic green phosphor */
   --brand-50: rgba(34, 232, 71, 0.1);
   --brand-100: rgba(34, 232, 71, 0.18);
@@ -91,7 +239,7 @@
   --brand-rgb: 34, 232, 71;
 }
 
-[data-theme='black_grey'] {
+[data-ui-style='technical'][data-theme='black_grey'] {
   /* Monochrome CRT — a cool ice-blue-white phosphor, since true white would wash out against
      white button text; this is the closest "monochrome terminal" gets while staying legible. */
   --brand-50: rgba(125, 201, 240, 0.1);
@@ -106,7 +254,7 @@
   --brand-text-hover: #4a9bc4;
 }
 
-[data-theme='gold_navy'] {
+[data-ui-style='technical'][data-theme='gold_navy'] {
   /* Classic amber CRT phosphor */
   --brand-50: rgba(230, 149, 0, 0.1);
   --brand-100: rgba(230, 149, 0, 0.18);
@@ -118,7 +266,7 @@
   --brand-rgb: 230, 149, 0;
 }
 
-[data-theme='blue_white'] {
+[data-ui-style='technical'][data-theme='blue_white'] {
   /* Cyan phosphor, like an old IBM terminal */
   --brand-50: rgba(0, 194, 224, 0.1);
   --brand-100: rgba(0, 194, 224, 0.18);
@@ -142,9 +290,8 @@ body {
   position: relative;
 }
 
-/* CRT scanlines — a fixed overlay across the whole viewport, subtle enough not to hurt
-   readability but present enough to read as a screen, not a flat page. */
-body::before {
+/* CRT scanlines + vignette — Technical style only, a fixed overlay across the whole viewport. */
+[data-ui-style='technical'] body::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -160,8 +307,7 @@ body::before {
   mix-blend-mode: multiply;
 }
 
-/* A faint vignette so the screen reads as a CRT tube, not an infinite black plane. */
-body::after {
+[data-ui-style='technical'] body::after {
   content: '';
   position: fixed;
   inset: 0;

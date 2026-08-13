@@ -6,6 +6,8 @@ import { THEME_KEYS } from '../constants/themes.js';
 
 const router = Router();
 
+const UI_STYLE_KEYS = new Set(['classic', 'technical']);
+
 function publicUser(row) {
   return {
     id: row.id,
@@ -13,6 +15,7 @@ function publicUser(row) {
     name: row.name,
     onboarded: !!row.onboarded,
     theme: row.theme || 'purple_pink',
+    uiStyle: row.ui_style || 'classic',
   };
 }
 
@@ -94,13 +97,14 @@ router.delete('/account', requireAuth, async (req, res) => {
 });
 
 router.patch('/profile', requireAuth, async (req, res) => {
-  const { username, name, theme } = req.body || {};
+  const { username, name, theme, uiStyle } = req.body || {};
   const userId = req.session.userId;
   const current = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 
   const nextUsername = username !== undefined ? String(username).trim() : current.username;
   const nextName = name !== undefined ? String(name).trim() : current.name;
   const nextTheme = theme !== undefined ? theme : current.theme;
+  const nextUiStyle = uiStyle !== undefined ? uiStyle : current.ui_style;
 
   if (nextUsername.length < 3) {
     return res.status(400).json({ error: 'Username must be at least 3 characters.' });
@@ -111,6 +115,9 @@ router.patch('/profile', requireAuth, async (req, res) => {
   if (theme !== undefined && !THEME_KEYS.has(theme)) {
     return res.status(400).json({ error: `Unknown theme: ${theme}` });
   }
+  if (uiStyle !== undefined && !UI_STYLE_KEYS.has(uiStyle)) {
+    return res.status(400).json({ error: `Unknown UI style: ${uiStyle}` });
+  }
 
   if (nextUsername.toLowerCase() !== current.username.toLowerCase()) {
     const clash = await db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(nextUsername, userId);
@@ -119,10 +126,11 @@ router.patch('/profile', requireAuth, async (req, res) => {
     }
   }
 
-  await db.prepare('UPDATE users SET username = ?, name = ?, theme = ? WHERE id = ?').run(
+  await db.prepare('UPDATE users SET username = ?, name = ?, theme = ?, ui_style = ? WHERE id = ?').run(
     nextUsername,
     nextName,
     nextTheme,
+    nextUiStyle,
     userId
   );
 

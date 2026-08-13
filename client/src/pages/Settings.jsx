@@ -7,6 +7,7 @@ export default function Settings({ user, onBack, onUserUpdated }) {
   const [username, setUsername] = useState(user.username);
   const [name, setName] = useState(user.name);
   const [theme, setTheme] = useState(user.theme);
+  const [uiStyle, setUiStyle] = useState(user.uiStyle || 'classic');
   const [error, setError] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -28,7 +29,7 @@ export default function Settings({ user, onBack, onUserUpdated }) {
     setError('');
     setSavingProfile(true);
     try {
-      const data = await api.updateProfile({ username, name, theme });
+      const data = await api.updateProfile({ username, name, theme, uiStyle });
       onUserUpdated(data.user);
     } catch (err) {
       setError(err.message);
@@ -65,6 +66,27 @@ export default function Settings({ user, onBack, onUserUpdated }) {
               {t.label}
             </button>
           ))}
+        </div>
+
+        <h2>UI style</h2>
+        <p className="subtle" style={{ marginTop: -8 }}>
+          Changes on Save, just like the color theme above.
+        </p>
+        <div className="theme-picker">
+          <button
+            type="button"
+            className={uiStyle === 'classic' ? 'theme-swatch active' : 'theme-swatch'}
+            onClick={() => setUiStyle('classic')}
+          >
+            Classic
+          </button>
+          <button
+            type="button"
+            className={uiStyle === 'technical' ? 'theme-swatch active' : 'theme-swatch'}
+            onClick={() => setUiStyle('technical')}
+          >
+            Technical Theme
+          </button>
         </div>
 
         <h2>Profile</h2>

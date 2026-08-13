@@ -103,8 +103,11 @@ export async function initDb() {
       onboarded INTEGER NOT NULL DEFAULT 0,
       periodic_day TEXT,
       theme TEXT NOT NULL DEFAULT 'purple_pink',
+      ui_style TEXT NOT NULL DEFAULT 'classic',
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS ui_style TEXT NOT NULL DEFAULT 'classic';
 
     CREATE TABLE IF NOT EXISTS user_subjects (
       id SERIAL PRIMARY KEY,
