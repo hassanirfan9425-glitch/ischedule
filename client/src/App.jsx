@@ -13,6 +13,7 @@ import Home from './pages/Home.jsx';
 import Settings from './pages/Settings.jsx';
 import ManualEntry from './pages/ManualEntry.jsx';
 import Electives from './pages/Electives.jsx';
+import More from './pages/More.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -185,5 +186,6 @@ export default function App() {
 
   if (activeTab === 'academics') return <Academics {...sharedProps} />;
   if (activeTab === 'schedule') return <Dashboard {...sharedProps} />;
+  if (activeTab === 'more') return <More {...sharedProps} />;
   return <Home {...sharedProps} />;
 }

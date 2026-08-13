@@ -1,36 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { api } from '../api.js';
-import { APK_DOWNLOAD_URL } from '../utils.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
-import NavDrawer from '../components/NavDrawer.jsx';
+import SideTabs from '../components/SideTabs.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
-import TabBar from '../components/TabBar.jsx';
 import GradeTable from '../components/GradeTable.jsx';
 import AcademicsUpload from './AcademicsUpload.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 
-export default function Academics({
-  user,
-  greeting,
-  onLogout,
-  onRetakeQuiz,
-  onEditElectives,
-  onSettings,
-  onDeleteAccount,
-  activeTab,
-  onSwitchTab,
-}) {
+export default function Academics({ greeting, activeTab, onSwitchTab }) {
   const [data, setData] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [defaultSubjects, setDefaultSubjects] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
   const [confirmingDeleteTerm, setConfirmingDeleteTerm] = useState(null);
   const [deletingGrades, setDeletingGrades] = useState(false);
   const [deleteGradesError, setDeleteGradesError] = useState('');
@@ -72,17 +54,6 @@ export default function Academics({
       }),
     ]).finally(() => setLoading(false));
   }, []);
-
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    setDeleteError('');
-    try {
-      await onDeleteAccount();
-    } catch (err) {
-      setDeleteError(err.message);
-      setDeleting(false);
-    }
-  };
 
   const handleDeleteTermGrades = async () => {
     const term = confirmingDeleteTerm;
@@ -151,30 +122,18 @@ export default function Academics({
     }
   };
 
-  useBackHandler(
-    Boolean(uploadingGrades || confirmingDelete || confirmingDeleteTerm !== null || choosingAdd || drawerOpen),
-    () => {
-      if (uploadingGrades) {
-        setUploadingGrades(false);
-        return;
-      }
-      if (confirmingDelete) {
-        setConfirmingDelete(false);
-        setDeleteError('');
-        return;
-      }
-      if (confirmingDeleteTerm !== null) {
-        setConfirmingDeleteTerm(null);
-        setDeleteGradesError('');
-        return;
-      }
-      if (choosingAdd) {
-        setChoosingAdd(false);
-        return;
-      }
-      setDrawerOpen(false);
+  useBackHandler(Boolean(uploadingGrades || confirmingDeleteTerm !== null || choosingAdd), () => {
+    if (uploadingGrades) {
+      setUploadingGrades(false);
+      return;
     }
-  );
+    if (confirmingDeleteTerm !== null) {
+      setConfirmingDeleteTerm(null);
+      setDeleteGradesError('');
+      return;
+    }
+    setChoosingAdd(false);
+  });
 
   if (uploadingGrades) {
     return (
@@ -190,113 +149,76 @@ export default function Academics({
     );
   }
 
-  const navItems = [
-    { label: 'Retake Quiz', onClick: onRetakeQuiz },
-    { label: 'Change Externals', onClick: onEditElectives },
-    { label: 'Settings', onClick: onSettings },
-    { label: 'Log Out', onClick: onLogout },
-    { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
-    ...(Capacitor.isNativePlatform()
-      ? []
-      : [{ label: 'Download App', onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
-  ];
-
   return (
-    <div className="dashboard">
-      <button type="button" className="hamburger-btn" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
-        ☰
-      </button>
-      <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} items={navItems} />
+    <div className="dashboard binder-page">
+      <SideTabs activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <div className="binder-content">
+        <header className="ledger-header">
+          <div className="ledger-header-title">Academics</div>
+          <h1>{greeting}</h1>
+        </header>
 
-      <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
-        <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
-          <CalendarIcon />
-          <div>
-            <div className="brand-name" style={{ fontSize: '1.1rem' }}>
-              iGrade
-            </div>
-            <h1 style={{ fontSize: '1.4rem' }}>{greeting}</h1>
+        {loading && (
+          <div className="centered-screen">
+            <div className="spinner" />
           </div>
-        </div>
-      </header>
+        )}
 
-      <TabBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
+        {error && <p className="error-text">{error}</p>}
 
-      {loading && (
-        <div className="centered-screen">
-          <div className="spinner" />
-        </div>
-      )}
+        {data && (
+          <>
+            <button type="button" className="see-all-btn" style={{ marginBottom: 12 }} onClick={() => setChoosingAdd(true)}>
+              + Add grades
+            </button>
+            {data.terms.map((termData) => (
+              <GradeTable
+                key={termData.term}
+                termData={termData}
+                subjects={subjects}
+                defaultSubjects={defaultSubjects}
+                displayedAverage={
+                  termData.term in displayedAverages ? displayedAverages[termData.term] : termData.overallAverage
+                }
+                delta={deltas[termData.term]}
+                recalculating={recalculatingTerm === termData.term}
+                onRecalculate={() => handleRecalculate(termData.term)}
+                onAddEntry={handleAddEntry}
+                onDeleteEntry={handleDeleteEntry}
+                onChangeTerm={handleChangeTerm}
+                onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
+              />
+            ))}
+          </>
+        )}
 
-      {error && <p className="error-text">{error}</p>}
+        {confirmingDeleteTerm !== null && (
+          <ConfirmDialog
+            message={`Are you sure you want to delete all grades for Term ${confirmingDeleteTerm}? This cannot be undone.`}
+            confirmLabel="Delete Grades"
+            danger
+            busy={deletingGrades}
+            error={deleteGradesError}
+            onCancel={() => {
+              setConfirmingDeleteTerm(null);
+              setDeleteGradesError('');
+            }}
+            onConfirm={handleDeleteTermGrades}
+          />
+        )}
 
-      {data && (
-        <>
-          <button type="button" className="see-all-btn" style={{ marginBottom: 12 }} onClick={() => setChoosingAdd(true)}>
-            + Add grades
-          </button>
-          {data.terms.map((termData) => (
-            <GradeTable
-              key={termData.term}
-              termData={termData}
-              subjects={subjects}
-              defaultSubjects={defaultSubjects}
-              displayedAverage={
-                termData.term in displayedAverages ? displayedAverages[termData.term] : termData.overallAverage
-              }
-              delta={deltas[termData.term]}
-              recalculating={recalculatingTerm === termData.term}
-              onRecalculate={() => handleRecalculate(termData.term)}
-              onAddEntry={handleAddEntry}
-              onDeleteEntry={handleDeleteEntry}
-              onChangeTerm={handleChangeTerm}
-              onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
-            />
-          ))}
-        </>
-      )}
-
-      {confirmingDelete && (
-        <ConfirmDialog
-          message="Are you sure you want to delete your account? This cannot be undone."
-          confirmLabel="Delete Account"
-          danger
-          busy={deleting}
-          error={deleteError}
-          onCancel={() => {
-            setConfirmingDelete(false);
-            setDeleteError('');
-          }}
-          onConfirm={handleDeleteAccount}
-        />
-      )}
-
-      {confirmingDeleteTerm !== null && (
-        <ConfirmDialog
-          message={`Are you sure you want to delete all grades for Term ${confirmingDeleteTerm}? This cannot be undone.`}
-          confirmLabel="Delete Grades"
-          danger
-          busy={deletingGrades}
-          error={deleteGradesError}
-          onCancel={() => {
-            setConfirmingDeleteTerm(null);
-            setDeleteGradesError('');
-          }}
-          onConfirm={handleDeleteTermGrades}
-        />
-      )}
-
-      {choosingAdd && (
-        <AddChoiceDialog
-          message="How would you like to add your grades?"
-          onChooseAuto={() => {
-            setChoosingAdd(false);
-            setUploadingGrades(true);
-          }}
-          onChooseManual={() => setChoosingAdd(false)}
-          onCancel={() => setChoosingAdd(false)}
-        />
-      )}
+        {choosingAdd && (
+          <AddChoiceDialog
+            message="How would you like to add your grades?"
+            onChooseAuto={() => {
+              setChoosingAdd(false);
+              setUploadingGrades(true);
+            }}
+            onChooseManual={() => setChoosingAdd(false)}
+            onCancel={() => setChoosingAdd(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
