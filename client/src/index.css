@@ -150,8 +150,8 @@ body::before {
   inset: 0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.22) 0px,
-    rgba(0, 0, 0, 0.22) 1px,
+    rgba(0, 0, 0, 0.13) 0px,
+    rgba(0, 0, 0, 0.13) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -165,7 +165,7 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.55) 130%);
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.4) 140%);
   pointer-events: none;
   z-index: 998;
 }
@@ -283,8 +283,8 @@ h2 {
   color: var(--brand-fill);
   border-color: var(--brand-fill);
   border-width: 1.5px;
-  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.45), inset 0 0 8px rgba(var(--brand-rgb), 0.15);
-  text-shadow: 0 0 6px currentColor;
+  box-shadow: 0 0 9px rgba(var(--brand-rgb), 0.3), inset 0 0 5px rgba(var(--brand-rgb), 0.1);
+  text-shadow: 0 0 3px currentColor;
 }
 
 @media (max-width: 400px) {
@@ -333,7 +333,7 @@ h2 {
   letter-spacing: 0.08em;
   color: var(--brand-fill);
   margin-bottom: 6px;
-  text-shadow: 0 0 6px currentColor;
+  text-shadow: 0 0 3px currentColor;
 }
 
 .ledger-header-title::before {
@@ -531,8 +531,8 @@ h2 {
   border: 1.5px solid var(--brand-600);
   border-radius: 2px;
   padding: 5px 10px;
-  text-shadow: 0 0 6px currentColor, 0 0 2px currentColor;
-  box-shadow: inset 0 0 10px rgba(var(--brand-rgb), 0.2), 0 0 8px rgba(var(--brand-rgb), 0.25);
+  text-shadow: 0 0 4px currentColor;
+  box-shadow: inset 0 0 6px rgba(var(--brand-rgb), 0.14), 0 0 5px rgba(var(--brand-rgb), 0.16);
 }
 
 .ledger-row-difficulty {
