@@ -1,173 +1,133 @@
 :root {
-  /* Inter for everything except numbers — a plain, ledger-appropriate grotesque, not a display
-     face with its own personality. Numbers (grades, countdowns) use --font-mono instead, so they
-     line up in fixed-width columns like a real mark sheet. */
-  --font-family: 'Inter', 'Segoe UI', sans-serif;
-  --font-display: 'Inter', 'Segoe UI', sans-serif;
+  /* Fully monospace, deliberately — Space Mono for headings (it has real display character,
+     unusual proportions), JetBrains Mono for everything else including body copy, not just
+     numbers. This app never looks like a normal app font-wise; that's the point. */
+  --font-family: 'JetBrains Mono', 'Consolas', monospace;
+  --font-display: 'Space Mono', 'JetBrains Mono', monospace;
   --font-mono: 'JetBrains Mono', 'Consolas', monospace;
 
-  --bg: #f2f3f5;
-  --surface: #ffffff;
-  --text: #1e2a38;
-  --text-subtle: #54595f;
-  --border: #d1d5db;
+  /* Always dark — this is a deliberate terminal aesthetic, not a light theme with a dark-mode
+     fallback, so these are set directly on :root rather than gated behind a media query. */
+  --bg: #0a0e0c;
+  --surface: #101512;
+  --text: #c8f7d0;
+  --text-subtle: #6b8f74;
+  --border: #1f3324;
 
-  /* Brand scale (theme-controlled) — default "purple & pink" theme. Saturated and vivid, just flat
-     (see --brand-fill below) instead of blended into a gradient. */
-  --brand-50: #faf5ff;
-  --brand-100: #f3e8ff;
-  --brand-300: #d8b4fe;
-  --brand-400: #c084fc;
-  --brand-500: #a855f7;
-  --brand-600: #9333ea;
-  --brand-700: #7e22ce;
-  --brand-rgb: 168, 85, 247;
+  /* Brand scale (theme-controlled) — each theme is a different phosphor color, not a different
+     hue mood. Default "purple & pink" theme = magenta phosphor. */
+  --brand-50: rgba(192, 38, 211, 0.1);
+  --brand-100: rgba(192, 38, 211, 0.18);
+  --brand-300: #e879f9;
+  --brand-400: #f472f4;
+  --brand-500: #d926d9;
+  --brand-600: #c026d3;
+  --brand-700: #8b1fa8;
+  --brand-rgb: 192, 38, 211;
 
-  /* Flat, not a gradient — a single considered color reads as intentional; a gradient reads as
-     a default. Kept as one variable so every existing site that references it updates together. */
   --brand-fill: var(--brand-600);
-  --shadow-brand: 0 6px 0 var(--brand-700), 0 8px 16px rgba(31, 27, 22, 0.16);
+  --shadow-brand: 0 6px 0 var(--brand-700), 0 0 18px rgba(var(--brand-rgb), 0.35);
 
-  /* For colored TEXT sitting directly on the page/card background (stat numbers, link hovers) —
-     separate from --brand-fill because a hued color like purple or green is legible as accent text
-     on its own, but the black & grey theme's near-black brand-600/700 is not: it just reads as more
-     body text. Themes with real hue leave these as brand-600/700; black_grey overrides below. */
   --brand-text: var(--brand-600);
   --brand-text-hover: var(--brand-700);
 
-  /* Index-card panel treatment — solid paper surface, crisp ink border, small offset shadow
-     (like a card sitting on a desk), instead of frosted glass. --glass-blur stays at 0 so every
-     existing backdrop-filter: blur(var(--glass-blur)) call site becomes a no-op automatically. */
-  --glass-bg: rgba(255, 255, 255, 0.97);
-  --glass-bg-strong: #ffffff;
+  /* Dark bezel panel treatment, glowing border instead of a soft shadow. */
+  --glass-bg: var(--surface);
+  --glass-bg-strong: #151b17;
   --glass-border: var(--border);
   --glass-blur: 0px;
-  --glass-shadow: 2px 3px 0 rgba(31, 27, 22, 0.06), 0 6px 16px rgba(31, 27, 22, 0.06);
+  --glass-shadow: 0 0 0 rgba(0, 0, 0, 0);
 
-  /* Fixed danger/error accent — stays consistent no matter the theme */
-  --danger: #ff5da2;
-  --danger-dark: #e0388a;
-  --error-bg: #ffe4f0;
+  --danger: #ff2d75;
+  --danger-dark: #d1104f;
+  --error-bg: rgba(255, 45, 117, 0.12);
 
-  /* Exam-difficulty colors are semantic (hard=red, medium=orange, easy=green) and never change
-     with the theme — swapping them per-theme would break the color-coding the app is built on.
-     Flat and saturated — not neon, not muted — used for both the difficulty-picker chips and the
-     exam/holiday bubbles; --*-text is the readable color for whichever surface uses that hue. */
-  --red-bg: #cf4a3d;
-  --red-text: #ffffff;
-  --red-border: #a83a2f;
+  /* Exam-difficulty colors are semantic and never change with the theme. Bright enough to read as
+     LED indicator colors against the black background; the "-text" pairing (near-black) is only
+     used where a color fills a solid chip (the difficulty picker), never for the ledger rows,
+     which use these as a glowing border instead of a fill. */
+  --red-bg: #ff3b3b;
+  --red-text: #0a0e0c;
+  --red-border: #ff3b3b;
 
-  --orange-bg: #c9790f;
-  --orange-text: #ffffff;
-  --orange-border: #a3620c;
+  --orange-bg: #ffb000;
+  --orange-text: #0a0e0c;
+  --orange-border: #ffb000;
 
-  --green-bg: #3f8f52;
-  --green-text: #ffffff;
-  --green-border: #326f42;
+  --green-bg: #22e847;
+  --green-text: #0a0e0c;
+  --green-border: #22e847;
 
-  --gray-bg: #7d7a72;
-  --gray-text: #ffffff;
-  --gray-border: #635f58;
+  --gray-bg: #8b95a1;
+  --gray-text: #0a0e0c;
+  --gray-border: #8b95a1;
 
-  --blue-bg: #3d7fa3;
-  --blue-text: #ffffff;
-  --blue-border: #2f6480;
+  --blue-bg: #00c2e0;
+  --blue-text: #0a0e0c;
+  --blue-border: #00c2e0;
 }
 
 [data-theme='red_blue'] {
-  --bg: #f2f3f5;
-  --border: #d1d5db;
-  --brand-50: #fef2f2;
-  --brand-100: #fee2e2;
-  --brand-300: #fca5a5;
-  --brand-400: #f87171;
-  --brand-500: #ef4444;
-  --brand-600: #dc2626;
+  /* Red phosphor */
+  --brand-50: rgba(239, 28, 28, 0.1);
+  --brand-100: rgba(239, 28, 28, 0.18);
+  --brand-300: #ff9a9a;
+  --brand-400: #ff6b6b;
+  --brand-500: #ff3b3b;
+  --brand-600: #ef1c1c;
   --brand-700: #b91c1c;
-  --brand-rgb: 239, 68, 68;
+  --brand-rgb: 239, 28, 28;
 }
 
 [data-theme='green'] {
-  --bg: #f2f3f5;
-  --border: #d1d5db;
-  --brand-50: #eefdf3;
-  --brand-100: #d7f9e3;
-  --brand-300: #7de3a3;
-  --brand-400: #4ade80;
-  --brand-500: #22c55e;
-  --brand-600: #16a34a;
-  --brand-700: #0f7a38;
-  --brand-rgb: 34, 197, 94;
+  /* Classic green phosphor */
+  --brand-50: rgba(34, 232, 71, 0.1);
+  --brand-100: rgba(34, 232, 71, 0.18);
+  --brand-300: #9dffb5;
+  --brand-400: #6dff8f;
+  --brand-500: #39ff5e;
+  --brand-600: #22e847;
+  --brand-700: #16b636;
+  --brand-rgb: 34, 232, 71;
 }
 
 [data-theme='black_grey'] {
-  --bg: #f2f3f5;
-  --border: #d1d5db;
-  --brand-50: #fafafa;
-  --brand-100: #f4f4f5;
-  --brand-300: #a1a1aa;
-  --brand-400: #71717a;
-  --brand-500: #52525b;
-  --brand-600: #3f3f46;
-  --brand-700: #27272a;
-  --brand-rgb: 82, 82, 91;
-  /* brand-600/700 are near-black — fine for button fills (white text on top always reads), but
-     as standalone text on the page they'd be indistinguishable from regular body copy. Use a
-     visibly lighter, mid-gray pair instead just for that context. */
-  --brand-text: #71717a;
-  --brand-text-hover: #52525b;
+  /* Monochrome CRT — a cool ice-blue-white phosphor, since true white would wash out against
+     white button text; this is the closest "monochrome terminal" gets while staying legible. */
+  --brand-50: rgba(125, 201, 240, 0.1);
+  --brand-100: rgba(125, 201, 240, 0.18);
+  --brand-300: #e8f7ff;
+  --brand-400: #d4f1ff;
+  --brand-500: #a8e0ff;
+  --brand-600: #7dc9f0;
+  --brand-700: #4a9bc4;
+  --brand-rgb: 125, 201, 240;
+  --brand-text: #7dc9f0;
+  --brand-text-hover: #4a9bc4;
 }
 
 [data-theme='gold_navy'] {
-  --bg: #f2f3f5;
-  --border: #d1d5db;
-  --brand-50: #fefce8;
-  --brand-100: #fef9c3;
-  --brand-300: #fde047;
-  --brand-400: #facc15;
-  --brand-500: #eab308;
-  --brand-600: #ca8a04;
-  --brand-700: #a16207;
-  --brand-rgb: 234, 179, 8;
+  /* Classic amber CRT phosphor */
+  --brand-50: rgba(230, 149, 0, 0.1);
+  --brand-100: rgba(230, 149, 0, 0.18);
+  --brand-300: #ffd699;
+  --brand-400: #ffcc66;
+  --brand-500: #ffb000;
+  --brand-600: #e69500;
+  --brand-700: #b87700;
+  --brand-rgb: 230, 149, 0;
 }
 
 [data-theme='blue_white'] {
-  --bg: #f2f3f5;
-  --border: #d1d5db;
-  --brand-50: #eff6ff;
-  --brand-100: #dbeafe;
-  --brand-300: #93c5fd;
-  --brand-400: #60a5fa;
-  --brand-500: #3b82f6;
-  --brand-600: #2563eb;
-  --brand-700: #1d4ed8;
-  --brand-rgb: 59, 130, 246;
-}
-
-@media (prefers-color-scheme: dark) {
-  /* Theme-agnostic dark neutrals — the active theme's brand-* colors still pop on top via
-     buttons/accents/blobs, but the base surface doesn't stay green-tinted for every theme. */
-  :root {
-    --bg: #101013;
-    --surface: #1b1b20;
-    --text: #f1f1f4;
-    --text-subtle: #a3a3ad;
-    --border: #33333c;
-
-    /* Universal translucent overlay for subtle fills, regardless of active theme's hue */
-    --brand-50: rgba(255, 255, 255, 0.07);
-    --brand-100: rgba(255, 255, 255, 0.12);
-
-    --shadow-brand: 0 6px 0 var(--brand-700), 0 10px 24px rgba(0, 0, 0, 0.45);
-    --error-bg: #3a1428;
-
-    /* Dark index-card panels: solid dark surface, crisp border, small offset shadow — matches
-       the light-mode paper-card treatment instead of frosted glass. */
-    --glass-bg: #1b1b20;
-    --glass-bg-strong: #202027;
-    --glass-border: var(--border);
-    --glass-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.35);
-  }
+  /* Cyan phosphor, like an old IBM terminal */
+  --brand-50: rgba(0, 194, 224, 0.1);
+  --brand-100: rgba(0, 194, 224, 0.18);
+  --brand-300: #a3f5ff;
+  --brand-400: #7dfaff;
+  --brand-500: #22e5ff;
+  --brand-600: #00c2e0;
+  --brand-700: #0090a8;
+  --brand-rgb: 0, 194, 224;
 }
 
 * {
@@ -176,10 +136,38 @@
 
 body {
   margin: 0;
-  /* Flat ledger paper — no glow, no wash, no gradient. */
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-family);
+  position: relative;
+}
+
+/* CRT scanlines — a fixed overlay across the whole viewport, subtle enough not to hurt
+   readability but present enough to read as a screen, not a flat page. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 999;
+  mix-blend-mode: multiply;
+}
+
+/* A faint vignette so the screen reads as a CRT tube, not an infinite black plane. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.55) 130%);
+  pointer-events: none;
+  z-index: 998;
 }
 
 h1, h2, h3, .brand-name {
@@ -270,25 +258,33 @@ h2 {
   padding: 16px 10px;
   border: 1.5px solid var(--border);
   border-left: none;
-  border-radius: 0 10px 10px 0;
+  border-radius: 0;
   background: var(--surface);
   color: var(--text-subtle);
-  font-family: var(--font-family);
+  font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 0.78rem;
-  line-height: 1.25;
+  font-size: 0.72rem;
+  line-height: 1.3;
   text-align: left;
   cursor: pointer;
-  box-shadow: 2px 2px 0 rgba(30, 42, 56, 0.06);
-  transition: width 0.15s ease, background 0.15s, color 0.15s, box-shadow 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  transition: width 0.15s ease, background 0.15s, color 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.side-tab::before {
+  content: '> ';
+  opacity: 0.5;
 }
 
 .side-tab.active {
-  width: 100px;
-  background: var(--brand-fill);
-  color: white;
+  width: 104px;
+  background: var(--brand-50);
+  color: var(--brand-fill);
   border-color: var(--brand-fill);
-  box-shadow: 3px 3px 0 rgba(30, 42, 56, 0.14);
+  border-width: 1.5px;
+  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.45), inset 0 0 8px rgba(var(--brand-rgb), 0.15);
+  text-shadow: 0 0 6px currentColor;
 }
 
 @media (max-width: 400px) {
@@ -326,7 +322,7 @@ h2 {
 .ledger-header {
   margin-bottom: 24px;
   padding-bottom: 14px;
-  border-bottom: 2px solid var(--text);
+  border-bottom: 1px solid var(--border);
 }
 
 .ledger-header-title {
@@ -335,14 +331,22 @@ h2 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
-  margin-bottom: 4px;
+  color: var(--brand-fill);
+  margin-bottom: 6px;
+  text-shadow: 0 0 6px currentColor;
+}
+
+.ledger-header-title::before {
+  content: '// ';
+  opacity: 0.6;
 }
 
 .ledger-header h1 {
   margin: 0;
-  font-size: 1.6rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   font-weight: 700;
+  color: var(--text);
 }
 
 .ledger-panel {
@@ -515,14 +519,20 @@ h2 {
   flex-shrink: 0;
 }
 
-/* The signature touch — a numeral underlined like a grade circled in red pen. */
+/* The signature touch — a digital-clock display, not just a number. Dark LED bezel, glowing
+   phosphor digits, tabular so they don't jitter row to row. */
 .ledger-row-days {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--text);
-  border-bottom: 2px solid var(--red-bg);
-  padding-bottom: 2px;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-fill);
+  background: #05070a;
+  border: 1.5px solid var(--brand-600);
+  border-radius: 2px;
+  padding: 5px 10px;
+  text-shadow: 0 0 6px currentColor, 0 0 2px currentColor;
+  box-shadow: inset 0 0 10px rgba(var(--brand-rgb), 0.2), 0 0 8px rgba(var(--brand-rgb), 0.25);
 }
 
 .ledger-row-difficulty {
