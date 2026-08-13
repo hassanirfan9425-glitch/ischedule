@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
-import SideTabs from '../components/SideTabs.jsx';
+import CommandBar from '../components/CommandBar.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
 import GradeTable from '../components/GradeTable.jsx';
@@ -151,7 +151,7 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
 
   return (
     <div className="dashboard binder-page">
-      <SideTabs activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
       <div className="binder-content">
         <header className="ledger-header">
           <div className="ledger-header-title">Academics</div>

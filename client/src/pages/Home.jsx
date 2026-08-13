@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { countdownText } from '../utils.js';
-import SideTabs from '../components/SideTabs.jsx';
+import CommandBar from '../components/CommandBar.jsx';
 
 export default function Home({ greeting, activeTab, onSwitchTab }) {
   const [dashboardData, setDashboardData] = useState(null);
@@ -35,7 +35,7 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
 
   return (
     <div className="dashboard binder-page">
-      <SideTabs activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
       <div className="binder-content">
         <header className="ledger-header">
           <div className="ledger-header-title">Home</div>

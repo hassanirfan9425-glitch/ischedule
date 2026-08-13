@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { APK_DOWNLOAD_URL } from '../utils.js';
-import SideTabs from '../components/SideTabs.jsx';
+import CommandBar from '../components/CommandBar.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 
@@ -52,7 +52,7 @@ export default function More({
 
   return (
     <div className="dashboard binder-page">
-      <SideTabs activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
       <div className="binder-content">
         <header className="ledger-header">
           <div className="ledger-header-title">More</div>

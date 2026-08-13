@@ -3,7 +3,7 @@ import { api } from '../api.js';
 import { countdownText } from '../utils.js';
 import ExamBubble from '../components/ExamBubble.jsx';
 import HolidayBubble from '../components/HolidayBubble.jsx';
-import SideTabs from '../components/SideTabs.jsx';
+import CommandBar from '../components/CommandBar.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import MaterialPopup from '../components/MaterialPopup.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
@@ -198,7 +198,7 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
 
   return (
     <div className="dashboard binder-page">
-      <SideTabs activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
       <div className="binder-content">
         <header className="ledger-header">
           <div className="ledger-header-title">Schedule</div>
