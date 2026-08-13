@@ -1,11 +1,8 @@
 :root {
-  /* Body/data text: IBM Plex Sans — distinctive without sacrificing legibility in the dense
-     grade/schedule tables. Headings use --font-display instead (see h1/h2/h3/.brand-name below). */
-  --font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
-  --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
-  /* Used once, deliberately, for the exam countdown badge — the one number a student would
-     actually circle on a paper planner. Not used anywhere else. */
-  --font-signature: 'Kalam', cursive;
+  /* Body/data text: Karla — warm, humanist, legible in the dense grade/schedule tables. Headings
+     use --font-display instead (see h1/h2/h3/.brand-name below). */
+  --font-family: 'Karla', 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', 'Karla', serif;
 
   --bg: #f7f3ea;
   --surface: #ffffff;
@@ -13,7 +10,8 @@
   --text-subtle: #6b6255;
   --border: #d8cdb8;
 
-  /* Brand scale (theme-controlled) — default "purple & pink" theme */
+  /* Brand scale (theme-controlled) — default "purple & pink" theme. Saturated and vivid, just flat
+     (see --brand-fill below) instead of blended into a gradient. */
   --brand-50: #faf5ff;
   --brand-100: #f3e8ff;
   --brand-300: #d8b4fe;
@@ -23,8 +21,17 @@
   --brand-700: #7e22ce;
   --brand-rgb: 168, 85, 247;
 
-  --grad-brand: linear-gradient(135deg, var(--brand-400), var(--brand-600));
-  --shadow-brand: 0 6px 0 var(--brand-700), 0 10px 20px rgba(var(--brand-rgb), 0.25);
+  /* Flat, not a gradient — a single considered color reads as intentional; a gradient reads as
+     a default. Kept as one variable so every existing site that references it updates together. */
+  --brand-fill: var(--brand-600);
+  --shadow-brand: 0 6px 0 var(--brand-700), 0 8px 16px rgba(31, 27, 22, 0.16);
+
+  /* For colored TEXT sitting directly on the page/card background (stat numbers, link hovers) —
+     separate from --brand-fill because a hued color like purple or green is legible as accent text
+     on its own, but the black & grey theme's near-black brand-600/700 is not: it just reads as more
+     body text. Themes with real hue leave these as brand-600/700; black_grey overrides below. */
+  --brand-text: var(--brand-600);
+  --brand-text-hover: var(--brand-700);
 
   /* Index-card panel treatment — solid paper surface, crisp ink border, small offset shadow
      (like a card sitting on a desk), instead of frosted glass. --glass-blur stays at 0 so every
@@ -42,37 +49,27 @@
 
   /* Exam-difficulty colors are semantic (hard=red, medium=orange, easy=green) and never change
      with the theme — swapping them per-theme would break the color-coding the app is built on.
-     Solid versions are for small chips (difficulty picker); "-glass" versions are translucent
-     tints used on the frosted exam/holiday bubbles, paired with a single readable text color. */
-  --red-bg: linear-gradient(135deg, #ff8fa3, #ff5d7a);
+     Flat and saturated — not neon, not muted — used for both the difficulty-picker chips and the
+     exam/holiday bubbles; --*-text is the readable color for whichever surface uses that hue. */
+  --red-bg: #cf4a3d;
   --red-text: #ffffff;
-  --red-border: #ff4d6d;
-  --red-glass: rgba(255, 93, 122, 0.4);
-  --red-glass-border: rgba(255, 93, 122, 0.65);
+  --red-border: #a83a2f;
 
-  --orange-bg: linear-gradient(135deg, #ffd166, #ffb703);
-  --orange-text: #5c3a00;
-  --orange-border: #ffb703;
-  --orange-glass: rgba(255, 183, 3, 0.38);
-  --orange-glass-border: rgba(255, 183, 3, 0.65);
+  --orange-bg: #c9790f;
+  --orange-text: #ffffff;
+  --orange-border: #a3620c;
 
-  --green-bg: linear-gradient(135deg, #7de3a3, #22c55e);
-  --green-text: #063d1c;
-  --green-border: #16a34a;
-  --green-glass: rgba(74, 222, 128, 0.42);
-  --green-glass-border: rgba(74, 222, 128, 0.65);
+  --green-bg: #3f8f52;
+  --green-text: #ffffff;
+  --green-border: #326f42;
 
-  --gray-bg: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-  --gray-text: #475569;
-  --gray-border: #cbd5e1;
-  --gray-glass: rgba(148, 163, 184, 0.38);
-  --gray-glass-border: rgba(148, 163, 184, 0.6);
+  --gray-bg: #7d7a72;
+  --gray-text: #ffffff;
+  --gray-border: #635f58;
 
-  --blue-bg: linear-gradient(135deg, #7dd3fc, #38bdf8);
-  --blue-text: #0c3a52;
-  --blue-border: #0ea5e9;
-  --blue-glass: rgba(56, 189, 248, 0.42);
-  --blue-glass-border: rgba(56, 189, 248, 0.65);
+  --blue-bg: #3d7fa3;
+  --blue-text: #ffffff;
+  --blue-border: #2f6480;
 }
 
 [data-theme='red_blue'] {
@@ -112,6 +109,11 @@
   --brand-600: #3f3f46;
   --brand-700: #27272a;
   --brand-rgb: 82, 82, 91;
+  /* brand-600/700 are near-black — fine for button fills (white text on top always reads), but
+     as standalone text on the page they'd be indistinguishable from regular body copy. Use a
+     visibly lighter, mid-gray pair instead just for that context. */
+  --brand-text: #71717a;
+  --brand-text-hover: #52525b;
 }
 
 [data-theme='gold_navy'] {
@@ -173,11 +175,10 @@
 body {
   margin: 0;
   background: var(--bg);
+  /* A quiet paper-toned wash, not a glowing hero gradient — depth without vibrancy. */
   background-image:
-    radial-gradient(circle at 8% 10%, rgba(var(--brand-rgb), 0.4), transparent 40%),
-    radial-gradient(circle at 92% 15%, rgba(255, 93, 162, 0.32), transparent 38%),
-    radial-gradient(circle at 12% 92%, rgba(var(--brand-rgb), 0.3), transparent 42%),
-    radial-gradient(circle at 90% 90%, rgba(255, 93, 162, 0.28), transparent 40%);
+    radial-gradient(circle at 8% 8%, rgba(var(--brand-rgb), 0.09), transparent 45%),
+    radial-gradient(circle at 92% 90%, rgba(var(--brand-rgb), 0.07), transparent 45%);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-family);
@@ -241,12 +242,9 @@ h2 {
 }
 
 .brand-name {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 1.5rem;
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--brand-fill);
 }
 
 .centered-screen {
@@ -341,9 +339,9 @@ h2 {
 }
 
 .page-tab.active {
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
-  box-shadow: 0 3px 10px rgba(var(--brand-rgb), 0.35);
+  box-shadow: 0 3px 10px rgba(31, 27, 22, 0.18);
 }
 
 .empty-landing {
@@ -396,7 +394,7 @@ h2 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--brand-600);
+  color: var(--brand-text);
   margin-bottom: 10px;
 }
 
@@ -441,9 +439,10 @@ h2 {
 }
 
 .preview-average-value {
+  font-family: var(--font-display);
   font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--brand-600);
+  font-weight: 700;
+  color: var(--brand-text);
 }
 
 .preview-average-label {
@@ -661,7 +660,7 @@ h2 {
   gap: 8px;
   padding: 10px 18px;
   border-radius: 999px;
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
   font-weight: 800;
 }
@@ -728,9 +727,9 @@ h2 {
 }
 
 .tab.active {
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
-  box-shadow: 0 3px 10px rgba(var(--brand-rgb), 0.35);
+  box-shadow: 0 3px 10px rgba(31, 27, 22, 0.18);
 }
 
 .auth-form {
@@ -774,8 +773,8 @@ textarea:focus {
   margin-top: 10px;
   padding: 13px 16px;
   border: none;
-  border-radius: 999px;
-  background: var(--grad-brand);
+  border-radius: 10px;
+  background: var(--brand-fill);
   color: white;
   font-weight: 700;
   font-size: 1rem;
@@ -792,7 +791,7 @@ textarea:focus {
 
 .primary-btn:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 var(--brand-700), 0 4px 10px rgba(var(--brand-rgb), 0.25);
+  box-shadow: 0 2px 0 var(--brand-700), 0 4px 10px rgba(31, 27, 22, 0.18);
 }
 
 .primary-btn:disabled {
@@ -805,7 +804,7 @@ textarea:focus {
   margin-top: 10px;
   padding: 11px 16px;
   border: 2px solid var(--border);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--text-subtle);
   font-weight: 700;
@@ -822,7 +821,7 @@ textarea:focus {
 
 .secondary-btn:hover {
   border-color: var(--brand-500);
-  color: var(--brand-700);
+  color: var(--brand-text-hover);
   transform: translateY(-1px);
 }
 
@@ -831,8 +830,8 @@ textarea:focus {
 }
 
 .primary-btn.danger-btn {
-  background: linear-gradient(135deg, var(--danger), var(--danger-dark));
-  box-shadow: 0 6px 0 var(--danger-dark), 0 10px 20px rgba(255, 93, 162, 0.25);
+  background: var(--danger-dark);
+  box-shadow: 0 6px 0 #a82468, 0 8px 16px rgba(31, 27, 22, 0.16);
 }
 
 .confirm-backdrop {
@@ -952,7 +951,7 @@ textarea:focus {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--brand-600);
+  color: var(--brand-text);
 }
 
 .material-group ul {
@@ -1002,7 +1001,7 @@ textarea:focus {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--grad-brand);
+  background: var(--brand-fill);
 }
 
 .subject-list {
@@ -1059,7 +1058,7 @@ textarea:focus {
 }
 
 .subject-row.selected .checkbox {
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   border-color: transparent;
   animation: checkPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1131,7 +1130,7 @@ textarea:focus {
 }
 
 .weekday-btn.active {
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
   border-color: transparent;
 }
@@ -1170,7 +1169,7 @@ textarea:focus {
 }
 
 .manual-subject-row.active {
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
 }
 
@@ -1264,7 +1263,7 @@ textarea:focus {
 }
 
 .back-link:hover {
-  color: var(--brand-600);
+  color: var(--brand-text);
   transform: translateX(-2px);
 }
 
@@ -1293,7 +1292,7 @@ textarea:focus {
   height: 84px;
   margin: 0 auto 16px;
   border-radius: 50%;
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
   font-size: 2.6rem;
   line-height: 84px;
@@ -1331,30 +1330,30 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* Full-bleed site chrome, not another floating card — a solid bar with a bold brand-colored
-     underline reads as real navigation, not another panel on the page. */
+  /* Reads like a running header on a page, not a floating app bar — no shadow, no bold accent
+     line, just a hairline rule doing the same job typography already does. */
   width: auto;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
   margin-top: -32px;
-  margin-bottom: 24px;
-  background: var(--glass-bg-strong);
+  margin-bottom: 28px;
+  background: transparent;
   border: none;
-  border-bottom: 4px solid var(--brand-500);
+  border-bottom: 1px solid var(--border);
   border-radius: 0;
   /* On the wrapped Android app the WebView can render edge-to-edge under the status bar — the
      safe-area env() adds the extra clearance the site itself never needs (it's 0 in a browser). */
-  padding-top: calc(20px + env(safe-area-inset-top));
-  padding-bottom: 20px;
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-bottom: 18px;
   padding-left: max(20px, calc(50vw - 470px), calc(20px + env(safe-area-inset-left)));
   padding-right: max(20px, calc(50vw - 470px), calc(20px + env(safe-area-inset-right)));
-  box-shadow: 0 4px 24px rgba(31, 27, 22, 0.1);
   flex-wrap: wrap;
   gap: 12px;
 }
 
 .dashboard-header h1 {
   margin: 0;
+  font-weight: 600;
 }
 
 .header-actions {
@@ -1377,7 +1376,7 @@ textarea:focus {
 
 .icon-btn:hover {
   border-color: var(--brand-500);
-  color: var(--brand-700);
+  color: var(--brand-text-hover);
   transform: translateY(-1px);
 }
 
@@ -1427,9 +1426,10 @@ textarea:focus {
 }
 
 .stat-value {
+  font-family: var(--font-display);
   font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--brand-600);
+  font-weight: 700;
+  color: var(--brand-text);
   line-height: 1;
 }
 
@@ -1442,7 +1442,7 @@ textarea:focus {
 }
 
 .stat-chip-highlight {
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   border-color: transparent;
 }
 
@@ -1465,7 +1465,7 @@ textarea:focus {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  color: var(--brand-600);
+  color: var(--brand-text);
   font-weight: 700;
   font-size: 0.85rem;
   font-family: var(--font-family);
@@ -1584,33 +1584,36 @@ textarea:focus {
 }
 
 .exam-bubble.color-red {
-  background: var(--red-glass);
-  border-color: var(--red-glass-border);
+  background: var(--red-bg);
+  border-color: var(--red-border);
+  color: var(--red-text);
 }
 
 .exam-bubble.color-orange {
-  background: var(--orange-glass);
-  border-color: var(--orange-glass-border);
+  background: var(--orange-bg);
+  border-color: var(--orange-border);
+  color: var(--orange-text);
 }
 
 .exam-bubble.color-green {
-  background: var(--green-glass);
-  border-color: var(--green-glass-border);
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  color: var(--green-text);
 }
 
 .exam-bubble.color-gray {
-  background: var(--gray-glass);
-  border-color: var(--gray-glass-border);
+  background: var(--gray-bg);
+  border-color: var(--gray-border);
+  color: var(--gray-text);
 }
 
 .exam-bubble-days {
   display: inline-block;
-  font-family: var(--font-signature);
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   line-height: 1.1;
-  transform: rotate(-2deg);
-  opacity: 0.95;
+  color: white;
 }
 
 .exam-bubble-subject {
@@ -1648,11 +1651,9 @@ textarea:focus {
 .holiday-bubble {
   border-radius: 10px;
   padding: 15px;
-  background: var(--blue-glass);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1.5px solid var(--blue-glass-border);
-  color: var(--text);
+  background: var(--blue-bg);
+  border: 1.5px solid var(--blue-border);
+  color: var(--blue-text);
   box-shadow: var(--glass-shadow);
   transition: transform 0.15s;
 }
@@ -1687,7 +1688,7 @@ textarea:focus {
   height: 60px;
   border-radius: 50%;
   border: none;
-  background: var(--grad-brand);
+  background: var(--brand-fill);
   color: white;
   font-size: 2rem;
   line-height: 60px;
@@ -1718,7 +1719,7 @@ textarea:focus {
   color: var(--text);
   font-size: 1.3rem;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(var(--brand-rgb), 0.15);
+  box-shadow: 0 4px 12px rgba(31, 27, 22, 0.1);
   transition: transform 0.15s, border-color 0.15s;
   z-index: 30;
 }

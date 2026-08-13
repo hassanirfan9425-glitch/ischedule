@@ -17,14 +17,10 @@ export default function Settings({ user, onBack, onUserUpdated }) {
       .catch((err) => setError(err.message));
   }, []);
 
-  async function handleThemePick(nextTheme) {
+  function handleThemePick(nextTheme) {
+    // Just a local pick — the swatch shows as selected immediately, but the theme doesn't
+    // actually apply anywhere else in the app until Save Changes is pressed below.
     setTheme(nextTheme);
-    try {
-      const data = await api.updateProfile({ theme: nextTheme });
-      onUserUpdated(data.user);
-    } catch (err) {
-      setError(err.message);
-    }
   }
 
   async function handleSaveProfile(e) {
@@ -32,7 +28,7 @@ export default function Settings({ user, onBack, onUserUpdated }) {
     setError('');
     setSavingProfile(true);
     try {
-      const data = await api.updateProfile({ username, name });
+      const data = await api.updateProfile({ username, name, theme });
       onUserUpdated(data.user);
     } catch (err) {
       setError(err.message);
