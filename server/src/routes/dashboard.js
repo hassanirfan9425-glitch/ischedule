@@ -9,6 +9,7 @@ import {
   isPriority,
   WEEKDAY_OFFSET_BY_KEY,
 } from '../constants/subjects.js';
+import { getTodayIso } from '../utils/uaeDate.js';
 
 const router = Router();
 
@@ -50,12 +51,8 @@ function sortByPriority(list) {
 
 router.get('/', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  // Testing-only override — set FAKE_TODAY=YYYY-MM-DD in server/.env to pretend "today" is a
-  // different date (e.g. to test against a schedule for a year that hasn't started yet). Remove
-  // the env var to go back to the real date.
-  const today = process.env.FAKE_TODAY ? new Date(`${process.env.FAKE_TODAY}T00:00:00Z`) : new Date();
-  const todayUtc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-  const todayIso = todayUtc.toISOString().slice(0, 10);
+  const todayIso = getTodayIso();
+  const todayUtc = new Date(`${todayIso}T00:00:00Z`);
 
   const user = await db.prepare('SELECT periodic_day FROM users WHERE id = ?').get(userId);
   const periodicOffset = user?.periodic_day ? WEEKDAY_OFFSET_BY_KEY[user.periodic_day] : null;
@@ -187,7 +184,7 @@ router.get('/', requireAuth, async (req, res) => {
     daysUntil: daysUntil(row.date_start, todayUtc),
   }));
 
-  res.json({ periodicExams, finalExams, allUpcomingExams, holidays, today: todayIso });
+  res.json({ periodicExams, finalExams, allUpcomingExams, holidays, currentTerm, today: todayIso });
 });
 
 export default router;

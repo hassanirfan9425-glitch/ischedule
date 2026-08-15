@@ -288,7 +288,13 @@ export default function Dashboard({
 
       {data && !hasAnyScheduleData && (
         <div className="empty-landing">
-          <div className="plus-button" onClick={() => setChoosingScheduleAdd(true)} role="button" tabIndex={0}>
+          <div
+            className="plus-button"
+            data-tutorial="schedule-add"
+            onClick={() => setChoosingScheduleAdd(true)}
+            role="button"
+            tabIndex={0}
+          >
             +
           </div>
           <div className="empty-landing-title">Add your school schedule</div>
@@ -377,7 +383,13 @@ export default function Dashboard({
       )}
 
       {hasAnyScheduleData && (
-        <button type="button" className="fab-btn" onClick={() => setChoosingScheduleAdd(true)} title="Update your schedule">
+        <button
+          type="button"
+          className="fab-btn"
+          data-tutorial="schedule-add"
+          onClick={() => setChoosingScheduleAdd(true)}
+          title="Update your schedule"
+        >
           +
         </button>
       )}

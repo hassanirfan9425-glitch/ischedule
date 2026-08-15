@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
-import CommandBar from '../components/CommandBar.jsx';
+import OrbitDial from '../components/OrbitDial.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
-import HeatGrid from '../components/HeatGrid.jsx';
+import MissionLog from '../components/MissionLog.jsx';
 import AcademicsUpload from './AcademicsUpload.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 
@@ -42,8 +42,6 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
       loadData(),
       Promise.all([api.getSubjectCatalog(), api.getMySubjects()]).then(([catalog, mine]) => {
         setSubjects([...catalog.coreSubjects, ...catalog.subjects]);
-        // Every student takes the core subjects, plus Moral Education (auto-included school-wide)
-        // — everything else only counts if the student actually rated it in the quiz.
         const ratedKeys = new Set(mine.subjects.map((s) => s.subject_key));
         setDefaultSubjects([
           ...catalog.coreSubjects,
@@ -150,11 +148,11 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
   }
 
   return (
-    <div className="dashboard binder-page">
-      <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
-      <div className="binder-content">
-        <header className="ledger-header">
-          <div className="ledger-header-title">Academics</div>
+    <div className="dashboard orbit-page">
+      <OrbitDial activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <div className="orbit-content">
+        <header className="orbit-header">
+          <div className="orbit-header-eyebrow">Academics</div>
           <h1>{greeting}</h1>
         </header>
 
@@ -172,7 +170,7 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
               + Add grades
             </button>
             {data.terms.map((termData) => (
-              <HeatGrid
+              <MissionLog
                 key={termData.term}
                 termData={termData}
                 subjects={subjects}

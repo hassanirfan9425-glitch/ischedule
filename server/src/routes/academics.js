@@ -6,9 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { SUBJECT_BY_KEY, gradeWeights, isAmsSubcourse } from '../constants/subjects.js';
+import { SUBJECT_BY_KEY, gradeWeights, isAmsSubcourse, isPassingGrade } from '../constants/subjects.js';
 import { parseGrades } from '../services/gradeParser.js';
 import { generateSuggestions } from '../services/suggestionGenerator.js';
+import { getTodayIso } from '../utils/uaeDate.js';
 
 // How much the overall average has to move (in either direction) since the last generated batch
 // of suggestions before it's worth spending an AI call on fresh ones.
@@ -94,6 +95,46 @@ async function determineCurrentTerm(userId, todayIso) {
   return closest;
 }
 
+// AMS-only, not periodic — this is meant to reward keeping up with the routine weekly work, not
+// exam performance (which already has its own priority/pass-fail treatment elsewhere). Needs at
+// least 2 back-to-back 90+ entries before it counts as a "streak" worth showing at all; a single
+// good week isn't a streak.
+const STREAK_GRADE_FLOOR = 90;
+const STREAK_MIN_LENGTH = 2;
+
+// A single below-90 week doesn't kill an established streak outright — it goes "at risk" (shown
+// greyed out, count preserved) for exactly one more week. A 90+ right after recovers it (back to
+// active, count continues climbing); a SECOND dip in a row while already at risk means the grace
+// wasn't used in time and the streak actually breaks back to zero.
+function calculateAmsStreakInfo(entries) {
+  const amsEntries = entries
+    .filter((e) => isAmsSubcourse(e.subcourse_label))
+    .slice()
+    .sort((a, b) => (a.week_number ?? -1) - (b.week_number ?? -1));
+
+  let streak = 0;
+  let status = 'none'; // 'active' | 'atRisk' | 'none'
+
+  for (const e of amsEntries) {
+    if (e.grade >= STREAK_GRADE_FLOOR) {
+      if (status === 'active' || status === 'atRisk') {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+      status = 'active';
+    } else if (status === 'active' && streak >= STREAK_MIN_LENGTH) {
+      status = 'atRisk';
+    } else {
+      streak = 0;
+      status = 'none';
+    }
+  }
+
+  if (streak < STREAK_MIN_LENGTH) return { streak: 0, status: 'none' };
+  return { streak, status };
+}
+
 // Weighted average for one subject's own entries, then a plain average of every subject's
 // average to get the one headline number for the term — per the school's rubric.
 function calculateTermSummary(entries) {
@@ -113,17 +154,23 @@ function calculateTermSummary(entries) {
       weightedSum += e.grade * w;
       weightTotal += w;
     }
+    const average = weightTotal > 0 ? weightedSum / weightTotal : null;
+    const { streak: amsStreak, status: amsStreakStatus } = calculateAmsStreakInfo(group.entries);
     return {
       subjectKey: group.subjectKey,
       subjectLabel: group.subjectLabel,
-      average: weightTotal > 0 ? weightedSum / weightTotal : null,
+      average,
+      passing: average !== null ? isPassingGrade(average) : null,
+      amsStreak,
+      amsStreakStatus,
     };
   });
 
   const valid = subjectAverages.filter((s) => s.average !== null);
   const overallAverage = valid.length > 0 ? valid.reduce((a, s) => a + s.average, 0) / valid.length : null;
+  const overallPassing = overallAverage !== null ? isPassingGrade(overallAverage) : null;
 
-  return { subjectAverages, overallAverage };
+  return { subjectAverages, overallAverage, overallPassing };
 }
 
 // Regenerates suggestions the first time a term ever has entries, or whenever the overall average
@@ -176,7 +223,7 @@ async function maybeRegenerateSuggestions(userId, term) {
 
 router.get('/', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  const todayIso = (process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10));
+  const todayIso = getTodayIso();
   const currentTerm = await determineCurrentTerm(userId, todayIso);
 
   const rows = await db
@@ -213,8 +260,8 @@ router.get('/', requireAuth, async (req, res) => {
   const result = terms.map((term) => {
     const entries = byTerm[term] || [];
     const rawEntries = rows.filter((r) => r.term === term);
-    const { subjectAverages, overallAverage } = calculateTermSummary(rawEntries);
-    return { term, entries, subjectAverages, overallAverage, suggestions: suggestionsByTerm[term] || [] };
+    const { subjectAverages, overallAverage, overallPassing } = calculateTermSummary(rawEntries);
+    return { term, entries, subjectAverages, overallAverage, overallPassing, suggestions: suggestionsByTerm[term] || [] };
   });
 
   res.json({ terms: result, currentTerm });
@@ -236,7 +283,7 @@ router.post('/manual', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Grade must be a number between 0 and 100.' });
   }
 
-  const todayIso = process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10);
+  const todayIso = getTodayIso();
   const resolvedTerm = Number.isInteger(term) ? term : await determineCurrentTerm(userId, todayIso);
 
   const info = await db
@@ -284,7 +331,7 @@ router.post('/upload', requireAuth, (req, res) => {
       if (Number.isInteger(result.term) && result.term >= 1 && result.term <= 6) {
         term = result.term;
       } else {
-        const todayIso = process.env.FAKE_TODAY || new Date().toISOString().slice(0, 10);
+        const todayIso = getTodayIso();
         term = await determineCurrentTerm(userId, todayIso);
       }
 

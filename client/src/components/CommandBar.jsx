@@ -26,7 +26,7 @@ export default function CommandBar({ activeTab, onSwitchTab }) {
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
         >
-          <span className="command-bar-prompt">sabishub:~$</span>
+          <span className="command-bar-prompt">studycompass:~$</span>
           <span className="command-bar-current">{currentLabel}</span>
           <span className="command-bar-cursor" />
         </button>

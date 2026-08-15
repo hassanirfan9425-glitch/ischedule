@@ -1,22 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../api.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
 
+// Static and tiny — fetching this from the server on every Settings open (the old approach) meant
+// the swatches sat blank for a network round-trip before rendering. Mirrors server/src/constants/
+// themes.js; only affects brand/decorative colors, exam-difficulty colors never change.
+const THEMES = [
+  { key: 'green', label: 'Green & White', swatch: ['#22c55e', '#ffffff'] },
+  { key: 'red_blue', label: 'Red & Blue', swatch: ['#ef4444', '#3b82f6'] },
+  { key: 'purple_pink', label: 'Purple & Pink', swatch: ['#a855f7', '#ec4899'] },
+  { key: 'black_grey', label: 'Black & Grey', swatch: ['#27272a', '#a1a1aa'] },
+  { key: 'gold_navy', label: 'Gold & Dark Blue', swatch: ['#eab308', '#1e3a8a'] },
+  { key: 'blue_white', label: 'Blue & White', swatch: ['#3b82f6', '#ffffff'] },
+];
+
 export default function Settings({ user, onBack, onUserUpdated }) {
-  const [themes, setThemes] = useState([]);
   const [username, setUsername] = useState(user.username);
   const [name, setName] = useState(user.name);
   const [theme, setTheme] = useState(user.theme);
   const [uiStyle, setUiStyle] = useState(user.uiStyle || 'classic');
   const [error, setError] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
-
-  useEffect(() => {
-    api
-      .getThemes()
-      .then((data) => setThemes(data.themes))
-      .catch((err) => setError(err.message));
-  }, []);
 
   function handleThemePick(nextTheme) {
     // Just a local pick — the swatch shows as selected immediately, but the theme doesn't
@@ -46,13 +50,13 @@ export default function Settings({ user, onBack, onUserUpdated }) {
         </button>
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">SabisHub</span>
+          <span className="brand-name">Study Compass</span>
         </div>
         <h1>Settings</h1>
 
         <h2 style={{ marginTop: 20 }}>Color theme</h2>
-        <div className="theme-picker">
-          {themes.map((t) => (
+        <div className="theme-picker" data-tutorial="color-theme">
+          {THEMES.map((t) => (
             <button
               type="button"
               key={t.key}
@@ -72,7 +76,7 @@ export default function Settings({ user, onBack, onUserUpdated }) {
         <p className="subtle" style={{ marginTop: -8 }}>
           Changes on Save, just like the color theme above.
         </p>
-        <div className="theme-picker">
+        <div className="theme-picker" data-tutorial="ui-style">
           <button
             type="button"
             className={uiStyle === 'classic' ? 'theme-swatch active' : 'theme-swatch'}
@@ -85,7 +89,14 @@ export default function Settings({ user, onBack, onUserUpdated }) {
             className={uiStyle === 'technical' ? 'theme-swatch active' : 'theme-swatch'}
             onClick={() => setUiStyle('technical')}
           >
-            Technical Theme
+            High-Tech
+          </button>
+          <button
+            type="button"
+            className={uiStyle === 'orbit' ? 'theme-swatch active' : 'theme-swatch'}
+            onClick={() => setUiStyle('orbit')}
+          >
+            Orbit
           </button>
         </div>
 

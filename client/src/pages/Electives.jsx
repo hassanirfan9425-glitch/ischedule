@@ -100,7 +100,7 @@ export default function Electives({ onDone, onCancel }) {
         </button>
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">SabisHub</span>
+          <span className="brand-name">Study Compass</span>
         </div>
 
         <h1>Your externals</h1>

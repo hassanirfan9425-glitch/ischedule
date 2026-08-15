@@ -104,10 +104,15 @@ export async function initDb() {
       periodic_day TEXT,
       theme TEXT NOT NULL DEFAULT 'purple_pink',
       ui_style TEXT NOT NULL DEFAULT 'classic',
+      tutorial_seen BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS ui_style TEXT NOT NULL DEFAULT 'classic';
+    -- Defaults to true at the column level so every already-onboarded account (this migration's
+    -- existing rows) is treated as having already seen it — only brand-new signups (see auth.js's
+    -- POST /signup, which explicitly inserts false) get the tour.
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS tutorial_seen BOOLEAN NOT NULL DEFAULT true;
 
     CREATE TABLE IF NOT EXISTS user_subjects (
       id SERIAL PRIMARY KEY,
@@ -170,6 +175,19 @@ export async function initDb() {
     );
 
     ALTER TABLE exam_materials ADD COLUMN IF NOT EXISTS details TEXT NOT NULL DEFAULT '[]';
+
+    CREATE TABLE IF NOT EXISTS study_plans (
+      id SERIAL PRIMARY KEY,
+      exam_id INTEGER NOT NULL UNIQUE REFERENCES exams(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      plan TEXT NOT NULL,
+      generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    -- Was created as TIMESTAMP (no zone) — NOW() got silently shifted by this session's non-UTC
+    -- timezone on write, so "how long ago was this generated" comparisons (the cooldown check)
+    -- came out hours off. TIMESTAMPTZ stores the real instant regardless of session timezone.
+    ALTER TABLE study_plans ALTER COLUMN generated_at TYPE TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS grade_entries (
       id SERIAL PRIMARY KEY,

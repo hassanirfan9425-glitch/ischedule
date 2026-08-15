@@ -3,10 +3,11 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { THEME_KEYS } from '../constants/themes.js';
+import { containsProfanity } from '../utils/profanityFilter.js';
 
 const router = Router();
 
-const UI_STYLE_KEYS = new Set(['classic', 'technical']);
+const UI_STYLE_KEYS = new Set(['classic', 'technical', 'orbit']);
 
 function publicUser(row) {
   return {
@@ -16,6 +17,7 @@ function publicUser(row) {
     onboarded: !!row.onboarded,
     theme: row.theme || 'purple_pink',
     uiStyle: row.ui_style || 'classic',
+    tutorialSeen: !!row.tutorial_seen,
   };
 }
 
@@ -31,6 +33,9 @@ router.post('/signup', async (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ error: 'Password must be at least 6 characters.' });
   }
+  if (containsProfanity(username) || containsProfanity(name)) {
+    return res.status(400).json({ error: 'Username and name cannot contain inappropriate language.' });
+  }
 
   const existing = await db.prepare('SELECT id FROM users WHERE username = ?').get(username.trim());
   if (existing) {
@@ -38,9 +43,11 @@ router.post('/signup', async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
+  // tutorial_seen defaults to true at the column level (existing accounts skip it) — brand-new
+  // signups explicitly get false so the first-time tutorial actually triggers for them.
   const info = await db
-    .prepare('INSERT INTO users (username, name, password_hash, theme) VALUES (?, ?, ?, ?)')
-    .run(username.trim(), name.trim(), passwordHash, 'purple_pink');
+    .prepare('INSERT INTO users (username, name, password_hash, theme, tutorial_seen) VALUES (?, ?, ?, ?, ?)')
+    .run(username.trim(), name.trim(), passwordHash, 'purple_pink', false);
 
   const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   req.session.userId = user.id;
@@ -112,6 +119,9 @@ router.patch('/profile', requireAuth, async (req, res) => {
   if (!nextName) {
     return res.status(400).json({ error: 'Name cannot be empty.' });
   }
+  if (containsProfanity(nextUsername) || containsProfanity(nextName)) {
+    return res.status(400).json({ error: 'Username and name cannot contain inappropriate language.' });
+  }
   if (theme !== undefined && !THEME_KEYS.has(theme)) {
     return res.status(400).json({ error: `Unknown theme: ${theme}` });
   }
@@ -135,6 +145,12 @@ router.patch('/profile', requireAuth, async (req, res) => {
   );
 
   const updated = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  res.json({ user: publicUser(updated) });
+});
+
+router.post('/tutorial-complete', requireAuth, async (req, res) => {
+  await db.prepare('UPDATE users SET tutorial_seen = true WHERE id = ?').run(req.session.userId);
+  const updated = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);
   res.json({ user: publicUser(updated) });
 });
 

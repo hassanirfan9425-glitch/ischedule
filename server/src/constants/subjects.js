@@ -140,6 +140,26 @@ export function priorityWindowDays(difficultyKey) {
   }
 }
 
+// How many days out a study plan should start, by difficulty — a subject rated harder gets a
+// longer runway. Doesn't reuse priorityWindowDays' groupings since a plan's length needs finer
+// granularity between very_easy and easy than that function cares about.
+export function studyPlanDays(difficultyKey) {
+  switch (difficultyKey) {
+    case 'very_hard':
+      return 14;
+    case 'hard':
+      return 7;
+    case 'medium':
+      return 5;
+    case 'easy':
+      return 4;
+    case 'very_easy':
+      return 3;
+    default:
+      return 5; // unrated subject — a reasonable middle-ground default
+  }
+}
+
 export function isPriority(difficultyKey, daysUntil) {
   const window = priorityWindowDays(difficultyKey);
   if (window === null || daysUntil === null) return false;
@@ -174,4 +194,11 @@ export function gradeWeights(subjectKey) {
 // (e.g. "Composition", "Pure Mathematics", "Chemistry") is a periodic exam entry for that subject.
 export function isAmsSubcourse(subcourseLabel) {
   return typeof subcourseLabel === 'string' && subcourseLabel.trim().toUpperCase() === 'AMS';
+}
+
+// The school's actual pass/fail line: 60 and above passes, anything below fails.
+export const PASSING_GRADE = 60;
+
+export function isPassingGrade(average) {
+  return typeof average === 'number' && average >= PASSING_GRADE;
 }

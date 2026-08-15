@@ -1,6 +1,6 @@
 import CalendarIcon from './CalendarIcon.jsx';
 
-export default function NavDrawer({ open, onClose, items }) {
+export default function NavDrawer({ open, onClose, items, highlightIndex = null }) {
   return (
     <>
       <div className={open ? 'drawer-backdrop open' : 'drawer-backdrop'} onClick={onClose} />
@@ -8,18 +8,18 @@ export default function NavDrawer({ open, onClose, items }) {
         <div className="nav-drawer-header">
           <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
             <CalendarIcon size={24} />
-            <span className="brand-name">SabisHub</span>
+            <span className="brand-name">Study Compass</span>
           </div>
           <button type="button" className="drawer-close" onClick={onClose} aria-label="Close menu">
             ✕
           </button>
         </div>
         <div className="nav-drawer-items">
-          {items.map((item) => (
+          {items.map((item, i) => (
             <button
               type="button"
               key={item.label}
-              className="nav-drawer-item"
+              className={i === highlightIndex ? 'nav-drawer-item tutorial-highlight' : 'nav-drawer-item'}
               onClick={() => {
                 onClose();
                 item.onClick();

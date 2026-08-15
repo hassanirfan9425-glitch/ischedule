@@ -7,6 +7,14 @@ import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { parseMaterial } from '../services/materialParser.js';
+import { generateStudyPlan } from '../services/studyPlanGenerator.js';
+import { SUBJECT_BY_KEY, studyPlanDays } from '../constants/subjects.js';
+import { getTodayIso } from '../utils/uaeDate.js';
+
+// Generating a plan is an AI call — this stops someone from mashing "Regenerate" and burning
+// through the Gemini quota for no real benefit (the plan for the same exam isn't going to look
+// meaningfully different a few seconds later anyway).
+const STUDY_PLAN_COOLDOWN_MS = 60 * 1000;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
@@ -155,6 +163,115 @@ router.delete('/:examId', requireAuth, async (req, res) => {
     return res.status(404).json({ error: 'No material found for that exam.' });
   }
   res.json({ ok: true });
+});
+
+// Every saved plan across every exam — lets the Home page show a live preview (e.g. the next
+// task due) without the user having to open the picker first, and lets the picker show which
+// exams already have one.
+router.get('/study-plans', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const rows = await db
+    .prepare(
+      `SELECT sp.exam_id, sp.plan, sp.generated_at, e.subject_key, e.subject_label
+       FROM study_plans sp
+       JOIN exams e ON e.id = sp.exam_id
+       WHERE sp.user_id = ?`
+    )
+    .all(userId);
+  const plans = rows.map((row) => ({
+    examId: row.exam_id,
+    subjectLabel: row.subject_key ? SUBJECT_BY_KEY[row.subject_key]?.label ?? row.subject_label : row.subject_label,
+    plan: JSON.parse(row.plan),
+    generatedAt: row.generated_at,
+  }));
+  res.json({ plans });
+});
+
+router.get('/:examId/study-plan', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const examId = Number(req.params.examId);
+  const row = await db
+    .prepare('SELECT plan, generated_at FROM study_plans WHERE exam_id = ? AND user_id = ?')
+    .get(examId, userId);
+  if (!row) return res.json({ plan: null });
+  res.json({ plan: JSON.parse(row.plan), generatedAt: row.generated_at });
+});
+
+router.post('/:examId/study-plan', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const examId = Number(req.params.examId);
+  const { daysUntil } = req.body || {};
+  if (!Number.isFinite(daysUntil)) {
+    return res.status(400).json({ error: 'daysUntil is required.' });
+  }
+
+  const exam = await db.prepare('SELECT * FROM exams WHERE id = ? AND user_id = ?').get(examId, userId);
+  if (!exam) {
+    return res.status(404).json({ error: 'Exam not found.' });
+  }
+
+  const existingPlan = await db.prepare('SELECT generated_at FROM study_plans WHERE exam_id = ? AND user_id = ?').get(examId, userId);
+  if (existingPlan) {
+    const elapsedMs = Date.now() - new Date(existingPlan.generated_at).getTime();
+    if (elapsedMs < STUDY_PLAN_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((STUDY_PLAN_COOLDOWN_MS - elapsedMs) / 1000);
+      return res.status(429).json({ error: `Please wait ${waitSeconds}s before regenerating this plan.` });
+    }
+  }
+
+  const material = await db
+    .prepare('SELECT quizzes, questions, details FROM exam_materials WHERE exam_id = ?')
+    .get(examId);
+  // A plan built on nothing but a subject name and difficulty rating isn't worth much — material
+  // gives it something concrete to actually schedule, so it's required, not just optional context.
+  if (!material) {
+    return res.status(400).json({ error: 'Add material for this exam before generating a study plan.' });
+  }
+  const difficultyRow = exam.subject_key
+    ? await db.prepare('SELECT difficulty FROM user_subjects WHERE user_id = ? AND subject_key = ?').get(userId, exam.subject_key)
+    : null;
+
+  const subjectLabel = exam.subject_key ? SUBJECT_BY_KEY[exam.subject_key]?.label ?? exam.subject_label : exam.subject_label;
+  const clampedDaysUntil = Math.max(0, Math.round(daysUntil));
+  // How far out the plan starts is driven by the subject's own difficulty rating, not a flat
+  // number — very easy only needs a few days, very hard gets a couple weeks. Still can't plan for
+  // days before "now" though, so this never exceeds how many days are actually left.
+  const targetDays = studyPlanDays(difficultyRow?.difficulty || null);
+  const planDays = Math.max(1, Math.min(targetDays, clampedDaysUntil || 1));
+
+  const todayIso = getTodayIso();
+  const examDate = new Date(`${todayIso}T00:00:00Z`);
+  examDate.setUTCDate(examDate.getUTCDate() + clampedDaysUntil);
+
+  try {
+    const rawPlan = await generateStudyPlan({
+      subjectLabel,
+      difficulty: difficultyRow?.difficulty || null,
+      planDays,
+      quizzes: material ? JSON.parse(material.quizzes) : [],
+      questions: material ? JSON.parse(material.questions) : [],
+      details: material ? JSON.parse(material.details) : [],
+    });
+
+    // Each entry only carries "N days before the exam" from the model — turn that into an actual
+    // calendar date here so the client can show something concrete without redoing this math.
+    const plan = rawPlan.map((day) => {
+      const d = new Date(examDate);
+      d.setUTCDate(d.getUTCDate() - day.daysBeforeExam);
+      return { ...day, date: d.toISOString().slice(0, 10) };
+    });
+
+    await db
+      .prepare(
+        `INSERT INTO study_plans (exam_id, user_id, plan, generated_at) VALUES (?, ?, ?, NOW())
+         ON CONFLICT(exam_id) DO UPDATE SET user_id = excluded.user_id, plan = excluded.plan, generated_at = NOW()`
+      )
+      .run(examId, userId, JSON.stringify(plan));
+
+    res.json({ ok: true, plan });
+  } catch (err) {
+    res.status(500).json({ error: `Could not generate a study plan: ${err.message || err}` });
+  }
 });
 
 export default router;

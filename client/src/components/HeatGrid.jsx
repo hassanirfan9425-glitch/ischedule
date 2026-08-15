@@ -8,11 +8,9 @@ function subjectIdentity(subjectKey, subjectLabel) {
   return subjectKey || `label:${subjectLabel}`;
 }
 
-// Every subject always gets both a Periodic and an AMS row, even if one has no grades yet — a
-// screenshot only showing periodic entries (or only AMS) shouldn't hide the other section.
-// `defaultSubjects` (core subjects + whatever electives this student rated in the quiz) seed the
-// table unconditionally, so a subject with zero entries this term still shows up blank instead of
-// disappearing — a screenshot that doesn't mention Chemistry shouldn't remove Chemistry.
+// Same shape as GradeTable's row-builder — kept as its own copy here since High-Tech pages are
+// already a self-contained set. Every subject always gets both a Periodic and an AMS row, and
+// `defaultSubjects` seeds the grid even for subjects with zero entries yet this term.
 function buildRows(entries, defaultSubjects, placeholderSubjects) {
   const subjectsByIdentity = new Map();
   const cellsByRowKey = new Map();
@@ -59,7 +57,109 @@ function buildRows(entries, defaultSubjects, placeholderSubjects) {
   return rows;
 }
 
-export default function GradeTable({
+function gradeBand(grade) {
+  if (grade >= 85) return 'ok';
+  if (grade >= 60) return 'warn';
+  return 'crit';
+}
+
+function HeatGridRow({ row, subcourseLabel, displayStreak, streakAtRisk, streakAnim, editingCell, editValue, setEditValue, cellError, saving, startEdit, commitEdit, setEditingCell, setCellError, onDeleteEntry }) {
+  return (
+    <div className={`hgrid-row hgrid-row-${subcourseLabel.toLowerCase()}`}>
+      <div className="hgrid-row-label">
+        <span className="hgrid-process-name">
+          {subcourseLabel === 'Periodic' ? (
+            row.subjectLabel
+          ) : (
+            displayStreak > 0 && (
+              <span
+                className={`streak-badge ${streakAtRisk ? 'streak-badge-atrisk' : ''} ${
+                  streakAnim ? `streak-anim-${streakAnim.type}` : ''
+                }`.trim()}
+                title={
+                  streakAtRisk
+                    ? `${displayStreak}-week AMS streak at risk — a 90+ next recovers it`
+                    : `${displayStreak}-week streak of AMS grades at 90 or above`
+                }
+              >
+                🔥{displayStreak}
+              </span>
+            )
+          )}
+        </span>
+        <span className={`hgrid-process-tag hgrid-process-tag-${subcourseLabel.toLowerCase()}`}>{subcourseLabel.toUpperCase()}</span>
+      </div>
+
+      <div className="hgrid-cells">
+        {WEEKS.map((w) => {
+          const cellEntry = row.cells.get(w);
+          const isEditing = editingCell?.rowKey === row.key && editingCell?.week === w;
+
+          if (isEditing) {
+            return (
+              <div key={w} className="hgrid-cell-editing">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  autoFocus
+                  className="hgrid-cell-input"
+                  value={editValue}
+                  disabled={saving}
+                  onChange={(e) => {
+                    setEditValue(e.target.value);
+                    setCellError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitEdit(row);
+                    if (e.key === 'Escape') setEditingCell(null);
+                  }}
+                  onBlur={() => commitEdit(row)}
+                />
+                {cellError && <span className="hgrid-cell-error">{cellError}</span>}
+              </div>
+            );
+          }
+
+          if (cellEntry) {
+            return (
+              <div key={w} className="hgrid-cell-wrap">
+                <button
+                  type="button"
+                  className={`hgrid-cell hgrid-cell-${gradeBand(cellEntry.grade)}`}
+                  onClick={() => startEdit(row, w)}
+                  title={`${row.subjectLabel} ${subcourseLabel} · Week ${w}`}
+                >
+                  {cellEntry.grade}
+                </button>
+                <button
+                  type="button"
+                  className="hgrid-cell-remove"
+                  onClick={() => onDeleteEntry(cellEntry.id)}
+                  aria-label={`Remove ${row.subjectLabel} ${subcourseLabel} week ${w} entry`}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={w}
+              type="button"
+              className="hgrid-cell hgrid-cell-empty"
+              onClick={() => startEdit(row, w)}
+              aria-label={`Log ${row.subjectLabel} ${subcourseLabel} week ${w} entry`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function HeatGrid({
   termData,
   subjects,
   defaultSubjects,
@@ -81,9 +181,6 @@ export default function GradeTable({
   );
   const streakAnimations = useStreakAnimation(subjectAverages);
 
-  // Subjects a student has started (via "+ Add Subject", for something outside their default
-  // list) but hasn't entered a grade for yet — once a real entry lands for that subject, it shows
-  // up via `entries` instead and this drops out.
   const [placeholderSubjects, setPlaceholderSubjects] = useState([]);
   const existingIdentities = new Set([
     ...entries.map((e) => subjectIdentity(e.subjectKey, e.subjectLabel)),
@@ -95,7 +192,19 @@ export default function GradeTable({
     placeholderSubjects.filter((p) => !existingIdentities.has(subjectIdentity(p.subjectKey, p.subjectLabel)))
   );
 
-  const [editingCell, setEditingCell] = useState(null); // { rowKey, week }
+  const subjectGroups = [];
+  const seenIdentity = new Set();
+  for (const row of rows) {
+    if (seenIdentity.has(row.subjectIdentity)) continue;
+    seenIdentity.add(row.subjectIdentity);
+    subjectGroups.push({
+      identity: row.subjectIdentity,
+      subjectLabel: row.subjectLabel,
+      rows: rows.filter((r) => r.subjectIdentity === row.subjectIdentity),
+    });
+  }
+
+  const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [cellError, setCellError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -160,7 +269,7 @@ export default function GradeTable({
       existingIdentities.has(identity) ||
       placeholderSubjects.some((p) => subjectIdentity(p.subjectKey, p.subjectLabel) === identity)
     ) {
-      setAddRowError('That subject is already in the table.');
+      setAddRowError('That subject is already in the grid.');
       return;
     }
     setPlaceholderSubjects((prev) => [...prev, { subjectKey: newRowSubjectKey || null, subjectLabel }]);
@@ -192,7 +301,7 @@ export default function GradeTable({
   }
 
   return (
-    <section className="grade-table-section">
+    <section className="hgrid-section">
       {editingTerm ? (
         <div className="term-edit-row">
           <label className="term-edit-label">
@@ -235,118 +344,59 @@ export default function GradeTable({
       {rows.length === 0 ? (
         <p className="subtle">No grades added for this term yet.</p>
       ) : (
-        <div className="grade-table-wrap">
-          <table className="grade-table">
-            <thead>
-              <tr>
-                <th>Course</th>
-                <th>Subcourse</th>
-                {WEEKS.map((w) => (
-                  <th key={w}>Wk {w}</th>
+        <div className="hgrid-wrap">
+          <div className="hgrid-scroll">
+            {subjectGroups.map((group) => {
+              const subjectAverage = averageBySubjectIdentity.get(group.identity);
+              const streakAnim = streakAnimations[group.identity];
+              const displayStreak = streakAnim ? streakAnim.streak : subjectAverage?.amsStreak;
+              const streakAtRisk = !streakAnim && subjectAverage?.amsStreakStatus === 'atRisk';
+              return (
+              <div key={group.identity} className="hgrid-subject-block">
+                {group.rows.map((row) => (
+                  <HeatGridRow
+                    key={row.key}
+                    row={row}
+                    subcourseLabel={row.subcourseLabel}
+                    displayStreak={displayStreak}
+                    streakAtRisk={streakAtRisk}
+                    streakAnim={streakAnim}
+                    editingCell={editingCell}
+                    editValue={editValue}
+                    setEditValue={setEditValue}
+                    cellError={cellError}
+                    saving={saving}
+                    startEdit={startEdit}
+                    commitEdit={commitEdit}
+                    setEditingCell={setEditingCell}
+                    setCellError={setCellError}
+                    onDeleteEntry={onDeleteEntry}
+                  />
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const subjectAverage = averageBySubjectIdentity.get(row.subjectIdentity);
-                const streakAnim = streakAnimations[row.subjectIdentity];
-                const displayStreak = streakAnim ? streakAnim.streak : subjectAverage?.amsStreak;
-                const streakAtRisk = !streakAnim && subjectAverage?.amsStreakStatus === 'atRisk';
-                return (
-                <tr key={row.key}>
-                  <td>
-                    {row.subcourseLabel === 'Periodic' ? (
-                      <>
-                        {row.subjectLabel}
-                        {subjectAverage && (
-                          <span
-                            className={`grade-pass-badge ${subjectAverage.passing ? 'grade-pass-badge-pass' : 'grade-pass-badge-fail'}`}
-                            title={subjectAverage.passing ? 'Passing' : 'Failing'}
-                          >
-                            {subjectAverage.average.toFixed(1)}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      displayStreak > 0 && (
-                        <span
-                          className={`streak-badge ${streakAtRisk ? 'streak-badge-atrisk' : ''} ${
-                            streakAnim ? `streak-anim-${streakAnim.type}` : ''
-                          }`.trim()}
-                          title={
-                            streakAtRisk
-                              ? `${displayStreak}-week AMS streak at risk — a 90+ next recovers it`
-                              : `${displayStreak}-week streak of AMS grades at 90 or above`
-                          }
-                        >
-                          🔥{displayStreak}
-                        </span>
-                      )
-                    )}
-                  </td>
-                  <td>{row.subcourseLabel}</td>
-                  {WEEKS.map((w) => {
-                    const cellEntry = row.cells.get(w);
-                    const isEditing = editingCell?.rowKey === row.key && editingCell?.week === w;
-
-                    if (isEditing) {
-                      return (
-                        <td key={w} className="grade-cell-editing">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            autoFocus
-                            className="grade-cell-input"
-                            value={editValue}
-                            disabled={saving}
-                            onChange={(e) => {
-                              setEditValue(e.target.value);
-                              setCellError('');
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') commitEdit(row);
-                              if (e.key === 'Escape') setEditingCell(null);
-                            }}
-                            onBlur={() => commitEdit(row)}
-                          />
-                          {cellError && <div className="grade-cell-error">{cellError}</div>}
-                        </td>
-                      );
-                    }
-
-                    return (
-                      <td key={w}>
-                        {cellEntry ? (
-                          <span className="grade-cell">
-                            {cellEntry.grade}
-                            <button
-                              type="button"
-                              className="grade-cell-remove"
-                              onClick={() => onDeleteEntry(cellEntry.id)}
-                              aria-label="Remove entry"
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="grade-cell-blank"
-                            onClick={() => startEdit(row, w)}
-                            aria-label={`Add grade for ${row.subjectLabel} ${row.subcourseLabel} week ${w}`}
-                          >
-                            -
-                          </button>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                {averageBySubjectIdentity.has(group.identity) && (
+                  <div className="hgrid-subject-badge-slot">
+                    <span
+                      className={`grade-pass-badge ${
+                        averageBySubjectIdentity.get(group.identity).passing
+                          ? 'grade-pass-badge-pass'
+                          : 'grade-pass-badge-fail'
+                      }`}
+                      title={averageBySubjectIdentity.get(group.identity).passing ? 'Passing' : 'Failing'}
+                    >
+                      {averageBySubjectIdentity.get(group.identity).average.toFixed(1)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              );
+            })}
+            <div className="hgrid-week-axis">
+              <span className="hgrid-week-axis-spacer" />
+              {WEEKS.map((w) => (
+                <span key={w}>{w}</span>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -357,7 +407,7 @@ export default function GradeTable({
       ) : (
         <form onSubmit={handleAddRow} className="grade-add-form">
           <p className="subtle" style={{ margin: 0 }}>
-            Pick a subject: it'll get both a Periodic and an AMS section in the table.
+            Pick a subject: it'll get both a Periodic and an AMS row in the grid.
           </p>
           <div className="manual-subject-list">
             {subjects.map((s) => (
@@ -399,7 +449,7 @@ export default function GradeTable({
         </form>
       )}
 
-      <p className="subtle grade-table-hint">Click any blank cell to enter that week's grade.</p>
+      <p className="subtle grade-table-hint">Click any tile to edit that week's grade, or an empty tile to add one.</p>
 
       <div className="grade-average-row">
         <button type="button" className="secondary-btn" onClick={onRecalculate} disabled={recalculating}>

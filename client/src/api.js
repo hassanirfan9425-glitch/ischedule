@@ -23,6 +23,7 @@ export const api = {
   logout: () => request('/auth/logout', { method: 'POST' }),
   deleteAccount: () => request('/auth/account', { method: 'DELETE' }),
   updateProfile: (fields) => request('/auth/profile', { method: 'PATCH', body: JSON.stringify(fields) }),
+  completeTutorial: () => request('/auth/tutorial-complete', { method: 'POST' }),
 
   getThemes: () => request('/themes'),
 
@@ -53,6 +54,11 @@ export const api = {
   addManualMaterial: (examId, { quizzes, questions }) =>
     request(`/materials/${examId}/manual`, { method: 'POST', body: JSON.stringify({ quizzes, questions }) }),
   deleteMaterial: (examId) => request(`/materials/${examId}`, { method: 'DELETE' }),
+
+  getStudyPlan: (examId) => request(`/materials/${examId}/study-plan`),
+  generateStudyPlan: (examId, daysUntil) =>
+    request(`/materials/${examId}/study-plan`, { method: 'POST', body: JSON.stringify({ daysUntil }) }),
+  getAllStudyPlans: () => request('/materials/study-plans'),
 
   getAcademics: () => request('/academics'),
   uploadGrades: (file) => {

@@ -3,9 +3,9 @@ import { api } from '../api.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
 
 const FEATURES = [
-  'AI-powered schedule parsing',
-  'Priority alerts for exams that matter',
-  'Manual entry any time the AI gets it wrong',
+  'Gives an organized schedule personalized for you',
+  'Get a rough calculation of your average at any time',
+  'Receive real advice based off your performance',
 ];
 
 function FeatureCheck() {
@@ -47,10 +47,10 @@ export default function AuthPage({ onAuth }) {
       <div className="auth-card">
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">SabisHub</span>
+          <span className="brand-name">Study Compass</span>
         </div>
         <h1>{mode === 'login' ? 'Welcome back!' : 'Create your account'}</h1>
-        <p className="subtle">Track upcoming exams and holidays from your school schedule.</p>
+        <p className="subtle">Your academic life, organized around you.</p>
 
         <ul className="auth-features">
           {FEATURES.map((feature) => (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { countdownText, formatDate } from '../utils.js';
-import CommandBar from '../components/CommandBar.jsx';
+import OrbitDial from '../components/OrbitDial.jsx';
 import StudyPlanPopup from '../components/StudyPlanPopup.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 import { useStreakAnimation } from '../hooks/useStreakAnimation.js';
@@ -54,14 +54,9 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
     return best;
   })();
 
-  // Show every term that actually has grades, not just whichever term the schedule says is
-  // "current" — that inference can be wrong (or there's no schedule at all yet), and a term with
-  // real entries shouldn't just silently not show up here.
   const termsWithGrades = academicsData
     ? academicsData.terms.filter((t) => t.overallAverage !== null).sort((a, b) => a.term - b.term)
     : [];
-  // Suggestions, unlike averages, only make sense for the most recent term — showing advice for
-  // an old term next to the current one is just noise.
   const latestTermWithGrades = termsWithGrades.length > 0 ? termsWithGrades[termsWithGrades.length - 1] : null;
 
   // Whichever subject currently has the longest AMS streak — folded into the existing Academics
@@ -78,11 +73,11 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
   const topStreakAnim = topStreakIdentity ? streakAnimations[topStreakIdentity] : null;
 
   return (
-    <div className="dashboard binder-page">
-      <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
-      <div className="binder-content">
-        <header className="ledger-header">
-          <div className="ledger-header-title">Home</div>
+    <div className="dashboard orbit-page">
+      <OrbitDial activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <div className="orbit-content">
+        <header className="orbit-header">
+          <div className="orbit-header-eyebrow">Home</div>
           <h1>{greeting}</h1>
         </header>
 
@@ -94,30 +89,30 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
 
         {!loading && (
           <>
-            <button type="button" className="ledger-panel" onClick={() => onSwitchTab('schedule')}>
-              <div className="ledger-panel-title">Schedule</div>
+            <button type="button" className="orbit-panel" onClick={() => onSwitchTab('schedule')}>
+              <div className="orbit-panel-title">Schedule</div>
               {upcomingExams.length === 0 ? (
-                <div className="ledger-panel-empty">No upcoming exams yet. Tap to add your schedule.</div>
+                <div className="orbit-panel-empty">No upcoming exams yet. Tap to add your schedule.</div>
               ) : (
                 upcomingExams.map((exam) => (
-                  <div className="ledger-line-row" key={exam.id}>
-                    <span className="ledger-line-label">{exam.subjectLabel}</span>
-                    <span className="ledger-line-value">{countdownText(exam.daysUntil)}</span>
+                  <div className="orbit-line-row" key={exam.id}>
+                    <span className="orbit-line-label">{exam.subjectLabel}</span>
+                    <span className="orbit-line-value">{countdownText(exam.daysUntil)}</span>
                   </div>
                 ))
               )}
             </button>
 
-            <button type="button" className="ledger-panel" onClick={() => onSwitchTab('academics')}>
-              <div className="ledger-panel-title">Academics</div>
+            <button type="button" className="orbit-panel" onClick={() => onSwitchTab('academics')}>
+              <div className="orbit-panel-title">Academics</div>
               {termsWithGrades.length === 0 ? (
-                <div className="ledger-panel-empty">No grades yet. Tap to add your grade report.</div>
+                <div className="orbit-panel-empty">No grades yet. Tap to add your grade report.</div>
               ) : (
                 termsWithGrades.map((t) => (
-                  <div className="ledger-line-row" key={t.term}>
-                    <span className="ledger-line-label">Term {t.term} average</span>
-                    <span className="ledger-line-value-group">
-                      <span className="ledger-line-value ledger-line-value-big">{Math.round(t.overallAverage)}</span>
+                  <div className="orbit-line-row" key={t.term}>
+                    <span className="orbit-line-label">Term {t.term} average</span>
+                    <span className="orbit-line-value-group">
+                      <span className="orbit-line-value orbit-line-value-big">{Math.round(t.overallAverage)}</span>
                       {topStreakSubject && latestTermWithGrades && t.term === latestTermWithGrades.term && (
                         <span
                           className={`streak-badge streak-badge-full ${
@@ -134,9 +129,9 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
             </button>
 
             {latestTermWithGrades && latestTermWithGrades.suggestions.length > 0 && (
-              <div className="ledger-panel">
-                <div className="ledger-panel-title">Suggestions</div>
-                <ul className="ledger-suggestions">
+              <div className="orbit-panel">
+                <div className="orbit-panel-title">Suggestions</div>
+                <ul className="orbit-suggestions">
                   {latestTermWithGrades.suggestions.map((s, i) => (
                     <li key={i}>{s}</li>
                   ))}
@@ -145,17 +140,17 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
             )}
 
             {planExams.length > 0 && (
-              <button type="button" className="ledger-panel" onClick={() => setViewingStudyPlan(true)}>
-                <div className="ledger-panel-title">Study Plan</div>
+              <button type="button" className="orbit-panel" onClick={() => setViewingStudyPlan(true)}>
+                <div className="orbit-panel-title">Study Plan</div>
                 {nextTask ? (
-                  <div className="ledger-line-row">
-                    <span className="ledger-line-label">
+                  <div className="orbit-line-row">
+                    <span className="orbit-line-label">
                       {nextTask.subjectLabel}: {nextTask.focus}
                     </span>
-                    <span className="ledger-line-value">{formatDate(nextTask.date)}</span>
+                    <span className="orbit-line-value">{formatDate(nextTask.date)}</span>
                   </div>
                 ) : (
-                  <div className="ledger-panel-empty">Tap to view or generate a day-by-day plan for any upcoming exam.</div>
+                  <div className="orbit-panel-empty">Tap to view or generate a day-by-day plan for any upcoming exam.</div>
                 )}
               </button>
             )}

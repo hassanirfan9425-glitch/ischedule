@@ -278,6 +278,159 @@
   --brand-rgb: 0, 194, 224;
 }
 
+/* ============================================================
+   Orbit — third UI style. Space/star-map theme: always dark like Technical (not a light/dark
+   toggle, a deliberate night-sky aesthetic), each brand theme becomes a different "nebula" color
+   instead of a phosphor color. Placed after Technical so ordering never matters between the two. */
+[data-ui-style='orbit'] {
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  --bg: #0b0b2a;
+  --surface: #12123f;
+  --text: #e8e6ff;
+  --text-subtle: #8f8ac4;
+  --border: #26245f;
+
+  /* Default "purple & pink" theme = violet nebula. */
+  --brand-50: rgba(168, 85, 247, 0.08);
+  --brand-100: rgba(168, 85, 247, 0.16);
+  --brand-300: #d8b4fe;
+  --brand-400: #c084fc;
+  --brand-500: #a855f7;
+  --brand-600: #9333ea;
+  --brand-700: #7e22ce;
+  --brand-rgb: 168, 85, 247;
+
+  --brand-fill: var(--brand-600);
+  --shadow-brand: 0 6px 0 var(--brand-700), 0 0 22px rgba(var(--brand-rgb), 0.4);
+
+  --brand-text: var(--brand-400);
+  --brand-text-hover: var(--brand-300);
+
+  --glass-bg: var(--surface);
+  --glass-bg-strong: #171754;
+  --glass-border: var(--border);
+  --glass-blur: 6px;
+  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+
+  --danger: #ff4d6d;
+  --danger-dark: #d81e4c;
+  --error-bg: rgba(255, 77, 109, 0.12);
+
+  /* Bright enough to read as star-glow against deep space, same semantic mapping (hard=red,
+     medium=orange, easy=green) as every other UI style — never theme-tinted. */
+  --red-bg: #ff5470;
+  --red-text: #0b0b2a;
+  --red-border: #ff5470;
+
+  --orange-bg: #ffa726;
+  --orange-text: #0b0b2a;
+  --orange-border: #ffa726;
+
+  --green-bg: #4ade80;
+  --green-text: #0b0b2a;
+  --green-border: #4ade80;
+
+  --gray-bg: #9ca3d4;
+  --gray-text: #0b0b2a;
+  --gray-border: #9ca3d4;
+
+  --blue-bg: #4fd8ff;
+  --blue-text: #0b0b2a;
+  --blue-border: #4fd8ff;
+}
+
+[data-ui-style='orbit'][data-theme='red_blue'] {
+  /* Crimson nebula */
+  --brand-50: rgba(225, 29, 72, 0.08);
+  --brand-100: rgba(225, 29, 72, 0.16);
+  --brand-300: #fda4af;
+  --brand-400: #fb7185;
+  --brand-500: #f43f5e;
+  --brand-600: #e11d48;
+  --brand-700: #be123c;
+  --brand-rgb: 225, 29, 72;
+  --brand-text: #fb7185;
+  --brand-text-hover: #fda4af;
+}
+
+[data-ui-style='orbit'][data-theme='green'] {
+  /* Emerald nebula */
+  --brand-50: rgba(16, 185, 129, 0.08);
+  --brand-100: rgba(16, 185, 129, 0.16);
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-rgb: 16, 185, 129;
+  --brand-text: #34d399;
+  --brand-text-hover: #6ee7b7;
+}
+
+[data-ui-style='orbit'][data-theme='black_grey'] {
+  /* Monochrome starlight — pale silver-blue rather than true grey, so it still reads as a glow
+     against deep space instead of going flat/muddy. */
+  --brand-50: rgba(168, 192, 217, 0.08);
+  --brand-100: rgba(168, 192, 217, 0.16);
+  --brand-300: #dbe4f0;
+  --brand-400: #c2d3e6;
+  --brand-500: #a8c0d9;
+  --brand-600: #7391b3;
+  --brand-700: #587291;
+  --brand-rgb: 168, 192, 217;
+  --brand-text: #c2d3e6;
+  --brand-text-hover: #dbe4f0;
+}
+
+[data-ui-style='orbit'][data-theme='gold_navy'] {
+  /* Amber nebula */
+  --brand-50: rgba(245, 158, 11, 0.08);
+  --brand-100: rgba(245, 158, 11, 0.16);
+  --brand-300: #fcd34d;
+  --brand-400: #fbbf24;
+  --brand-500: #f59e0b;
+  --brand-600: #d97706;
+  --brand-700: #b45309;
+  --brand-rgb: 245, 158, 11;
+  --brand-text: #fbbf24;
+  --brand-text-hover: #fcd34d;
+}
+
+[data-ui-style='orbit'][data-theme='blue_white'] {
+  /* Ice-cyan nebula */
+  --brand-50: rgba(14, 165, 233, 0.08);
+  --brand-100: rgba(14, 165, 233, 0.16);
+  --brand-300: #a5e9ff;
+  --brand-400: #38bdf8;
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+  --brand-700: #026aa1;
+  --brand-rgb: 14, 165, 233;
+  --brand-text: #38bdf8;
+  --brand-text-hover: #a5e9ff;
+}
+
+/* Faint starfield, Orbit only — a fixed dot-scatter behind everything, quieter than Technical's
+   scanlines since it needs to stay legible behind the orbit map and grade table alike. */
+[data-ui-style='orbit'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 70% 15%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 85% 60%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 55% 45%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 10% 65%, rgba(255, 255, 255, 0.3), transparent);
+  background-size: 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -352,6 +505,10 @@ h2 {
   gap: 9px;
   font-size: 0.85rem;
   color: var(--text-subtle);
+}
+
+.auth-features li svg {
+  flex-shrink: 0;
 }
 
 .brand {
@@ -990,6 +1147,7 @@ h2 {
   display: flex;
   align-items: baseline;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .preview-average-value {
@@ -1239,6 +1397,201 @@ h2 {
 
 .grade-average-delta-same {
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* A small pill next to a subject's name showing that subject's exact weighted average — solid,
+   saturated fill (not just a colored border) so pass/fail reads at a glance without squinting.
+   60 is the school's actual pass/fail line (see server/src/constants/subjects.js's
+   PASSING_GRADE); this is per-subject, not the term-wide average. */
+.grade-pass-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: none;
+  color: white;
+  margin-left: 6px;
+  vertical-align: middle;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.grade-pass-badge-pass {
+  background: var(--green-bg);
+}
+
+.grade-pass-badge-fail {
+  background: var(--red-bg);
+}
+
+/* AMS streak — a subject earns this once it has 2+ back-to-back AMS entries at 90 or above (see
+   calculateAmsStreak in server/src/routes/academics.js); count resets the moment one drops below
+   90. Plain colored text rather than a filled pill, so it doesn't visually compete with the
+   pass/fail badge that already sits nearby. */
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--orange-bg);
+  white-space: nowrap;
+}
+
+/* A living flame flickers — subtle, continuous, off during the one-shot pop/death animations
+   below (which set their own `animation` and so naturally override this while they run). */
+@media (prefers-reduced-motion: no-preference) {
+  .streak-badge:not(.streak-anim-unlock):not(.streak-anim-death) {
+    animation: streakIdleGlow 2.2s ease-in-out infinite;
+  }
+}
+
+@keyframes streakIdleGlow {
+  0%,
+  100% {
+    text-shadow: 0 0 2px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 7px currentColor;
+  }
+}
+
+/* One below-90 week doesn't kill an established streak — it goes quiet/grey instead, count still
+   showing, waiting for a 90+ to relight it. */
+.streak-badge-atrisk {
+  color: var(--text-subtle);
+  opacity: 0.65;
+}
+
+/* Fires when a streak first becomes visible (2 back-to-back 90s) or comes back from "at risk" —
+   see useStreakAnimation.js. A quick overshoot pop, like a flame catching. */
+.streak-anim-unlock {
+  animation: streakPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes streakPop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1.4);
+    opacity: 1;
+    text-shadow: 0 0 12px currentColor;
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fires when a streak actually breaks (a second dip with no recovery) — a flicker then it goes
+   out, rather than just vanishing. */
+.streak-anim-death {
+  animation: streakDeath 0.85s ease-in both;
+}
+
+@keyframes streakDeath {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(1.12);
+    opacity: 0.6;
+  }
+  35% {
+    transform: scale(0.92);
+    opacity: 1;
+  }
+  55% {
+    transform: scale(1.05);
+    opacity: 0.4;
+  }
+  75% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* Home's version spells out what the streak actually is ("3-week streak in Math"), not just a bare
+   number — the grid badges elsewhere stay compact since they already sit right next to the subject
+   name, but Home has no such context nearby. Wraps instead of overflowing since it's real prose,
+   not a fixed-width pill; drops to its own line below the average rather than fighting for space
+   on the same line. */
+.streak-badge-full {
+  white-space: normal;
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+/* .preview-average is a wrapping row (value, label) — force the streak line below both rather
+   than letting it wrap mid-sentence into the leftover space next to the label. */
+.preview-average .streak-badge-full {
+  flex-basis: 100%;
+}
+
+/* Groups a term average with the streak line as one right-aligned unit (Technical/Orbit's
+   line-rows use justify-content: space-between with exactly two children — label on the left,
+   this group on the right — so the streak stacks under the average instead of getting centered
+   between label and value, or fighting it for horizontal space). */
+.ledger-line-value-group,
+.orbit-line-value-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+/* High-Tech's phosphor greens/reds are neon-bright by design (see .hgrid-cell-ok etc.) — a solid
+   fill in that color with white text is hard to read. Swap to the same idiom the rest of High-Tech
+   already uses for colored readouts: dark background, glowing colored text, instead of a filled
+   pill. */
+[data-ui-style='technical'] .grade-pass-badge {
+  background: #05070a;
+  border: 1.5px solid currentColor;
+  box-shadow: 0 0 5px currentColor;
+  text-shadow: 0 0 4px currentColor;
+}
+
+[data-ui-style='technical'] .grade-pass-badge-pass {
+  color: var(--green-bg);
+}
+
+[data-ui-style='technical'] .grade-pass-badge-fail {
+  color: var(--red-bg);
+}
+
+/* Orbit's own idiom for a colored readout is a glowing glass pill, not a flat solid fill — matches
+   .orbit-star (glow via box-shadow: 0 0 Npx currentColor) and the glass-surface language used
+   everywhere else in this theme (.orbit-panel, .orbit-action-row, etc). */
+[data-ui-style='orbit'] .grade-pass-badge {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid currentColor;
+  box-shadow: 0 0 3px currentColor;
+  text-shadow: 0 0 1px currentColor;
+}
+
+[data-ui-style='orbit'] .grade-pass-badge-pass {
+  color: var(--green-bg);
+}
+
+[data-ui-style='orbit'] .grade-pass-badge-fail {
+  color: var(--red-bg);
 }
 
 .grade-disclaimer {
@@ -1528,6 +1881,92 @@ textarea:focus {
   font-weight: 500;
   line-height: 1.4;
   color: var(--text);
+}
+
+/* Study Plan — StudyPlanPopup.jsx, reached from a "Study Plan" card on Home (all three UI styles).
+   Shares .material-popup's glass-card chrome, sized up here since this holds a full exam picker
+   plus a multi-day plan rather than one exam's short material list. The exam picker reuses
+   .manual-subject-list/.manual-subject-row verbatim (the same clickable-row picker already used
+   for "+ Add Subject" elsewhere) instead of a native <select>, so it actually matches the rest of
+   the app's own UI. */
+.study-plan-popup {
+  max-width: 640px;
+  max-height: 88vh;
+}
+
+.study-plan-exam-list {
+  max-height: 180px;
+  margin: 14px 0 18px;
+}
+
+.study-plan-exam-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.study-plan-exam-meta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.75;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.study-plan-days {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.study-plan-day {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--brand-50);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-500);
+}
+
+.study-plan-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.study-plan-day-label {
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.study-plan-day-countdown {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.study-plan-day-focus {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.study-plan-day-tasks {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+  line-height: 1.5;
+}
+
+.study-plan-day-tasks li {
+  margin-bottom: 2px;
 }
 
 .error-text {
@@ -2374,4 +2813,1160 @@ textarea:focus {
 
 .nav-drawer-icon {
   font-size: 1.1rem;
+}
+
+.nav-drawer-item.tutorial-highlight {
+  background: var(--brand-50);
+  box-shadow: inset 0 0 0 2px var(--brand-500);
+}
+
+/* First-time-user tutorial (Classic only) — driven tour backdrop + card, and the lightweight
+   companion card used on the two quiz steps (see Quiz.jsx, non-blocking, no backdrop). */
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Intentionally not dimmed — the real page underneath and the tutorial card should read as
+     equally visible. This still needs to be a real, pointer-events-catching element (not just a
+     positioned card) so clicks don't fall through to the real page during the driven tour. */
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px;
+  z-index: 90;
+  animation: fadeInUp 0.15s ease-out both;
+}
+
+.tutorial-card {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--glass-shadow);
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+.tutorial-card-step {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-text);
+  margin: 0 0 6px;
+}
+
+.tutorial-card-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+}
+
+.tutorial-card-body {
+  margin: 0;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.tutorial-card-image {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1.5px solid var(--glass-border);
+  margin: 12px 0;
+}
+
+.tutorial-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.tutorial-card-actions .secondary-btn,
+.tutorial-card-actions .primary-btn {
+  margin-top: 0;
+}
+
+.tutorial-highlight {
+  outline: 3px solid var(--brand-600);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(var(--brand-rgb), 0.22);
+  border-radius: inherit;
+}
+
+.tutorial-companion {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top));
+  right: calc(16px + env(safe-area-inset-right));
+  z-index: 90;
+  width: min(300px, calc(100% - 32px));
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--glass-shadow);
+  animation: fadeInUp 0.3s ease-out both;
+}
+
+.tutorial-companion p {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tutorial-companion .primary-btn,
+.tutorial-companion .secondary-btn {
+  margin-top: 0;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.tutorial-companion .tutorial-skip-link,
+.tutorial-card-actions .tutorial-skip-link {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+}
+
+.tutorial-card-actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tutorial-card-actions .tutorial-skip-link {
+  margin: 0 0 0 auto;
+}
+
+/* ============================================================
+   Orbit — nav dial, page chrome, exam/holiday rows, and the radial map. Orbit-only classes; see
+   the [data-ui-style='orbit'] token block above for the palette these read from. */
+
+.orbit-dial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.orbit-dial-wrap {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 41;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.orbit-dial {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.orbit-dial.open,
+.orbit-dial:hover {
+  border-color: var(--brand-fill);
+  box-shadow: 0 0 16px rgba(var(--brand-rgb), 0.45);
+}
+
+.orbit-dial.open {
+  transform: rotate(25deg);
+}
+
+.orbit-dial-ring {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brand-fill);
+  opacity: 0.55;
+}
+
+.orbit-dial-needle {
+  width: 3px;
+  height: 16px;
+  background: var(--brand-fill);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--brand-fill);
+}
+
+.orbit-dial-planet {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top) + 26px);
+  left: 50%;
+  width: 84px;
+  height: 32px;
+  margin-left: -42px;
+  margin-top: -16px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 41;
+  transform: translate(0, 0) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s, border-color 0.15s, color 0.15s;
+}
+
+.orbit-dial-planet.active {
+  color: var(--brand-text);
+  border-color: var(--brand-fill);
+  box-shadow: 0 0 10px rgba(var(--brand-rgb), 0.4);
+}
+
+.orbit-dial-planet:hover {
+  color: var(--text);
+  border-color: var(--brand-fill);
+}
+
+.dashboard.orbit-page {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.orbit-content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: calc(88px + env(safe-area-inset-top)) 20px 60px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.orbit-header {
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.orbit-header-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brand-text);
+  margin-bottom: 6px;
+}
+
+.orbit-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.orbit-panel {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.orbit-panel:hover {
+  border-color: var(--brand-fill);
+  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.25);
+}
+
+.orbit-panel-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-text);
+  margin-bottom: 10px;
+}
+
+.orbit-panel-empty {
+  color: var(--text-subtle);
+  font-size: 0.9rem;
+}
+
+.orbit-line-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.orbit-line-row:last-child {
+  border-bottom: none;
+}
+
+.orbit-line-label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.orbit-line-value {
+  color: var(--text-subtle);
+}
+
+.orbit-line-value-big {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--brand-text);
+}
+
+.orbit-summary-row {
+  background: var(--glass-bg-strong);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.orbit-map-wrap {
+  position: relative;
+}
+
+/* Tucked in the corner like a real map's zoom control, instead of competing with the orbit itself
+   for attention in the middle of the page. */
+.orbit-zoom-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  color: var(--brand-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.orbit-zoom-btn:hover {
+  border-color: var(--brand-fill);
+  box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.3);
+}
+
+/* Opposite corner from the zoom control — a quiet status readout rather than a full-width bar
+   competing with the map for the page's attention. */
+.orbit-map-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 62%;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.orbit-map-info .orbit-line-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.orbit-map-info .orbit-line-value {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+}
+
+.orbit-suggestions {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-subtle);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.orbit-suggestions li {
+  margin-bottom: 6px;
+}
+
+.orbit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.orbit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.orbit-row.color-red { border-color: var(--red-border); }
+.orbit-row.color-orange { border-color: var(--orange-border); }
+.orbit-row.color-green { border-color: var(--green-border); }
+.orbit-row.color-gray { border-color: var(--gray-border); }
+.orbit-row.color-blue { border-color: var(--blue-border); }
+
+.orbit-row.priority-glow {
+  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.3);
+}
+
+.orbit-row:hover {
+  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.25);
+}
+
+.orbit-row-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--gray-bg);
+  box-shadow: 0 0 6px var(--gray-bg);
+}
+
+.orbit-row.color-red .orbit-row-dot { background: var(--red-bg); box-shadow: 0 0 6px var(--red-bg); }
+.orbit-row.color-orange .orbit-row-dot { background: var(--orange-bg); box-shadow: 0 0 6px var(--orange-bg); }
+.orbit-row.color-green .orbit-row-dot { background: var(--green-bg); box-shadow: 0 0 6px var(--green-bg); }
+.orbit-row.color-blue .orbit-row-dot { background: var(--blue-bg); box-shadow: 0 0 6px var(--blue-bg); }
+
+.orbit-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.orbit-row-subject {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.orbit-row-meta {
+  color: var(--text-subtle);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.orbit-row-hint {
+  color: var(--brand-text);
+  font-size: 0.76rem;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.orbit-row-side {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.orbit-row-days {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.orbit-row-difficulty {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+  margin-top: 2px;
+}
+
+.orbit-comet {
+  cursor: default;
+  border-style: dashed;
+}
+
+.orbit-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--glass-bg-strong);
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.orbit-empty-title {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.orbit-empty-hint {
+  color: var(--text-subtle);
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+/* The radial map — a self-contained, bounded square so it stays legible no matter how many exams
+   are in it (ring bucketing happens in OrbitMap.jsx; this is purely the visual shell). Extra top
+   margin so a two-line greeting in the header above never crowds the sun/innermost stars.
+   Deliberately the same persistent element across a "see all" toggle (no key/remount) — the whole
+   point is a clean, continuous zoom, not a hard cut where the old map vanishes and a new one pops
+   in bigger. `max-width` actually transitions here because of that; rings/stars that don't survive
+   the toggle (a different ring count reshuffles most of them into new parents) fade in on mount
+   instead of hard-cutting, and ones that do survive smoothly glide to their new position. */
+.orbit-map {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 1;
+  margin: 28px auto 32px;
+  animation: orbitMapMountIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: max-width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes orbitMapMountIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.orbit-map-zoom-out {
+  max-width: 480px;
+}
+
+.orbit-map-rings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orbit-map-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed var(--border);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), height 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: orbitFadeIn 0.4s ease both;
+}
+
+@keyframes orbitFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.orbit-map-sun {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--brand-fill);
+  box-shadow: 0 0 16px 4px rgba(var(--brand-rgb), 0.6);
+  transition: width 0.5s ease, height 0.5s ease;
+}
+
+.orbit-map-zoom-out .orbit-map-sun {
+  width: 30px;
+  height: 30px;
+  box-shadow: 0 0 24px 6px rgba(var(--brand-rgb), 0.65);
+}
+
+.orbit-map-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 26px);
+  white-space: nowrap;
+  color: var(--text-subtle);
+  font-size: 0.8rem;
+}
+
+.orbit-star {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gray-bg);
+  box-shadow: 0 0 8px 2px var(--gray-bg);
+  cursor: pointer;
+  padding: 0;
+  /* Position (left/top) is driven every frame by a requestAnimationFrame loop in OrbitMap.jsx, not
+     a CSS animation rotating some parent — a `transition` on left/top would fight that, chasing
+     each ~16ms update with its own easing and turning smooth motion into a laggy blur, so there
+     intentionally isn't one here. Deliberately no rotation anywhere in this star's ancestry either:
+     that's what previously let a label end up visibly tilted whenever it mounted mid-way through
+     its ring's spin instead of at the exact same instant the spin started. Moving by position
+     instead of by rotating a parent makes a tilted label structurally impossible. */
+  animation: orbitFadeIn 0.4s ease both;
+}
+
+.orbit-star.color-red { background: var(--red-bg); color: var(--red-bg); box-shadow: 0 0 8px 2px var(--red-bg); }
+.orbit-star.color-orange { background: var(--orange-bg); color: var(--orange-bg); box-shadow: 0 0 8px 2px var(--orange-bg); }
+.orbit-star.color-green { background: var(--green-bg); color: var(--green-bg); box-shadow: 0 0 8px 2px var(--green-bg); }
+.orbit-star.color-blue { background: var(--blue-bg); color: var(--blue-bg); box-shadow: 0 0 8px 2px var(--blue-bg); }
+
+.orbit-star.priority {
+  width: 20px;
+  height: 20px;
+  animation: orbitPriorityPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes orbitPriorityPulse {
+  0%, 100% { box-shadow: 0 0 8px 2px currentColor; }
+  50% { box-shadow: 0 0 18px 6px currentColor; }
+}
+
+/* Always visible — hiding these behind :hover broke touch entirely (nothing to hover on a phone,
+   and a hover-styled element under a tap handler can eat the first tap just to trigger the hover
+   state). Kept small and low-contrast instead, so a dense map still reads as calmer than a wall of
+   full-weight text without making the labels themselves undiscoverable. */
+.orbit-star-label {
+  position: absolute;
+  top: 128%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.56rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* Holiday meteors — deliberately not part of the orbiting star set, so they never join a ring's
+   spin. Anchored at a fixed point between the two exams the holiday falls between chronologically
+   (see OrbitMap.jsx), then wanders in a small, slow, irregular loop around that point. Clickable,
+   shows date + duration. */
+.orbit-meteor-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.orbit-meteor {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--blue-bg);
+  box-shadow: 0 0 8px 2px var(--blue-bg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbit-meteor {
+    animation-name: orbitMeteorWander;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+  }
+}
+
+@keyframes orbitMeteorWander {
+  0% { transform: translate(0, 0); }
+  22% { transform: translate(7px, -5px); }
+  48% { transform: translate(-6px, 4px); }
+  74% { transform: translate(4px, 6px); }
+  100% { transform: translate(0, 0); }
+}
+
+.orbit-meteor-tail {
+  position: absolute;
+  top: 50%;
+  right: 50%;
+  width: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue-bg));
+  transform: translateY(-50%) rotate(15deg);
+  transform-origin: right center;
+  opacity: 0.6;
+  border-radius: 2px;
+}
+
+.orbit-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.orbit-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.orbit-action-row:hover {
+  border-color: var(--brand-fill);
+  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.25);
+}
+
+.orbit-action-row.danger {
+  border-color: var(--danger);
+}
+
+.orbit-action-row.danger:hover {
+  box-shadow: 0 0 14px rgba(255, 77, 109, 0.3);
+}
+
+.orbit-action-label {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.orbit-action-row.danger .orbit-action-label {
+  color: var(--danger);
+}
+
+.orbit-action-hint {
+  color: var(--text-subtle);
+  font-size: 0.8rem;
+}
+
+/* Orbit Academics — "Mission Log" grade journal (MissionLog.jsx). Trades a chart for a scrolling
+   flight log: each week is a dated entry ("SD-04") in a per-subject/subcourse log, colored by how
+   the grade landed, with unlogged weeks sitting quiet until filled in. Reuses the shared
+   .term-heading-row / .grade-add-form / .grade-average-row / .grade-disclaimer chrome from the
+   Classic/Technical grade table (those are unstyled by ui-style, so they already fit) — only the
+   log itself needed a new visual language. Orbit is always-dark by design (see the token block
+   above), so the low-opacity white row dividers below are safe across every Orbit color theme. */
+.mlog-section {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.mlog-log {
+  display: flex;
+  flex-direction: column;
+  margin: 14px 0 8px;
+}
+
+.mlog-subject {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.mlog-subject-header {
+  margin-bottom: 6px;
+}
+
+.mlog-subject-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-shadow: 0 0 6px rgba(var(--brand-rgb), 0.25);
+}
+
+.mlog-subcourse {
+  margin-bottom: 10px;
+}
+
+.mlog-subcourse-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brand-text);
+  opacity: 0.85;
+  margin-bottom: 2px;
+}
+
+.mlog-entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.mlog-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mlog-entry-pending {
+  opacity: 0.6;
+}
+
+.mlog-entry-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+  opacity: 0.35;
+}
+
+.mlog-entry-logged .mlog-entry-dot {
+  background: currentColor;
+  opacity: 1;
+  box-shadow: 0 0 4px 1px currentColor;
+}
+
+/* Color carries meaning here, not decoration — a quick scan of a subject's log shows which weeks
+   read strong vs. weak without reading every number. */
+.mlog-entry-high { color: var(--green-bg); }
+.mlog-entry-mid { color: var(--brand-text); }
+.mlog-entry-low { color: var(--red-bg); }
+
+.mlog-entry-tag {
+  flex-shrink: 0;
+  width: 42px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.mlog-entry-dots {
+  flex: 1;
+  align-self: center;
+  height: 1px;
+  border-bottom: 1px dotted var(--glass-border);
+  margin: 0 2px;
+}
+
+.mlog-entry-value {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: currentColor;
+  text-shadow: 0 0 4px currentColor;
+}
+
+.mlog-entry-remove {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.mlog-entry-logged:hover .mlog-entry-remove,
+.mlog-entry-logged:focus-within .mlog-entry-remove {
+  opacity: 1;
+}
+
+.mlog-entry-add {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 0.68rem;
+  font-style: italic;
+  color: var(--text-subtle);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.mlog-entry-add:hover {
+  opacity: 1;
+  color: var(--brand-text);
+}
+
+.mlog-entry-input {
+  width: 44px;
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.mlog-entry-error {
+  font-size: 0.6rem;
+  color: var(--danger);
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
+/* High-Tech Academics — "Heat Grid" grade readout (HeatGrid.jsx). Each subject/subcourse is a row
+   of 14 tiles, one per week, each printing the actual grade as bold text on a color-coded tile
+   (green/amber/red by band) — like a terminal status board or a contribution heatmap, but every
+   value stays plainly readable text, not just an implied shape (an earlier bar-chart pass got
+   rejected for exactly that reason). Matches High-Tech's existing terminal/ledger language (solid
+   --surface cards, hairline --border, 4px radius, --font-mono, phosphor glow via currentColor)
+   rather than Orbit's glass/blur — reuses the shared .term-heading-row / .grade-add-form /
+   .grade-average-row / .grade-disclaimer chrome, only the grid itself needed a new visual language. */
+.hgrid-section {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.hgrid-wrap {
+  overflow-x: auto;
+  margin: 14px 0 8px;
+}
+
+.hgrid-scroll {
+  min-width: 610px;
+}
+
+.hgrid-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0 4px 8px;
+  border-left: 3px solid transparent;
+}
+
+/* A subject's Periodic and AMS rows sit right on top of each other with identical layouts, so the
+   only thing telling them apart was a small subtle caption easy to skim past. The border stripe is
+   readable peripherally without even looking at the tag, and the badge repeats the same color so
+   the two cues reinforce each other instead of relying on one. */
+.hgrid-row-periodic {
+  border-left-color: var(--brand-fill);
+}
+
+.hgrid-row-ams {
+  border-left-color: var(--gray-bg);
+}
+
+/* Wraps a subject's Periodic+AMS row pair — groups them visually (otherwise the flat list of
+   same-shaped rows reads as one continuous stream) and anchors the pass/fail badge so it can sit
+   vertically centered between the two rows, inside the subject's own box. */
+.hgrid-subject-block {
+  position: relative;
+}
+
+.hgrid-subject-block:not(:first-child) {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+/* Matches .hgrid-row's own left padding (8px) and .hgrid-row-label's width (150px) exactly, so the
+   badge lines up with the label column above and below it rather than floating at an arbitrary
+   offset. */
+.hgrid-subject-badge-slot {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  width: 150px;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.hgrid-subject-badge-slot .grade-pass-badge {
+  pointer-events: auto;
+}
+
+.hgrid-row-label {
+  flex: 0 0 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.hgrid-process-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hgrid-process-tag {
+  display: inline-block;
+  width: fit-content;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid;
+  font-size: 0.58rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+.hgrid-process-tag-periodic {
+  color: var(--brand-fill);
+  border-color: var(--brand-fill);
+  box-shadow: 0 0 4px rgba(var(--brand-rgb), 0.35);
+}
+
+.hgrid-process-tag-ams {
+  color: var(--gray-bg);
+  border-color: var(--gray-bg);
+}
+
+.hgrid-cells {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+}
+
+.hgrid-cell,
+.hgrid-cell-editing {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+}
+
+.hgrid-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  background: #05070a;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.hgrid-cell-ok { border-color: var(--green-bg); color: var(--green-bg); box-shadow: 0 0 5px currentColor; text-shadow: 0 0 4px currentColor; }
+.hgrid-cell-warn { border-color: var(--orange-bg); color: var(--orange-bg); box-shadow: 0 0 5px currentColor; text-shadow: 0 0 4px currentColor; }
+.hgrid-cell-crit { border-color: var(--red-bg); color: var(--red-bg); box-shadow: 0 0 5px currentColor; text-shadow: 0 0 4px currentColor; }
+
+.hgrid-cell-empty {
+  border-style: dashed;
+  color: var(--text-subtle);
+  opacity: 0.4;
+  font-weight: 400;
+  transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.hgrid-cell-empty:hover {
+  opacity: 0.9;
+  border-color: var(--brand-fill);
+  color: var(--brand-fill);
+}
+
+.hgrid-cell-wrap {
+  position: relative;
+  flex: 0 0 34px;
+}
+
+.hgrid-cell-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface);
+  color: var(--text-subtle);
+  font-size: 0.6rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.hgrid-cell-wrap:hover .hgrid-cell-remove,
+.hgrid-cell-wrap:focus-within .hgrid-cell-remove {
+  opacity: 1;
+}
+
+.hgrid-cell-editing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.hgrid-cell-input {
+  width: 30px;
+  padding: 1px 2px;
+  text-align: center;
+  font-size: 0.68rem;
+}
+
+.hgrid-cell-error {
+  font-size: 0.48rem;
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.hgrid-week-axis {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.hgrid-week-axis-spacer {
+  flex: 0 0 160px;
+}
+
+.hgrid-week-axis span:not(.hgrid-week-axis-spacer) {
+  flex: 0 0 34px;
+  text-align: center;
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  color: var(--text-subtle);
+  opacity: 0.55;
 }

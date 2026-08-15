@@ -3,7 +3,8 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { api } from './api.js';
 import { pickGreetingTemplate } from './utils.js';
-import { hasBackHandler, popBackHandler } from './hooks/useBackButton.js';
+import { hasBackHandler, popBackHandler, useBackHandler } from './hooks/useBackButton.js';
+import { useTutorial } from './hooks/useTutorial.js';
 import AuthPage from './pages/AuthPage.jsx';
 import Quiz from './pages/Quiz.jsx';
 import Upload from './pages/Upload.jsx';
@@ -14,6 +15,8 @@ import Settings from './pages/Settings.jsx';
 import ManualEntry from './pages/ManualEntry.jsx';
 import Electives from './pages/Electives.jsx';
 import More from './pages/More.jsx';
+import MoreOrbit from './pages/MoreOrbit.jsx';
+import TutorialOverlay from './components/TutorialOverlay.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -30,6 +33,21 @@ export default function App() {
   // baked in here: greetingTemplate is applied to user.name at render time below, so renaming the
   // account in Settings updates the greeting immediately without picking a new phrase.
   const [greetingTemplate, setGreetingTemplate] = useState(null);
+
+  // First-time tutorial: `tutorialSeen` starts false only for brand-new signups (see server/src/
+  // routes/auth.js). The "driven" tour only ever runs once onboarding is done — the quiz has its
+  // own separate, non-blocking companion cards (see Quiz.jsx's `tutorialActive` prop). Classic-only
+  // by design (its steps target Classic-specific DOM like the hamburger drawer) — every new signup
+  // defaults to Classic, but nothing stops a test/API-driven account from switching UI style before
+  // finishing the tour, so this guards against the tutorial overlay rendering over Technical/Orbit.
+  const tutorialDriven = Boolean(user && user.onboarded && !user.tutorialSeen && user.uiStyle === 'classic');
+  const tutorial = useTutorial(tutorialDriven, { onSwitchTab: setActiveTab, setViewingSettings });
+  useBackHandler(tutorialDriven, tutorial.back);
+
+  async function handleFinishTutorial() {
+    const data = await api.completeTutorial();
+    setUser(data.user);
+  }
 
   useEffect(() => {
     api
@@ -124,6 +142,8 @@ export default function App() {
   if (!user.onboarded) {
     return (
       <Quiz
+        tutorialActive={!user.tutorialSeen}
+        onSkipTutorial={handleFinishTutorial}
         onComplete={async () => {
           const data = await api.me();
           setUser(data.user);
@@ -154,13 +174,29 @@ export default function App() {
     return <Electives onDone={() => setViewingElectives(false)} onCancel={() => setViewingElectives(false)} />;
   }
 
+  const tutorialOverlay = tutorialDriven && (
+    <TutorialOverlay
+      step={tutorial.currentStep}
+      stepIndex={tutorial.stepIndex}
+      totalSteps={tutorial.totalSteps}
+      isFirst={tutorial.isFirst}
+      onNext={tutorial.next}
+      onBack={tutorial.back}
+      onFinish={handleFinishTutorial}
+      onSkip={handleFinishTutorial}
+    />
+  );
+
   if (viewingSettings) {
     return (
-      <Settings
-        user={user}
-        onBack={() => setViewingSettings(false)}
-        onUserUpdated={setUser}
-      />
+      <>
+        <Settings
+          user={user}
+          onBack={() => setViewingSettings(false)}
+          onUserUpdated={setUser}
+        />
+        {tutorialOverlay}
+      </>
     );
   }
 
@@ -188,11 +224,28 @@ export default function App() {
     },
   };
 
-  if (activeTab === 'academics') return <Academics {...sharedProps} />;
-  if (activeTab === 'schedule') return <Dashboard {...sharedProps} />;
-  // 'more' is a Technical-only tab — Classic mode has no route for it (it uses the hamburger
-  // drawer instead), so a mid-session switch away from Technical while parked on that tab falls
-  // back to Home rather than rendering the Technical-only page under Classic tokens.
-  if (activeTab === 'more' && user.uiStyle === 'technical') return <More {...sharedProps} />;
-  return <Home {...sharedProps} />;
+  let page;
+  if (activeTab === 'academics') page = <Academics {...sharedProps} />;
+  else if (activeTab === 'schedule') page = <Dashboard {...sharedProps} />;
+  // 'more' only exists for the two nav paradigms that don't have their own drawer/dial slot for
+  // account actions — Classic uses its hamburger drawer instead, so a mid-session switch to Classic
+  // while parked on 'more' falls back to Home rather than rendering this page under Classic tokens.
+  else if (activeTab === 'more' && user.uiStyle === 'technical') page = <More {...sharedProps} />;
+  else if (activeTab === 'more' && user.uiStyle === 'orbit') page = <MoreOrbit {...sharedProps} />;
+  else {
+    page = (
+      <Home
+        {...sharedProps}
+        forceDrawerOpen={tutorialDriven && tutorial.forceDrawerOpen}
+        drawerHighlightIndex={tutorialDriven ? tutorial.drawerHighlightIndex : null}
+      />
+    );
+  }
+
+  return (
+    <>
+      {page}
+      {tutorialOverlay}
+    </>
+  );
 }

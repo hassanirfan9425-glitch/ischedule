@@ -42,7 +42,13 @@ function WeekdayQuestion({ weekdays, value, onChange }) {
   );
 }
 
-export default function Quiz({ onComplete, retake }) {
+const QUIZ_TUTORIAL_COPY = {
+  core: 'These are your required subjects. Rate how difficult each one is for you.',
+  electives:
+    "These are extra subjects you might be taking. If any apply to you, select them and rate their difficulty. Otherwise, just press Next below to continue.",
+};
+
+export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutorial }) {
   const [coreSubjects, setCoreSubjects] = useState([]);
   const [conditionalCoreSubjects, setConditionalCoreSubjects] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -134,6 +140,8 @@ export default function Quiz({ onComplete, retake }) {
   const missingElectiveDifficulty = selectedKeys.some((k) => !selections[k]);
   const missingCoreDifficulty = allCoreSubjects.some((s) => !coreDifficulty[s.key]);
 
+  const showTutorialCard = tutorialActive && (step === 'electives' || (step === 'core' && readyForSubjects));
+
   function handleNext() {
     if (missingCoreDifficulty) {
       setError('Rate every core subject before continuing.');
@@ -180,6 +188,14 @@ export default function Quiz({ onComplete, retake }) {
 
   return (
     <div className="page-screen">
+      {showTutorialCard && (
+        <div className="tutorial-companion">
+          <p>{QUIZ_TUTORIAL_COPY[step]}</p>
+          <button type="button" className="back-link tutorial-skip-link" onClick={onSkipTutorial}>
+            Skip tutorial
+          </button>
+        </div>
+      )}
       <div className="quiz-card">
         {retake && step === 'core' && (
           <button type="button" className="back-link" onClick={onComplete}>
@@ -188,7 +204,7 @@ export default function Quiz({ onComplete, retake }) {
         )}
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">SabisHub</span>
+          <span className="brand-name">Study Compass</span>
         </div>
 
         {step === 'core' && (

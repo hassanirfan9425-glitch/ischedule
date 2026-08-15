@@ -232,7 +232,13 @@ export default function Academics({
 
       {data && (
         <>
-          <button type="button" className="see-all-btn" style={{ marginBottom: 12 }} onClick={() => setChoosingAdd(true)}>
+          <button
+            type="button"
+            className="see-all-btn"
+            data-tutorial="academics-add"
+            style={{ marginBottom: 12 }}
+            onClick={() => setChoosingAdd(true)}
+          >
             + Add grades
           </button>
           {data.terms.map((termData) => (

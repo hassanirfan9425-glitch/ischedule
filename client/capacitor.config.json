@@ -1,9 +1,9 @@
 {
   "appId": "com.sabishub.app",
-  "appName": "SabisHub",
+  "appName": "Study Compass",
   "webDir": "dist",
   "server": {
-    "url": "https://ischeduleschool.netlify.app",
+    "url": "https://studycompass.netlify.app",
     "androidScheme": "https"
   },
   "android": {
