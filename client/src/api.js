@@ -43,6 +43,7 @@ export const api = {
   },
 
   getDashboard: () => request('/dashboard'),
+  getScheduleStatus: () => request('/schedule/status'),
   deleteSchedule: () => request('/schedule', { method: 'DELETE' }),
   deleteFinalSchedule: () => request('/schedule/final', { method: 'DELETE' }),
 

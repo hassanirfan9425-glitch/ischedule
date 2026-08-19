@@ -17,12 +17,27 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
     setError('');
   }
 
+  async function pollUntilDone() {
+    // The AI pipeline runs in the background on the server (see schedule.js) so this request
+    // returns instantly — poll status instead of waiting on one long request, since that's what
+    // was hitting Netlify's ~30s proxy timeout in production.
+    while (true) {
+      const { upload } = await api.getScheduleStatus();
+      if (upload?.status === 'done') return;
+      if (upload?.status === 'error') {
+        throw new Error(upload.error || 'Could not analyze the calendar.');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  }
+
   async function handleSubmit() {
     if (!file) return;
     setStatus('analyzing');
     setError('');
     try {
       await api.uploadSchedule(file);
+      await pollUntilDone();
       await onComplete();
     } catch (err) {
       setError(err.message);
@@ -55,7 +70,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
           <span className="brand-name">iCalendar</span>
         </div>
         <h1>Attach your school calendar</h1>
-        <p className="subtle">Upload a PDF or image of your exam &amp; holiday calendar to build your dashboard.</p>
+        <p className="subtle">Upload a PDF or image of the school calendar to build your own personalized calendar.</p>
 
         <div
           className={dragOver ? 'drop-zone drag-over' : 'drop-zone'}

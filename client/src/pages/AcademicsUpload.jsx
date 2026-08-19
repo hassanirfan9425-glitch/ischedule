@@ -54,7 +54,7 @@ export default function AcademicsUpload({ onComplete, onCancel }) {
         </div>
         <h1>Attach your grade report</h1>
         <p className="subtle">
-          Upload a photo or PDF of your grades. This gets added to your current term automatically.
+          Upload a photo or PDF of the academics page on the SDP. It gets added to your current term automatically, and you'll get a rough estimate of your average.
         </p>
 
         <div

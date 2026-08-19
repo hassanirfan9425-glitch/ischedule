@@ -50,6 +50,147 @@ const upload = multer({
 
 const router = Router();
 
+// The AI pipeline below can take minutes (classify + up to 6 parsing turns), which is well past
+// Netlify's ~30s proxy timeout in production. So this only does the fast part (save the file,
+// create the upload record) before responding — the actual parsing runs after the response is
+// sent, and the frontend polls GET /status instead of waiting on this request.
+async function processScheduleUpload({ userId, uploadId, file }) {
+  try {
+    const ratedSubjects = (
+      await db.prepare('SELECT subject_key FROM user_subjects WHERE user_id = ?').all(userId)
+    )
+      .map((row) => SUBJECT_BY_KEY[row.subject_key])
+      .filter(Boolean);
+    // AMS/Grid/MOES apply to every student automatically — always offer them as matching
+    // candidates even though nobody rates them in the quiz.
+    const selectedSubjects = [...ratedSubjects, ...AUTO_SUBJECTS];
+
+    // Same "+" upload accepts either document — a cheap triage call decides which pipeline runs,
+    // so the student never has to pick a document type themselves. "unknown" falls back to the
+    // general-calendar pipeline, since that's the only document type this app accepted before
+    // final-exam-timetable support existed.
+    const docType = await classifyScheduleDocument({
+      filePath: file.path,
+      mimeType: file.mimetype,
+    });
+
+    if (docType === 'final_exam_timetable') {
+      const result = await parseFinalExamSchedule({
+        filePath: file.path,
+        mimeType: file.mimetype,
+        selectedSubjects,
+      });
+
+      const term = Number.isInteger(result.term) ? result.term : null;
+      if (term === null) {
+        throw new Error(
+          "Couldn't confidently tell which term this final exam timetable is for. Make sure the title showing the term is clearly visible and try again."
+        );
+      }
+
+      const exams = Array.isArray(result.exams) ? result.exams : [];
+
+      const persistFinals = transaction(async () => {
+        // Additive relative to the rest of the schedule: only this term's final exams are
+        // replaced — periodic exams, holidays, and every other term's finals are untouched.
+        await db
+          .prepare("DELETE FROM exams WHERE user_id = ? AND exam_type = 'final' AND term = ?")
+          .run(userId, term);
+
+        const insertExam = db.prepare(`
+          INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, date, time, notes)
+          VALUES (?, ?, ?, ?, 'final', ?, ?, ?, ?)
+        `);
+        for (const e of exams) {
+          if (!e.subjectLabel || !e.date) continue;
+          const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
+          await insertExam.run(userId, uploadId, subjectKey, e.subjectLabel, term, shiftScheduleDate(e.date), e.time ?? null, e.notes ?? null);
+        }
+
+        await db.prepare('UPDATE schedule_uploads SET status = ? WHERE id = ?').run('done', uploadId);
+      });
+      await persistFinals();
+      return;
+    }
+
+    const result = await parseSchedule({
+      filePath: file.path,
+      mimeType: file.mimetype,
+      selectedSubjects,
+    });
+
+    const holidays = Array.isArray(result.holidays) ? result.holidays : [];
+    const exams = Array.isArray(result.exams) ? result.exams : [];
+
+    // The calendar PDF literally prints "AMS" for Term 1's very first assessment week, but
+    // every other term's first week prints as "Grid" — that week actually runs as a Grid Exam
+    // at this school despite what the calendar says, so relabel it to match reality.
+    for (const e of exams) {
+      if (e.term === 1 && e.weekNumber === 1 && e.matchedSubjectKey === 'ams') {
+        e.matchedSubjectKey = 'grid_exam';
+        e.subjectLabel = 'Grid Exam';
+      }
+    }
+
+    const persist = transaction(async () => {
+      // A fresh upload replaces the previous one's extracted data entirely.
+      await db.prepare('DELETE FROM exams WHERE user_id = ?').run(userId);
+      await db.prepare('DELETE FROM holidays WHERE user_id = ?').run(userId);
+
+      const insertHoliday = db.prepare(`
+        INSERT INTO holidays (user_id, upload_id, label, date_start, date_end, term, week_number)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const h of holidays) {
+        if (!h.dateStart || !h.dateEnd) continue;
+        await insertHoliday.run(
+          userId,
+          uploadId,
+          h.label ?? null,
+          shiftScheduleDate(h.dateStart),
+          shiftScheduleDate(h.dateEnd),
+          h.term ?? null,
+          h.weekNumber ?? null
+        );
+      }
+
+      const insertExam = db.prepare(`
+        INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, week_number, date, date_start, date_end, time, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const e of exams) {
+        if (!e.subjectLabel) continue;
+        const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
+        const examType = EXAM_TYPES.has(e.examType) ? e.examType : 'weekly';
+        await insertExam.run(
+          userId,
+          uploadId,
+          subjectKey,
+          e.subjectLabel,
+          examType,
+          e.term ?? null,
+          e.weekNumber ?? null,
+          shiftScheduleDate(e.date ?? null),
+          shiftScheduleDate(e.dateStart ?? null),
+          shiftScheduleDate(e.dateEnd ?? null),
+          e.time ?? null,
+          e.notes ?? null
+        );
+      }
+
+      await db.prepare('UPDATE schedule_uploads SET status = ? WHERE id = ?').run('done', uploadId);
+      await db.prepare('UPDATE users SET onboarded = 1 WHERE id = ?').run(userId);
+    });
+    await persist();
+  } catch (parseErr) {
+    await db.prepare('UPDATE schedule_uploads SET status = ?, error = ? WHERE id = ?').run(
+      'error',
+      String(parseErr.message || parseErr),
+      uploadId
+    );
+  }
+}
+
 router.post('/upload', requireAuth, aiCostLimiter(SCHEDULE_UPLOAD_COST), aiCallLimiter, (req, res) => {
   upload.single('schedule')(req, res, async (err) => {
     if (err) {
@@ -67,150 +208,8 @@ router.post('/upload', requireAuth, aiCostLimiter(SCHEDULE_UPLOAD_COST), aiCallL
       .run(userId, req.file.filename, req.file.originalname, 'processing');
     const uploadId = uploadInfo.lastInsertRowid;
 
-    try {
-      const ratedSubjects = (
-        await db.prepare('SELECT subject_key FROM user_subjects WHERE user_id = ?').all(userId)
-      )
-        .map((row) => SUBJECT_BY_KEY[row.subject_key])
-        .filter(Boolean);
-      // AMS/Grid/MOES apply to every student automatically — always offer them as matching
-      // candidates even though nobody rates them in the quiz.
-      const selectedSubjects = [...ratedSubjects, ...AUTO_SUBJECTS];
-
-      // Same "+" upload accepts either document — a cheap triage call decides which pipeline runs,
-      // so the student never has to pick a document type themselves. "unknown" falls back to the
-      // general-calendar pipeline, since that's the only document type this app accepted before
-      // final-exam-timetable support existed.
-      const docType = await classifyScheduleDocument({
-        filePath: req.file.path,
-        mimeType: req.file.mimetype,
-      });
-
-      if (docType === 'final_exam_timetable') {
-        const result = await parseFinalExamSchedule({
-          filePath: req.file.path,
-          mimeType: req.file.mimetype,
-          selectedSubjects,
-        });
-
-        const term = Number.isInteger(result.term) ? result.term : null;
-        if (term === null) {
-          throw new Error(
-            "Couldn't confidently tell which term this final exam timetable is for. Make sure the title showing the term is clearly visible and try again."
-          );
-        }
-
-        const exams = Array.isArray(result.exams) ? result.exams : [];
-
-        const persistFinals = transaction(async () => {
-          // Additive relative to the rest of the schedule: only this term's final exams are
-          // replaced — periodic exams, holidays, and every other term's finals are untouched.
-          await db
-            .prepare("DELETE FROM exams WHERE user_id = ? AND exam_type = 'final' AND term = ?")
-            .run(userId, term);
-
-          const insertExam = db.prepare(`
-            INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, date, time, notes)
-            VALUES (?, ?, ?, ?, 'final', ?, ?, ?, ?)
-          `);
-          for (const e of exams) {
-            if (!e.subjectLabel || !e.date) continue;
-            const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
-            await insertExam.run(userId, uploadId, subjectKey, e.subjectLabel, term, shiftScheduleDate(e.date), e.time ?? null, e.notes ?? null);
-          }
-
-          await db.prepare('UPDATE schedule_uploads SET status = ? WHERE id = ?').run('done', uploadId);
-        });
-        await persistFinals();
-
-        return res.json({ ok: true, kind: 'final', term, examsFound: exams.length });
-      }
-
-      const result = await parseSchedule({
-        filePath: req.file.path,
-        mimeType: req.file.mimetype,
-        selectedSubjects,
-      });
-
-      const holidays = Array.isArray(result.holidays) ? result.holidays : [];
-      const exams = Array.isArray(result.exams) ? result.exams : [];
-
-      // The calendar PDF literally prints "AMS" for Term 1's very first assessment week, but
-      // every other term's first week prints as "Grid" — that week actually runs as a Grid Exam
-      // at this school despite what the calendar says, so relabel it to match reality.
-      for (const e of exams) {
-        if (e.term === 1 && e.weekNumber === 1 && e.matchedSubjectKey === 'ams') {
-          e.matchedSubjectKey = 'grid_exam';
-          e.subjectLabel = 'Grid Exam';
-        }
-      }
-
-      const persist = transaction(async () => {
-        // A fresh upload replaces the previous one's extracted data entirely.
-        await db.prepare('DELETE FROM exams WHERE user_id = ?').run(userId);
-        await db.prepare('DELETE FROM holidays WHERE user_id = ?').run(userId);
-
-        const insertHoliday = db.prepare(`
-          INSERT INTO holidays (user_id, upload_id, label, date_start, date_end, term, week_number)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-        for (const h of holidays) {
-          if (!h.dateStart || !h.dateEnd) continue;
-          await insertHoliday.run(
-            userId,
-            uploadId,
-            h.label ?? null,
-            shiftScheduleDate(h.dateStart),
-            shiftScheduleDate(h.dateEnd),
-            h.term ?? null,
-            h.weekNumber ?? null
-          );
-        }
-
-        const insertExam = db.prepare(`
-          INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, week_number, date, date_start, date_end, time, notes)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        for (const e of exams) {
-          if (!e.subjectLabel) continue;
-          const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
-          const examType = EXAM_TYPES.has(e.examType) ? e.examType : 'weekly';
-          await insertExam.run(
-            userId,
-            uploadId,
-            subjectKey,
-            e.subjectLabel,
-            examType,
-            e.term ?? null,
-            e.weekNumber ?? null,
-            shiftScheduleDate(e.date ?? null),
-            shiftScheduleDate(e.dateStart ?? null),
-            shiftScheduleDate(e.dateEnd ?? null),
-            e.time ?? null,
-            e.notes ?? null
-          );
-        }
-
-        await db.prepare('UPDATE schedule_uploads SET status = ? WHERE id = ?').run('done', uploadId);
-        await db.prepare('UPDATE users SET onboarded = 1 WHERE id = ?').run(userId);
-      });
-      await persist();
-
-      res.json({
-        ok: true,
-        kind: 'general',
-        academicYearLabel: result.academicYearLabel ?? null,
-        holidaysFound: holidays.length,
-        examsFound: exams.length,
-      });
-    } catch (parseErr) {
-      await db.prepare('UPDATE schedule_uploads SET status = ?, error = ? WHERE id = ?').run(
-        'error',
-        String(parseErr.message || parseErr),
-        uploadId
-      );
-      res.status(500).json({ error: `Could not analyze the schedule: ${parseErr.message || parseErr}` });
-    }
+    res.json({ ok: true, uploadId });
+    processScheduleUpload({ userId, uploadId, file: req.file });
   });
 });
 
