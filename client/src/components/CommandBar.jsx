@@ -6,7 +6,7 @@ import { useBackHandler } from '../hooks/useBackButton.js';
 // palette of the other destinations, styled like a list of runnable commands.
 const TABS = [
   { key: 'home', label: 'home' },
-  { key: 'schedule', label: 'schedule' },
+  { key: 'schedule', label: 'calendar' },
   { key: 'academics', label: 'academics' },
   { key: 'more', label: 'more' },
 ];

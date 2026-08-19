@@ -3,7 +3,7 @@
 // sits flush with the page content, like a divider tab pulled forward in a real binder.
 const TABS = [
   { key: 'home', label: 'Home' },
-  { key: 'schedule', label: 'Schedule' },
+  { key: 'schedule', label: 'Calendar' },
   { key: 'academics', label: 'Academics' },
   { key: 'more', label: 'More' },
 ];

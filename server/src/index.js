@@ -3,6 +3,7 @@ import express from 'express';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import cors from 'cors';
+import helmet from 'helmet';
 import { initDb, pool } from './db.js';
 
 import authRoutes from './routes/auth.js';
@@ -13,14 +14,30 @@ import themesRoutes from './routes/themes.js';
 import manualExamsRoutes from './routes/manualExams.js';
 import materialsRoutes from './routes/materials.js';
 import academicsRoutes from './routes/academics.js';
+import reflectionsRoutes from './routes/reflections.js';
+import goalsRoutes from './routes/goals.js';
+import calculatorRoutes from './routes/calculator.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Falling back to a hardcoded secret in production would let anyone who's read this source file
+// (it's public/shared) forge a valid session cookie for any user id — same class of risk as
+// DATABASE_URL being required below, so it gets the same hard stop instead of a silent fallback.
+if (isProduction && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET is not set. Add it to the production environment before starting the server.');
+}
+
 // Render (and most hosts) sit behind a TLS-terminating proxy — without this, Express thinks
 // every request is plain HTTP and refuses to set secure cookies.
 if (isProduction) app.set('trust proxy', 1);
+
+// This API only ever returns JSON (never renders HTML itself), so contentSecurityPolicy has
+// nothing to protect here — the frontend's own HTML is served by Netlify, a separate origin.
+// Everything else (nosniff, frame options, HSTS, hiding X-Powered-By) still applies to every
+// response this server sends.
+app.use(helmet({ contentSecurityPolicy: false }));
 
 app.use(
   cors({
@@ -42,10 +59,10 @@ app.use(
     cookie: {
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      // Frontend (Netlify) and backend (Render) live on different domains in production, so the
-      // session cookie needs sameSite:'none' to be sent cross-site — which in turn requires
-      // secure:true (browsers reject sameSite:'none' cookies over plain HTTP).
-      sameSite: isProduction ? 'none' : 'lax',
+      // Netlify proxies /api/* to this server (see client/netlify.toml), so from the browser's
+      // point of view every request is same-origin — sameSite:'lax' works everywhere, including
+      // Safari/iOS, which blocks sameSite:'none' cross-site cookies by default.
+      sameSite: 'lax',
       secure: isProduction,
     },
   })
@@ -59,6 +76,9 @@ app.use('/api/themes', themesRoutes);
 app.use('/api/manual-exams', manualExamsRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/academics', academicsRoutes);
+app.use('/api/reflections', reflectionsRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/calculator', calculatorRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

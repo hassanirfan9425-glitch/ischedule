@@ -155,12 +155,15 @@ export default function OrbitMap({ exams, holidays = [], onExamClick, onHolidayC
               else starRefs.current.delete(exam.id);
             }}
             type="button"
-            className={`orbit-star color-${exam.color}${exam.priority ? ' priority' : ''}`}
+            className={`orbit-star color-${exam.color}${exam.priority ? ' priority' : ''}${exam.examType === 'final' ? ' final' : ''}`}
             style={{ left: `${left}%`, top: `${top}%` }}
             onClick={() => onExamClick(exam)}
-            title={`${exam.subjectLabel} · ${countdownText(exam.daysUntil)}`}
+            title={`${exam.subjectLabel} · ${countdownText(exam.daysUntil)}${exam.examType === 'final' ? ' · Final Exam' : ''}`}
           >
-            <span className="orbit-star-label">{exam.subjectLabel}</span>
+            <span className="orbit-star-label">
+              {exam.subjectLabel}
+              {exam.examType === 'final' && <span className="orbit-star-final-tag">FINAL</span>}
+            </span>
           </button>
         );
       })}

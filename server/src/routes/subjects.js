@@ -80,4 +80,22 @@ router.post('/mine', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Targeted single-subject update — unlike POST /mine (a full replace of every subject), this
+// works for the "re-rate this one subject" nudge without touching anything else the student rated,
+// and unlike Electives.jsx (electives only) or the Quiz retake flow (core only, full re-do), it
+// works uniformly for core and elective subjects alike.
+router.patch('/mine/:subjectKey', requireAuth, async (req, res) => {
+  const { difficulty } = req.body || {};
+  if (!DIFFICULTY_KEYS.has(difficulty)) {
+    return res.status(400).json({ error: `Invalid difficulty: ${difficulty}` });
+  }
+  const info = await db
+    .prepare('UPDATE user_subjects SET difficulty = ? WHERE user_id = ? AND subject_key = ?')
+    .run(difficulty, req.session.userId, req.params.subjectKey);
+  if (info.changes === 0) {
+    return res.status(404).json({ error: 'You are not currently rating that subject.' });
+  }
+  res.json({ ok: true });
+});
+
 export default router;

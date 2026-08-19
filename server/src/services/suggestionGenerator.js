@@ -7,8 +7,8 @@ const PASSING_GRADE = 60;
 const NEAR_FAILING_CEILING = 70;
 
 function statusNote(average) {
-  if (average < PASSING_GRADE) return ' — FAILING (below the passing grade)';
-  if (average < NEAR_FAILING_CEILING) return ' — passing, but close to the passing grade';
+  if (average < PASSING_GRADE) return ', FAILING (below the passing grade)';
+  if (average < NEAR_FAILING_CEILING) return ', passing, but close to the passing grade';
   return '';
 }
 
@@ -35,7 +35,8 @@ Respond with ONLY a single JSON object — no markdown fence, no commentary — 
 
 { "suggestions": [string, string, ...] }
 
-Each string should be one sentence, plain language, no markdown formatting.`;
+Each string should be one sentence, plain language, no markdown formatting. Do not use em dashes
+anywhere in your response; use commas, periods, colons, or semicolons instead.`;
 
 function extractJson(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);

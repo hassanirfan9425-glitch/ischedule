@@ -4,3 +4,14 @@
   # Skip the deploy entirely when a push only touches Android/CI files that don't affect the
   # website itself (each deploy costs a flat credit amount regardless of size or content).
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':!android' ':!capacitor.config.json' ':!scripts/generate-icon-sources.mjs' ':!assets' ':!../.github'"
+
+# Proxies API calls through Netlify's own domain instead of the browser calling Render directly.
+# Without this, the session cookie is cross-site (Netlify domain vs Render domain), which Safari's
+# default "Prevent Cross-Site Tracking" setting blocks outright — login works in Chrome and fails
+# silently everywhere on iOS/macOS Safari. Proxied, the browser only ever talks to one origin, so
+# the cookie is same-site and works in every browser.
+[[redirects]]
+  from = "/api/*"
+  to = "https://ischedule-ccaj.onrender.com/api/:splat"
+  status = 200
+  force = true

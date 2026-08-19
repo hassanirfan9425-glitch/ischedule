@@ -3,6 +3,11 @@ import { api } from '../api.js';
 import { countdownText, formatDate } from '../utils.js';
 import CommandBar from '../components/CommandBar.jsx';
 import StudyPlanPopup from '../components/StudyPlanPopup.jsx';
+import ReflectionPopup from '../components/ReflectionPopup.jsx';
+import DifficultyNudgePopup from '../components/DifficultyNudgePopup.jsx';
+import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
+import MaterialUpload from './MaterialUpload.jsx';
+import ManualMaterialEntry from './ManualMaterialEntry.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 import { useStreakAnimation } from '../hooks/useStreakAnimation.js';
 
@@ -12,15 +17,67 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
   const [studyPlans, setStudyPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingStudyPlan, setViewingStudyPlan] = useState(false);
+  const [studyPlanExamId, setStudyPlanExamId] = useState(null);
+  const [choosingMaterialForExam, setChoosingMaterialForExam] = useState(null);
+  const [attachingMaterialExam, setAttachingMaterialExam] = useState(null);
+  const [manualMaterialExam, setManualMaterialExam] = useState(null);
+  const [pendingReflection, setPendingReflection] = useState(null);
+  const [difficultyCatalog, setDifficultyCatalog] = useState([]);
+  const [reflectingExam, setReflectingExam] = useState(null);
+  const [activeNudge, setActiveNudge] = useState(null);
 
-  useBackHandler(viewingStudyPlan, () => setViewingStudyPlan(false));
+  useBackHandler(
+    viewingStudyPlan ||
+      !!reflectingExam ||
+      !!activeNudge ||
+      !!choosingMaterialForExam ||
+      !!attachingMaterialExam ||
+      !!manualMaterialExam,
+    () => {
+    if (attachingMaterialExam) {
+      setAttachingMaterialExam(null);
+      return;
+    }
+    if (manualMaterialExam) {
+      setManualMaterialExam(null);
+      return;
+    }
+    if (choosingMaterialForExam) {
+      setChoosingMaterialForExam(null);
+      return;
+    }
+    if (activeNudge) {
+      setActiveNudge(null);
+      return;
+    }
+    if (reflectingExam) {
+      setReflectingExam(null);
+      return;
+    }
+    setViewingStudyPlan(false);
+  });
+
+  const handleMaterialComplete = async () => {
+    setAttachingMaterialExam(null);
+    setManualMaterialExam(null);
+    const fresh = await api.getDashboard();
+    setDashboardData(fresh);
+  };
 
   useEffect(() => {
-    Promise.all([api.getDashboard(), api.getAcademics(), api.getAllStudyPlans()])
-      .then(([dash, acad, plans]) => {
+    Promise.all([
+      api.getDashboard(),
+      api.getAcademics(),
+      api.getAllStudyPlans(),
+      api.getPendingReflection(),
+      api.getSubjectCatalog(),
+    ])
+      .then(([dash, acad, plans, pending, catalog]) => {
         setDashboardData(dash);
         setAcademicsData(acad);
         setStudyPlans(plans.plans);
+        setPendingReflection(pending);
+        setDifficultyCatalog(catalog.difficulties);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -77,6 +134,26 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
   const topStreakIdentity = topStreakSubject?.subjectKey || (topStreakSubject ? `label:${topStreakSubject.subjectLabel}` : null);
   const topStreakAnim = topStreakIdentity ? streakAnimations[topStreakIdentity] : null;
 
+  if (attachingMaterialExam) {
+    return (
+      <MaterialUpload
+        exam={attachingMaterialExam}
+        onComplete={handleMaterialComplete}
+        onCancel={() => setAttachingMaterialExam(null)}
+      />
+    );
+  }
+
+  if (manualMaterialExam) {
+    return (
+      <ManualMaterialEntry
+        exam={manualMaterialExam}
+        onComplete={handleMaterialComplete}
+        onCancel={() => setManualMaterialExam(null)}
+      />
+    );
+  }
+
   return (
     <div className="dashboard binder-page">
       <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
@@ -95,9 +172,9 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
         {!loading && (
           <>
             <button type="button" className="ledger-panel" onClick={() => onSwitchTab('schedule')}>
-              <div className="ledger-panel-title">Schedule</div>
+              <div className="ledger-panel-title">Calendar</div>
               {upcomingExams.length === 0 ? (
-                <div className="ledger-panel-empty">No upcoming exams yet. Tap to add your schedule.</div>
+                <div className="ledger-panel-empty">No upcoming exams yet. Tap to add your calendar.</div>
               ) : (
                 upcomingExams.map((exam) => (
                   <div className="ledger-line-row" key={exam.id}>
@@ -159,6 +236,44 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
                 )}
               </button>
             )}
+
+            {(pendingReflection?.examToReflect || pendingReflection?.nudge) && (
+              <button
+                type="button"
+                className="ledger-panel"
+                onClick={() => {
+                  if (pendingReflection.nudge?.autoApplied) {
+                    setPendingReflection((prev) => ({ ...prev, nudge: null }));
+                  } else if (pendingReflection.nudge) {
+                    setActiveNudge(pendingReflection.nudge);
+                  } else {
+                    setReflectingExam(pendingReflection.examToReflect);
+                  }
+                }}
+              >
+                <div className="ledger-panel-title">Reflection</div>
+                {pendingReflection.nudge?.autoApplied ? (
+                  <div className="ledger-line-row">
+                    <span className="ledger-line-label">
+                      {pendingReflection.nudge.subjectLabel} auto-adjusted to{' '}
+                      {difficultyCatalog.find((d) => d.key === pendingReflection.nudge.newDifficulty)?.label ??
+                        pendingReflection.nudge.newDifficulty}
+                    </span>
+                  </div>
+                ) : pendingReflection.nudge ? (
+                  <div className="ledger-line-row">
+                    <span className="ledger-line-label">Re-rate {pendingReflection.nudge.subjectLabel}?</span>
+                  </div>
+                ) : (
+                  <div className="ledger-line-row">
+                    <span className="ledger-line-label">
+                      How did {pendingReflection.examToReflect.subjectLabel}
+                      {pendingReflection.examToReflect.weekNumber ? ` (Week ${pendingReflection.examToReflect.weekNumber})` : ''} go?
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
           </>
         )}
       </div>
@@ -169,6 +284,51 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
           plans={studyPlans}
           onClose={() => setViewingStudyPlan(false)}
           onPlanUpdated={handlePlanUpdated}
+          initialExamId={studyPlanExamId}
+          onSelectExam={setStudyPlanExamId}
+          onAddMaterial={(exam) => {
+            setStudyPlanExamId(exam.id);
+            setChoosingMaterialForExam(exam);
+          }}
+        />
+      )}
+
+      {choosingMaterialForExam && (
+        <AddChoiceDialog
+          message={`How would you like to add material for ${choosingMaterialForExam.subjectLabel}?`}
+          onChooseAuto={() => {
+            setAttachingMaterialExam(choosingMaterialForExam);
+            setChoosingMaterialForExam(null);
+          }}
+          onChooseManual={() => {
+            setManualMaterialExam(choosingMaterialForExam);
+            setChoosingMaterialForExam(null);
+          }}
+          onCancel={() => setChoosingMaterialForExam(null)}
+        />
+      )}
+
+      {reflectingExam && (
+        <ReflectionPopup
+          exam={reflectingExam}
+          onClose={() => setReflectingExam(null)}
+          onSubmitted={(data) => {
+            setReflectingExam(null);
+            setPendingReflection((prev) => ({ ...prev, examToReflect: null, nudge: data.nudge ?? prev?.nudge ?? null }));
+            if (data.nudge && !data.nudge.autoApplied) setActiveNudge(data.nudge);
+          }}
+        />
+      )}
+
+      {activeNudge && (
+        <DifficultyNudgePopup
+          nudge={activeNudge}
+          difficulties={difficultyCatalog}
+          onClose={() => setActiveNudge(null)}
+          onResolved={() => {
+            setActiveNudge(null);
+            setPendingReflection((prev) => ({ ...prev, nudge: null }));
+          }}
         />
       )}
     </div>

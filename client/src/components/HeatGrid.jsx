@@ -78,7 +78,7 @@ function HeatGridRow({ row, subcourseLabel, displayStreak, streakAtRisk, streakA
                 }`.trim()}
                 title={
                   streakAtRisk
-                    ? `${displayStreak}-week AMS streak at risk — a 90+ next recovers it`
+                    ? `${displayStreak}-week AMS streak at risk: a 90+ next recovers it`
                     : `${displayStreak}-week streak of AMS grades at 90 or above`
                 }
               >
@@ -171,6 +171,9 @@ export default function HeatGrid({
   onDeleteEntry,
   onChangeTerm,
   onDeleteTerm,
+  subjectGoals,
+  overallGoal,
+  onOpenGoal,
 }) {
   const { term, entries, subjectAverages } = termData;
 
@@ -387,6 +390,19 @@ export default function HeatGrid({
                     </span>
                   </div>
                 )}
+                {(() => {
+                  const goal = subjectGoals?.[group.identity];
+                  return (
+                    <button
+                      type="button"
+                      className={goal ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'}
+                      title={goal ? `Goal: ${goal.targetAverage}` : 'Set a goal for this subject'}
+                      onClick={() => onOpenGoal('subject', term, group.rows[0]?.subjectKey, group.subjectLabel)}
+                    >
+                      {goal ? goal.targetAverage : 'Goal'}
+                    </button>
+                  );
+                })()}
               </div>
               );
             })}
@@ -466,6 +482,14 @@ export default function HeatGrid({
             )}
           </div>
         )}
+        <button
+          type="button"
+          className={overallGoal ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'}
+          title={overallGoal ? `Overall goal: ${overallGoal.targetAverage}` : 'Set an overall goal for this term'}
+          onClick={() => onOpenGoal('overall', term)}
+        >
+          {overallGoal ? overallGoal.targetAverage : 'Set Overall Goal'}
+        </button>
       </div>
       <p className="grade-disclaimer">
         This is a rough estimate based on the entries you've added, not your exact official average.

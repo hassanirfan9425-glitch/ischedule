@@ -190,8 +190,10 @@ only thing that counts.
 
 Merge consecutive rows that both have "Final Exam" in the Academic Milestones column, within the same
 term, into a SINGLE block (do not report them as two separate entries). For each block, give: the term
-number, the start date (Monday of the first row in the block) and end date (Sunday of the last row in the
-block) — one date range per block, one block per term. Do NOT create separate entries for the
+number, the start date (Monday of the first row in the block), the end date (Sunday of the last row in the
+block), AND the term-relative week number of that block's FIRST row (read from the left-hand week-number
+column described earlier) — this tells the rest of the app which week regular weekly assessments (Periodic
+and AMS) stop for that term, since none of those happen during a Final Exam week. Do NOT create separate entries for the
 English/second-language composition finals, "SAT MOCK", or "IELTS" milestones — those are explicitly out
 of scope, skip them entirely.
 
@@ -215,6 +217,8 @@ check for:
 - Any composition-final / SAT-mock / IELTS / "Revision in school" entries that slipped in — remove them
 - A missing Final Exam block: confirm you have one for EACH of Term I, Term II, and Term III. If any term
   doesn't have one in your list yet, go back and look at that term's rows again — it's there.
+- A missing week number on a Final Exam block: confirm each one has the term-relative week number of its
+  first row set, not left null.
 - Missing holidays: scroll through the whole image one more time looking specifically for blue-shaded,
   blank-week-number rows you might have skipped, especially near the start/end of a term or between
   numbered weeks. It's common to miss one on the first pass — double check all three terms again now.
@@ -249,7 +253,9 @@ Rules for each examType:
 - "final": there must be EXACTLY ONE "final" entry per term that has one (so at most 3 total, one each for
   Term I / II / III) — merge multi-row blocks into that single entry, never emit more than one "final" per
   term. Set dateStart/dateEnd to the whole block's Monday/Sunday range, subjectLabel "Final Exams",
-  matchedSubjectKey null, leave date and time null.
+  matchedSubjectKey null, leave date and time null. Set weekNumber to the term-relative week number of the
+  block's FIRST row — do not leave this null for a "final" entry, it's needed elsewhere in the app (unlike
+  every other examType, where weekNumber may be null if not applicable).
 
 Every date must be a real calendar date in YYYY-MM-DD format. matchedSubjectKey must be one of the
 student's subject keys listed earlier, or null: ${selectedSubjects.map((s) => s.key).join(', ') || '(none — always use null)'}`

@@ -45,7 +45,7 @@ export default function ManualMaterialEntry({ exam, onComplete, onCancel }) {
         </button>
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">iSchedule</span>
+          <span className="brand-name">iCalendar</span>
         </div>
         <h1>Enter material for {exam.subjectLabel}</h1>
         <p className="subtle">

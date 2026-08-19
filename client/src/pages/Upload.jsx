@@ -36,7 +36,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
         <CalendarIcon size={40} />
         <div className="spinner" style={{ marginTop: 16 }} />
         <p className="subtle" style={{ marginTop: 16, textAlign: 'center', maxWidth: 320 }}>
-          Analyzing your schedule. This can take a few minutes while the agent works through the grid…
+          Analyzing your calendar. This can take a few minutes while the agent works through the grid…
         </p>
       </div>
     );
@@ -52,10 +52,10 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
         )}
         <div className="brand">
           <CalendarIcon />
-          <span className="brand-name">iSchedule</span>
+          <span className="brand-name">iCalendar</span>
         </div>
-        <h1>Attach your school schedule</h1>
-        <p className="subtle">Upload a PDF or image of your exam &amp; holiday schedule to build your dashboard.</p>
+        <h1>Attach your school calendar</h1>
+        <p className="subtle">Upload a PDF or image of your exam &amp; holiday calendar to build your dashboard.</p>
 
         <div
           className={dragOver ? 'drop-zone drag-over' : 'drop-zone'}
@@ -95,14 +95,14 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
             <p className="error-text">{error}</p>
             {onManualEntry && (
               <button type="button" className="back-link" onClick={onManualEntry}>
-                Enter schedule manually.
+                Enter calendar manually.
               </button>
             )}
           </>
         )}
 
         <button type="button" className="primary-btn" disabled={!file} onClick={handleSubmit}>
-          Analyze Schedule
+          Analyze Calendar
         </button>
       </div>
     </div>

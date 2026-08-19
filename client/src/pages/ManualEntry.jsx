@@ -123,7 +123,7 @@ export default function ManualEntry({ onDone, onCancel }) {
             ← Back to dashboard
           </button>
         )}
-        <h1>Enter your schedule manually</h1>
+        <h1>Enter your calendar manually</h1>
         <p className="subtle">
           Pick a subject below, add a date for each exam, and repeat for as many as you need. Press Done
           when you're finished.

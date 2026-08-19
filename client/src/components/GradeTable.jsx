@@ -71,6 +71,9 @@ export default function GradeTable({
   onDeleteEntry,
   onChangeTerm,
   onDeleteTerm,
+  subjectGoals,
+  overallGoal,
+  onOpenGoal,
 }) {
   const { term, entries, subjectAverages } = termData;
 
@@ -266,6 +269,19 @@ export default function GradeTable({
                             {subjectAverage.average.toFixed(1)}
                           </span>
                         )}
+                        {(() => {
+                          const goal = subjectGoals?.[row.subjectIdentity];
+                          return (
+                            <button
+                              type="button"
+                              className={goal ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'}
+                              title={goal ? `Goal: ${goal.targetAverage}` : 'Set a goal for this subject'}
+                              onClick={() => onOpenGoal('subject', term, row.subjectKey, row.subjectLabel)}
+                            >
+                              {goal ? goal.targetAverage : 'Goal'}
+                            </button>
+                          );
+                        })()}
                       </>
                     ) : (
                       displayStreak > 0 && (
@@ -275,7 +291,7 @@ export default function GradeTable({
                           }`.trim()}
                           title={
                             streakAtRisk
-                              ? `${displayStreak}-week AMS streak at risk — a 90+ next recovers it`
+                              ? `${displayStreak}-week AMS streak at risk: a 90+ next recovers it`
                               : `${displayStreak}-week streak of AMS grades at 90 or above`
                           }
                         >
@@ -416,6 +432,14 @@ export default function GradeTable({
             )}
           </div>
         )}
+        <button
+          type="button"
+          className={overallGoal ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'}
+          title={overallGoal ? `Overall goal: ${overallGoal.targetAverage}` : 'Set an overall goal for this term'}
+          onClick={() => onOpenGoal('overall', term)}
+        >
+          {overallGoal ? overallGoal.targetAverage : 'Set Overall Goal'}
+        </button>
       </div>
       <p className="grade-disclaimer">
         This is a rough estimate based on the entries you've added, not your exact official average.

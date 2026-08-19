@@ -102,7 +102,7 @@ export async function initDb() {
       password_hash TEXT NOT NULL,
       onboarded INTEGER NOT NULL DEFAULT 0,
       periodic_day TEXT,
-      theme TEXT NOT NULL DEFAULT 'purple_pink',
+      theme TEXT NOT NULL DEFAULT 'terracotta',
       ui_style TEXT NOT NULL DEFAULT 'classic',
       tutorial_seen BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -113,6 +113,9 @@ export async function initDb() {
     -- existing rows) is treated as having already seen it — only brand-new signups (see auth.js's
     -- POST /signup, which explicitly inserts false) get the tour.
     ALTER TABLE users ADD COLUMN IF NOT EXISTS tutorial_seen BOOLEAN NOT NULL DEFAULT true;
+    -- Opt-in (default off): when true, a post-exam reflection mismatch (see routes/reflections.js)
+    -- gets applied automatically instead of surfacing a confirmation nudge to the student.
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_adjust_difficulty BOOLEAN NOT NULL DEFAULT false;
 
     CREATE TABLE IF NOT EXISTS user_subjects (
       id SERIAL PRIMARY KEY,
@@ -210,6 +213,35 @@ export async function initDb() {
       baseline_average REAL,
       generated_at TIMESTAMP NOT NULL DEFAULT NOW(),
       UNIQUE(user_id, term)
+    );
+
+    CREATE TABLE IF NOT EXISTS exam_reflections (
+      id SERIAL PRIMARY KEY,
+      exam_id INTEGER NOT NULL UNIQUE REFERENCES exams(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subject_key TEXT NOT NULL,
+      term INTEGER,
+      rating TEXT NOT NULL,
+      nudge_dismissed_at TIMESTAMPTZ,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    -- goal_identity mirrors the subjectKey || 'label:'+subjectLabel identity resolution already
+    -- used by calculateTermSummary/reflections.js, plus a reserved 'overall' sentinel for the
+    -- whole-term goal — keeping it NOT NULL (rather than a nullable subject_key in the UNIQUE
+    -- constraint) sidesteps Postgres treating NULLs as distinct, which would otherwise fail to
+    -- enforce one-goal-per-subject for free-text/AI-unmatched subjects.
+    CREATE TABLE IF NOT EXISTS grade_goals (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      term INTEGER NOT NULL,
+      goal_identity TEXT NOT NULL,
+      subject_key TEXT,
+      subject_label TEXT,
+      target_average REAL NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, term, goal_identity)
     );
   `);
 }

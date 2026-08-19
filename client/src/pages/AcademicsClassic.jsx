@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
 import TabBar from '../components/TabBar.jsx';
 import GradeTable from '../components/GradeTable.jsx';
+import GradeCalculatorPopup from '../components/GradeCalculatorPopup.jsx';
 import AcademicsUpload from './AcademicsUpload.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 
@@ -39,6 +40,10 @@ export default function Academics({
   const [displayedAverages, setDisplayedAverages] = useState({});
   const [deltas, setDeltas] = useState({});
   const [recalculatingTerm, setRecalculatingTerm] = useState(null);
+  // undefined = closed; {} = open with no preselection (the general "What grade do I need?"
+  // button); {kind, term, subjectKey, subjectLabel} = opened from a specific subject/overall
+  // Goal badge, locked to that exact record.
+  const [goalPopupContext, setGoalPopupContext] = useState(undefined);
 
   const loadData = () =>
     api
@@ -115,6 +120,20 @@ export default function Academics({
     await loadData();
   };
 
+  const handleSetGoal = async (payload) => {
+    await api.setGoal(payload);
+    await loadData();
+  };
+
+  const handleDeleteGoal = async (goalId) => {
+    await api.deleteGoal(goalId);
+    await loadData();
+  };
+
+  const handleOpenGoal = (kind, term, subjectKey, subjectLabel) => {
+    setGoalPopupContext({ kind, term, subjectKey, subjectLabel });
+  };
+
   const handleChangeTerm = async (fromTerm, toTerm) => {
     await api.changeGradeTerm(fromTerm, toTerm);
     setDisplayedAverages((prev) => {
@@ -152,7 +171,9 @@ export default function Academics({
   };
 
   useBackHandler(
-    Boolean(uploadingGrades || confirmingDelete || confirmingDeleteTerm !== null || choosingAdd || drawerOpen),
+    Boolean(
+      uploadingGrades || confirmingDelete || confirmingDeleteTerm !== null || choosingAdd || drawerOpen || goalPopupContext
+    ),
     () => {
       if (uploadingGrades) {
         setUploadingGrades(false);
@@ -170,6 +191,10 @@ export default function Academics({
       }
       if (choosingAdd) {
         setChoosingAdd(false);
+        return;
+      }
+      if (goalPopupContext) {
+        setGoalPopupContext(undefined);
         return;
       }
       setDrawerOpen(false);
@@ -232,15 +257,24 @@ export default function Academics({
 
       {data && (
         <>
-          <button
-            type="button"
-            className="see-all-btn"
-            data-tutorial="academics-add"
-            style={{ marginBottom: 12 }}
-            onClick={() => setChoosingAdd(true)}
-          >
-            + Add grades
-          </button>
+          <div className="grade-table-actions-row">
+            <button
+              type="button"
+              className="see-all-btn"
+              data-tutorial="academics-add"
+              onClick={() => setChoosingAdd(true)}
+            >
+              + Add grades
+            </button>
+            <button
+              type="button"
+              className="see-all-btn"
+              data-tutorial="academics-goal"
+              onClick={() => setGoalPopupContext({})}
+            >
+              What grade do I need?
+            </button>
+          </div>
           {data.terms.map((termData) => (
             <GradeTable
               key={termData.term}
@@ -257,6 +291,9 @@ export default function Academics({
               onDeleteEntry={handleDeleteEntry}
               onChangeTerm={handleChangeTerm}
               onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
+              subjectGoals={termData.goals?.subjects || {}}
+              overallGoal={termData.goals?.overall || null}
+              onOpenGoal={handleOpenGoal}
             />
           ))}
         </>
@@ -301,6 +338,17 @@ export default function Academics({
           }}
           onChooseManual={() => setChoosingAdd(false)}
           onCancel={() => setChoosingAdd(false)}
+        />
+      )}
+
+      {goalPopupContext && data && (
+        <GradeCalculatorPopup
+          terms={data.terms}
+          currentTerm={data.currentTerm}
+          initialContext={goalPopupContext.kind ? goalPopupContext : null}
+          onSetGoal={handleSetGoal}
+          onDeleteGoal={handleDeleteGoal}
+          onClose={() => setGoalPopupContext(undefined)}
         />
       )}
     </div>

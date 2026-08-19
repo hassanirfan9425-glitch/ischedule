@@ -6,7 +6,11 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { SUBJECT_BY_KEY, gradeWeights, isAmsSubcourse, isPassingGrade } from '../constants/subjects.js';
+import { aiCallLimiter, aiCostLimiter, tryConsumeAiBudget } from '../middleware/aiRateLimit.js';
+
+// Grade parsing is a single Gemini call per upload.
+const GRADE_UPLOAD_COST = 1;
+import { SUBJECT_BY_KEY, gradeWeights, subjectOverallWeight, isAmsSubcourse, isPassingGrade } from '../constants/subjects.js';
 import { parseGrades } from '../services/gradeParser.js';
 import { generateSuggestions } from '../services/suggestionGenerator.js';
 import { getTodayIso } from '../utils/uaeDate.js';
@@ -56,7 +60,7 @@ function daysBetween(isoA, isoB) {
 // term's exams span) plus today's date — used to tag new grade entries with the right term
 // without asking the student to pick one. Falls back to the nearest term if today lands in a
 // gap (e.g. a holiday between terms), and to term 1 if there's no schedule at all yet.
-async function determineCurrentTerm(userId, todayIso) {
+export async function determineCurrentTerm(userId, todayIso) {
   const rows = await db
     .prepare(
       `SELECT term, COALESCE(date, date_start) AS d1, COALESCE(date, date_end, date_start) AS d2
@@ -135,9 +139,12 @@ function calculateAmsStreakInfo(entries) {
   return { streak, status };
 }
 
-// Weighted average for one subject's own entries, then a plain average of every subject's
-// average to get the one headline number for the term — per the school's rubric.
-function calculateTermSummary(entries) {
+// Weighted average for one subject's own entries, then a WEIGHTED average of every subject's
+// average to get the one headline number for the term (per the school's rubric) — most subjects
+// count equally, but subjectOverallWeight() lets a subject (currently: every AP elective) count
+// for almost nothing toward this overall number without changing how that subject's own average
+// is computed.
+export function calculateTermSummary(entries) {
   const bySubject = {};
   for (const e of entries) {
     const key = e.subject_key || `label:${e.subject_label}`;
@@ -167,7 +174,17 @@ function calculateTermSummary(entries) {
   });
 
   const valid = subjectAverages.filter((s) => s.average !== null);
-  const overallAverage = valid.length > 0 ? valid.reduce((a, s) => a + s.average, 0) / valid.length : null;
+  let overallAverage = null;
+  if (valid.length > 0) {
+    let overallWeightedSum = 0;
+    let overallWeightTotal = 0;
+    for (const s of valid) {
+      const w = subjectOverallWeight(s.subjectKey);
+      overallWeightedSum += s.average * w;
+      overallWeightTotal += w;
+    }
+    overallAverage = overallWeightTotal > 0 ? overallWeightedSum / overallWeightTotal : null;
+  }
   const overallPassing = overallAverage !== null ? isPassingGrade(overallAverage) : null;
 
   return { subjectAverages, overallAverage, overallPassing };
@@ -197,6 +214,11 @@ async function maybeRegenerateSuggestions(userId, term) {
     const shouldRegenerate =
       !existing || Math.abs(overallAverage - existing.baseline_average) >= SUGGESTION_CHANGE_THRESHOLD;
     if (!shouldRegenerate) return;
+
+    // This is the one place across all four call sites (manual entry, upload, term move, delete)
+    // that actually reaches Gemini — checked here, not at the route level, so routes that end up
+    // not needing a regeneration (the common case) never touch the shared AI budget at all.
+    if (!tryConsumeAiBudget(1)) return;
 
     const difficultyByKey = Object.fromEntries(
       (await db.prepare('SELECT subject_key, difficulty FROM user_subjects WHERE user_id = ?').all(userId)).map(
@@ -257,11 +279,35 @@ router.get('/', requireAuth, async (req, res) => {
     suggestionRows.map((r) => [r.term, JSON.parse(r.suggestions)])
   );
 
+  const goalRows = await db.prepare('SELECT * FROM grade_goals WHERE user_id = ?').all(userId);
+  const goalsByTerm = {};
+  for (const g of goalRows) {
+    if (!goalsByTerm[g.term]) goalsByTerm[g.term] = { overall: null, subjects: {} };
+    if (g.goal_identity === 'overall') {
+      goalsByTerm[g.term].overall = { id: g.id, targetAverage: g.target_average };
+    } else {
+      goalsByTerm[g.term].subjects[g.goal_identity] = {
+        id: g.id,
+        targetAverage: g.target_average,
+        subjectKey: g.subject_key,
+        subjectLabel: g.subject_label,
+      };
+    }
+  }
+
   const result = terms.map((term) => {
     const entries = byTerm[term] || [];
     const rawEntries = rows.filter((r) => r.term === term);
     const { subjectAverages, overallAverage, overallPassing } = calculateTermSummary(rawEntries);
-    return { term, entries, subjectAverages, overallAverage, overallPassing, suggestions: suggestionsByTerm[term] || [] };
+    return {
+      term,
+      entries,
+      subjectAverages,
+      overallAverage,
+      overallPassing,
+      suggestions: suggestionsByTerm[term] || [],
+      goals: goalsByTerm[term] || { overall: null, subjects: {} },
+    };
   });
 
   res.json({ terms: result, currentTerm });
@@ -306,7 +352,7 @@ router.post('/manual', requireAuth, async (req, res) => {
   res.json({ ok: true, id: info.lastInsertRowid, term: resolvedTerm });
 });
 
-router.post('/upload', requireAuth, (req, res) => {
+router.post('/upload', requireAuth, aiCostLimiter(GRADE_UPLOAD_COST), aiCallLimiter, (req, res) => {
   upload.single('grades')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ error: err.message });

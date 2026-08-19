@@ -40,13 +40,19 @@ export default function App() {
   // by design (its steps target Classic-specific DOM like the hamburger drawer) — every new signup
   // defaults to Classic, but nothing stops a test/API-driven account from switching UI style before
   // finishing the tour, so this guards against the tutorial overlay rendering over Technical/Orbit.
-  const tutorialDriven = Boolean(user && user.onboarded && !user.tutorialSeen && user.uiStyle === 'classic');
+  // manualTutorialRestart lets an already-onboarded user re-run the tour from the "Restart
+  // Tutorial" menu item, independent of the one-time tutorialSeen flag.
+  const [manualTutorialRestart, setManualTutorialRestart] = useState(false);
+  const tutorialDriven = Boolean(
+    user && user.onboarded && (!user.tutorialSeen || manualTutorialRestart) && user.uiStyle === 'classic'
+  );
   const tutorial = useTutorial(tutorialDriven, { onSwitchTab: setActiveTab, setViewingSettings });
   useBackHandler(tutorialDriven, tutorial.back);
 
   async function handleFinishTutorial() {
     const data = await api.completeTutorial();
     setUser(data.user);
+    setManualTutorialRestart(false);
   }
 
   useEffect(() => {
@@ -61,7 +67,7 @@ export default function App() {
   }, [user, greetingTemplate]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', user?.theme || 'purple_pink');
+    document.documentElement.setAttribute('data-theme', user?.theme || 'terracotta');
   }, [user?.theme]);
 
   useEffect(() => {
@@ -210,17 +216,29 @@ export default function App() {
       setUser(null);
       setGreetingTemplate(null);
       setActiveTab('home');
+      // The tutorial's stepIndex lives in a hook here in App.jsx, which never unmounts across a
+      // logout/login cycle in this SPA — without resetting it, a tab that ran the tour to (or near)
+      // completion on one account would show the tail end of it immediately for the next account
+      // signed into in the same tab, instead of starting over from step 1.
+      tutorial.restart();
+      setManualTutorialRestart(false);
     },
     onReupload: () => setReuploading(true),
     onRetakeQuiz: () => setRetakingQuiz(true),
     onEditElectives: () => setViewingElectives(true),
     onSettings: () => setViewingSettings(true),
+    onRestartTutorial: () => {
+      tutorial.restart();
+      setManualTutorialRestart(true);
+    },
     onManualEntry: () => setViewingManualEntry(true),
     onDeleteAccount: async () => {
       await api.deleteAccount();
       setUser(null);
       setGreetingTemplate(null);
       setActiveTab('home');
+      tutorial.restart();
+      setManualTutorialRestart(false);
     },
   };
 

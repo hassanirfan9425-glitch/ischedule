@@ -4,6 +4,7 @@ import CommandBar from '../components/CommandBar.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
 import HeatGrid from '../components/HeatGrid.jsx';
+import GradeCalculatorPopup from '../components/GradeCalculatorPopup.jsx';
 import AcademicsUpload from './AcademicsUpload.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 
@@ -21,6 +22,7 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
   const [displayedAverages, setDisplayedAverages] = useState({});
   const [deltas, setDeltas] = useState({});
   const [recalculatingTerm, setRecalculatingTerm] = useState(null);
+  const [goalPopupContext, setGoalPopupContext] = useState(undefined);
 
   const loadData = () =>
     api
@@ -86,6 +88,20 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
     await loadData();
   };
 
+  const handleSetGoal = async (payload) => {
+    await api.setGoal(payload);
+    await loadData();
+  };
+
+  const handleDeleteGoal = async (goalId) => {
+    await api.deleteGoal(goalId);
+    await loadData();
+  };
+
+  const handleOpenGoal = (kind, term, subjectKey, subjectLabel) => {
+    setGoalPopupContext({ kind, term, subjectKey, subjectLabel });
+  };
+
   const handleChangeTerm = async (fromTerm, toTerm) => {
     await api.changeGradeTerm(fromTerm, toTerm);
     setDisplayedAverages((prev) => {
@@ -122,7 +138,7 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
     }
   };
 
-  useBackHandler(Boolean(uploadingGrades || confirmingDeleteTerm !== null || choosingAdd), () => {
+  useBackHandler(Boolean(uploadingGrades || confirmingDeleteTerm !== null || choosingAdd || goalPopupContext), () => {
     if (uploadingGrades) {
       setUploadingGrades(false);
       return;
@@ -130,6 +146,10 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
     if (confirmingDeleteTerm !== null) {
       setConfirmingDeleteTerm(null);
       setDeleteGradesError('');
+      return;
+    }
+    if (goalPopupContext) {
+      setGoalPopupContext(undefined);
       return;
     }
     setChoosingAdd(false);
@@ -168,9 +188,14 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
 
         {data && (
           <>
-            <button type="button" className="see-all-btn" style={{ marginBottom: 12 }} onClick={() => setChoosingAdd(true)}>
-              + Add grades
-            </button>
+            <div className="grade-table-actions-row">
+              <button type="button" className="see-all-btn" onClick={() => setChoosingAdd(true)}>
+                + Add grades
+              </button>
+              <button type="button" className="see-all-btn" onClick={() => setGoalPopupContext({})}>
+                What grade do I need?
+              </button>
+            </div>
             {data.terms.map((termData) => (
               <HeatGrid
                 key={termData.term}
@@ -187,6 +212,9 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
                 onDeleteEntry={handleDeleteEntry}
                 onChangeTerm={handleChangeTerm}
                 onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
+                subjectGoals={termData.goals?.subjects || {}}
+                overallGoal={termData.goals?.overall || null}
+                onOpenGoal={handleOpenGoal}
               />
             ))}
           </>
@@ -216,6 +244,17 @@ export default function Academics({ greeting, activeTab, onSwitchTab }) {
             }}
             onChooseManual={() => setChoosingAdd(false)}
             onCancel={() => setChoosingAdd(false)}
+          />
+        )}
+
+        {goalPopupContext && data && (
+          <GradeCalculatorPopup
+            terms={data.terms}
+            currentTerm={data.currentTerm}
+            initialContext={goalPopupContext.kind ? goalPopupContext : null}
+            onSetGoal={handleSetGoal}
+            onDeleteGoal={handleDeleteGoal}
+            onClose={() => setGoalPopupContext(undefined)}
           />
         )}
       </div>

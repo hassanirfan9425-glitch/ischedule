@@ -23,7 +23,7 @@ Respond with ONLY a single JSON object — no markdown fence, no commentary — 
 
 "daysBeforeExam" counts down to the exam (e.g. 3 means three days before the exam), and entries must be in
 descending order from furthest out to closest (ending at 1). Keep "focus" under 8 words and each task under
-12 words.`;
+12 words. Do not use em dashes anywhere in your response; use commas, periods, colons, or semicolons instead.`;
 
 function extractJson(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);

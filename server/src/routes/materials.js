@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { aiCallLimiter, aiCostLimiter } from '../middleware/aiRateLimit.js';
+
+// Both material parsing and study-plan generation are a single Gemini call each.
+const MATERIAL_ANALYSIS_COST = 1;
+const STUDY_PLAN_COST = 1;
 import { parseMaterial } from '../services/materialParser.js';
 import { generateStudyPlan } from '../services/studyPlanGenerator.js';
 import { SUBJECT_BY_KEY, studyPlanDays } from '../constants/subjects.js';
@@ -47,7 +52,7 @@ const upload = multer({
 
 const router = Router();
 
-router.post('/:examId', requireAuth, (req, res) => {
+router.post('/:examId', requireAuth, aiCostLimiter(MATERIAL_ANALYSIS_COST), aiCallLimiter, (req, res) => {
   upload.single('material')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ error: err.message });
@@ -197,7 +202,7 @@ router.get('/:examId/study-plan', requireAuth, async (req, res) => {
   res.json({ plan: JSON.parse(row.plan), generatedAt: row.generated_at });
 });
 
-router.post('/:examId/study-plan', requireAuth, async (req, res) => {
+router.post('/:examId/study-plan', requireAuth, aiCostLimiter(STUDY_PLAN_COST), aiCallLimiter, async (req, res) => {
   const userId = req.session.userId;
   const examId = Number(req.params.examId);
   const { daysUntil } = req.body || {};

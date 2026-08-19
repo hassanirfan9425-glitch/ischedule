@@ -33,7 +33,7 @@ const GREETINGS = {
   morning: [
     (name) => `Good morning, ${name}!`,
     (name) => `Rise and shine, ${name}.`,
-    (name) => `Morning, ${name} — ready for today?`,
+    (name) => `Morning, ${name}, ready for today?`,
     (name) => `Up bright and early, ${name}?`,
   ],
   afternoon: [
@@ -44,7 +44,7 @@ const GREETINGS = {
   ],
   evening: [
     (name) => `Good evening, ${name}!`,
-    (name) => `Evening, ${name} — how'd today go?`,
+    (name) => `Evening, ${name}, how'd today go?`,
     (name) => `Winding down, ${name}?`,
     (name) => `Evening check-in, ${name}.`,
   ],

@@ -15,7 +15,7 @@ const ARC_RADIUS = 150;
 const ARC_SPAN_DEG = 120;
 const TAB_DEFS = [
   { key: 'home', label: 'Home' },
-  { key: 'schedule', label: 'Schedule' },
+  { key: 'schedule', label: 'Calendar' },
   { key: 'academics', label: 'Academics' },
   { key: 'more', label: 'More' },
 ];

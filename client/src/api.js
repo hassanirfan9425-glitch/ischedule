@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+// Always relative: in prod Netlify proxies /api/* to Render (see netlify.toml) so the cookie stays
+// same-site; in dev Vite's own dev-server proxy sends /api to localhost:4000.
+const API_BASE = '/api';
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -31,6 +33,8 @@ export const api = {
   getMySubjects: () => request('/subjects/mine'),
   saveMySubjects: (subjects, periodicDay) =>
     request('/subjects/mine', { method: 'POST', body: JSON.stringify({ subjects, periodicDay }) }),
+  updateSubjectDifficulty: (subjectKey, difficulty) =>
+    request(`/subjects/mine/${subjectKey}`, { method: 'PATCH', body: JSON.stringify({ difficulty }) }),
 
   uploadSchedule: (file) => {
     const form = new FormData();
@@ -40,6 +44,7 @@ export const api = {
 
   getDashboard: () => request('/dashboard'),
   deleteSchedule: () => request('/schedule', { method: 'DELETE' }),
+  deleteFinalSchedule: () => request('/schedule/final', { method: 'DELETE' }),
 
   getManualExams: () => request('/manual-exams'),
   addManualExam: (exam) => request('/manual-exams', { method: 'POST', body: JSON.stringify(exam) }),
@@ -71,4 +76,18 @@ export const api = {
   deleteGradesByTerm: (term) => request(`/academics/term/${term}`, { method: 'DELETE' }),
   changeGradeTerm: (fromTerm, toTerm) =>
     request('/academics/term', { method: 'PATCH', body: JSON.stringify({ fromTerm, toTerm }) }),
+
+  getPendingReflection: () => request('/reflections/pending'),
+  submitReflection: (examId, rating) =>
+    request('/reflections', { method: 'POST', body: JSON.stringify({ examId, rating }) }),
+  dismissReflectionNudge: (reflectionId) =>
+    request(`/reflections/${reflectionId}/dismiss-nudge`, { method: 'PATCH' }),
+
+  setGoal: (payload) => request('/goals', { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteGoal: (goalId) => request(`/goals/${goalId}`, { method: 'DELETE' }),
+
+  calculateSubjectTarget: (payload) =>
+    request('/calculator/subject-target', { method: 'POST', body: JSON.stringify(payload) }),
+  calculateOverallTarget: (payload) =>
+    request('/calculator/overall-target', { method: 'POST', body: JSON.stringify(payload) }),
 };

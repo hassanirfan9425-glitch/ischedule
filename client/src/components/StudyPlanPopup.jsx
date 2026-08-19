@@ -15,8 +15,13 @@ const COOLDOWN_MS = 60 * 1000;
 // saved plan) — reused here directly instead of re-fetching per exam, so switching between exams
 // in the picker is instant and every previously generated plan stays visible without ever being
 // lost or overwritten by a different exam's plan.
-export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated }) {
-  const [selectedExamId, setSelectedExamId] = useState(exams[0]?.id ?? null);
+export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated, initialExamId, onSelectExam, onAddMaterial }) {
+  const [selectedExamId, setSelectedExamId] = useState(initialExamId ?? exams[0]?.id ?? null);
+
+  function selectExam(id) {
+    setSelectedExamId(id);
+    onSelectExam?.(id);
+  }
   const [localPlans, setLocalPlans] = useState({});
   const [localGeneratedAt, setLocalGeneratedAt] = useState({});
   const [generating, setGenerating] = useState(false);
@@ -75,12 +80,15 @@ export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated })
                   ? 'manual-subject-row study-plan-exam-row active'
                   : 'manual-subject-row study-plan-exam-row'
               }
-              onClick={() => setSelectedExamId(exam.id)}
+              onClick={() => selectExam(exam.id)}
             >
               <span>{exam.subjectLabel}</span>
               <span className="study-plan-exam-meta">
                 {countdownText(exam.daysUntil)}
                 {plannedExamIds.has(exam.id) ? ' · Planned' : ''}
+                {exam.term != null && exam.weekNumber != null && (
+                  <span className="study-plan-exam-week">T{exam.term} WK{exam.weekNumber}</span>
+                )}
               </span>
             </button>
           ))}
@@ -111,7 +119,14 @@ export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated })
 
         {(!plan || plan.length === 0) && <p className="subtle">No study plan yet for this exam.</p>}
 
-        {!hasMaterial && <p className="subtle">Add material for this exam before generating a study plan.</p>}
+        {!hasMaterial && (
+          <>
+            <p className="subtle">Add material for this exam before generating a study plan.</p>
+            <button type="button" className="secondary-btn" onClick={() => onAddMaterial?.(selectedExam)}>
+              + Add Material
+            </button>
+          </>
+        )}
 
         {hasMaterial && (
           <button

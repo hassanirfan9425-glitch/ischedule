@@ -27,5 +27,6 @@ export function useTutorial(active, { onSwitchTab, setViewingSettings }) {
     drawerHighlightIndex,
     next: () => setStepIndex((i) => Math.min(i + 1, tutorialSteps.length - 1)),
     back: () => setStepIndex((i) => Math.max(i - 1, 0)),
+    restart: () => setStepIndex(0),
   };
 }

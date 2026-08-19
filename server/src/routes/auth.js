@@ -1,11 +1,23 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { THEME_KEYS } from '../constants/themes.js';
 import { containsProfanity } from '../utils/profanityFilter.js';
 
 const router = Router();
+
+// Login/signup have no other brute-force defense (no account lockout) — this is the only thing
+// standing between an attacker and unlimited password guesses per account, or unlimited spam
+// accounts (each of which could burn Gemini API quota via schedule uploads).
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please wait a few minutes and try again.' },
+});
 
 const UI_STYLE_KEYS = new Set(['classic', 'technical', 'orbit']);
 
@@ -15,13 +27,14 @@ function publicUser(row) {
     username: row.username,
     name: row.name,
     onboarded: !!row.onboarded,
-    theme: row.theme || 'purple_pink',
+    theme: row.theme || 'terracotta',
     uiStyle: row.ui_style || 'classic',
     tutorialSeen: !!row.tutorial_seen,
+    autoAdjustDifficulty: !!row.auto_adjust_difficulty,
   };
 }
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', authLimiter, async (req, res) => {
   const { username, name, password } = req.body || {};
 
   if (!username || !name || !password) {
@@ -47,14 +60,14 @@ router.post('/signup', async (req, res) => {
   // signups explicitly get false so the first-time tutorial actually triggers for them.
   const info = await db
     .prepare('INSERT INTO users (username, name, password_hash, theme, tutorial_seen) VALUES (?, ?, ?, ?, ?)')
-    .run(username.trim(), name.trim(), passwordHash, 'purple_pink', false);
+    .run(username.trim(), name.trim(), passwordHash, 'terracotta', false);
 
   const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   req.session.userId = user.id;
   res.json({ user: publicUser(user) });
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required.' });
@@ -104,7 +117,7 @@ router.delete('/account', requireAuth, async (req, res) => {
 });
 
 router.patch('/profile', requireAuth, async (req, res) => {
-  const { username, name, theme, uiStyle } = req.body || {};
+  const { username, name, theme, uiStyle, autoAdjustDifficulty } = req.body || {};
   const userId = req.session.userId;
   const current = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 
@@ -112,6 +125,8 @@ router.patch('/profile', requireAuth, async (req, res) => {
   const nextName = name !== undefined ? String(name).trim() : current.name;
   const nextTheme = theme !== undefined ? theme : current.theme;
   const nextUiStyle = uiStyle !== undefined ? uiStyle : current.ui_style;
+  const nextAutoAdjustDifficulty =
+    autoAdjustDifficulty !== undefined ? !!autoAdjustDifficulty : current.auto_adjust_difficulty;
 
   if (nextUsername.length < 3) {
     return res.status(400).json({ error: 'Username must be at least 3 characters.' });
@@ -136,13 +151,11 @@ router.patch('/profile', requireAuth, async (req, res) => {
     }
   }
 
-  await db.prepare('UPDATE users SET username = ?, name = ?, theme = ?, ui_style = ? WHERE id = ?').run(
-    nextUsername,
-    nextName,
-    nextTheme,
-    nextUiStyle,
-    userId
-  );
+  await db
+    .prepare(
+      'UPDATE users SET username = ?, name = ?, theme = ?, ui_style = ?, auto_adjust_difficulty = ? WHERE id = ?'
+    )
+    .run(nextUsername, nextName, nextTheme, nextUiStyle, nextAutoAdjustDifficulty, userId);
 
   const updated = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   res.json({ user: publicUser(updated) });

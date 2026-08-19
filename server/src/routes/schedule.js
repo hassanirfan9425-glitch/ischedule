@@ -6,8 +6,16 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { db, transaction } from '../db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { aiCallLimiter, aiCostLimiter } from '../middleware/aiRateLimit.js';
+
+// Worst case per hit: 1 classify call + up to 6 turns for a general-calendar parse (the final-exam
+// path is cheaper, at 1 + 3, but the cost is charged before the route knows which one this is).
+const SCHEDULE_UPLOAD_COST = 7;
 import { SUBJECT_BY_KEY, AUTO_SUBJECTS } from '../constants/subjects.js';
 import { parseSchedule } from '../services/scheduleParser.js';
+import { classifyScheduleDocument } from '../services/scheduleClassifier.js';
+import { parseFinalExamSchedule } from '../services/finalExamParser.js';
+import { shiftScheduleDate } from '../utils/scheduleYearShift.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
@@ -42,7 +50,7 @@ const upload = multer({
 
 const router = Router();
 
-router.post('/upload', requireAuth, (req, res) => {
+router.post('/upload', requireAuth, aiCostLimiter(SCHEDULE_UPLOAD_COST), aiCallLimiter, (req, res) => {
   upload.single('schedule')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ error: err.message });
@@ -69,6 +77,55 @@ router.post('/upload', requireAuth, (req, res) => {
       // candidates even though nobody rates them in the quiz.
       const selectedSubjects = [...ratedSubjects, ...AUTO_SUBJECTS];
 
+      // Same "+" upload accepts either document — a cheap triage call decides which pipeline runs,
+      // so the student never has to pick a document type themselves. "unknown" falls back to the
+      // general-calendar pipeline, since that's the only document type this app accepted before
+      // final-exam-timetable support existed.
+      const docType = await classifyScheduleDocument({
+        filePath: req.file.path,
+        mimeType: req.file.mimetype,
+      });
+
+      if (docType === 'final_exam_timetable') {
+        const result = await parseFinalExamSchedule({
+          filePath: req.file.path,
+          mimeType: req.file.mimetype,
+          selectedSubjects,
+        });
+
+        const term = Number.isInteger(result.term) ? result.term : null;
+        if (term === null) {
+          throw new Error(
+            "Couldn't confidently tell which term this final exam timetable is for. Make sure the title showing the term is clearly visible and try again."
+          );
+        }
+
+        const exams = Array.isArray(result.exams) ? result.exams : [];
+
+        const persistFinals = transaction(async () => {
+          // Additive relative to the rest of the schedule: only this term's final exams are
+          // replaced — periodic exams, holidays, and every other term's finals are untouched.
+          await db
+            .prepare("DELETE FROM exams WHERE user_id = ? AND exam_type = 'final' AND term = ?")
+            .run(userId, term);
+
+          const insertExam = db.prepare(`
+            INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, date, time, notes)
+            VALUES (?, ?, ?, ?, 'final', ?, ?, ?, ?)
+          `);
+          for (const e of exams) {
+            if (!e.subjectLabel || !e.date) continue;
+            const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
+            await insertExam.run(userId, uploadId, subjectKey, e.subjectLabel, term, shiftScheduleDate(e.date), e.time ?? null, e.notes ?? null);
+          }
+
+          await db.prepare('UPDATE schedule_uploads SET status = ? WHERE id = ?').run('done', uploadId);
+        });
+        await persistFinals();
+
+        return res.json({ ok: true, kind: 'final', term, examsFound: exams.length });
+      }
+
       const result = await parseSchedule({
         filePath: req.file.path,
         mimeType: req.file.mimetype,
@@ -77,6 +134,16 @@ router.post('/upload', requireAuth, (req, res) => {
 
       const holidays = Array.isArray(result.holidays) ? result.holidays : [];
       const exams = Array.isArray(result.exams) ? result.exams : [];
+
+      // The calendar PDF literally prints "AMS" for Term 1's very first assessment week, but
+      // every other term's first week prints as "Grid" — that week actually runs as a Grid Exam
+      // at this school despite what the calendar says, so relabel it to match reality.
+      for (const e of exams) {
+        if (e.term === 1 && e.weekNumber === 1 && e.matchedSubjectKey === 'ams') {
+          e.matchedSubjectKey = 'grid_exam';
+          e.subjectLabel = 'Grid Exam';
+        }
+      }
 
       const persist = transaction(async () => {
         // A fresh upload replaces the previous one's extracted data entirely.
@@ -89,7 +156,15 @@ router.post('/upload', requireAuth, (req, res) => {
         `);
         for (const h of holidays) {
           if (!h.dateStart || !h.dateEnd) continue;
-          await insertHoliday.run(userId, uploadId, h.label ?? null, h.dateStart, h.dateEnd, h.term ?? null, h.weekNumber ?? null);
+          await insertHoliday.run(
+            userId,
+            uploadId,
+            h.label ?? null,
+            shiftScheduleDate(h.dateStart),
+            shiftScheduleDate(h.dateEnd),
+            h.term ?? null,
+            h.weekNumber ?? null
+          );
         }
 
         const insertExam = db.prepare(`
@@ -108,9 +183,9 @@ router.post('/upload', requireAuth, (req, res) => {
             examType,
             e.term ?? null,
             e.weekNumber ?? null,
-            e.date ?? null,
-            e.dateStart ?? null,
-            e.dateEnd ?? null,
+            shiftScheduleDate(e.date ?? null),
+            shiftScheduleDate(e.dateStart ?? null),
+            shiftScheduleDate(e.dateEnd ?? null),
             e.time ?? null,
             e.notes ?? null
           );
@@ -123,6 +198,7 @@ router.post('/upload', requireAuth, (req, res) => {
 
       res.json({
         ok: true,
+        kind: 'general',
         academicYearLabel: result.academicYearLabel ?? null,
         holidaysFound: holidays.length,
         examsFound: exams.length,
@@ -154,6 +230,14 @@ router.delete('/', requireAuth, async (req, res) => {
     await db.prepare('DELETE FROM holidays WHERE user_id = ?').run(userId);
   });
   await deleteAll();
+  res.json({ ok: true });
+});
+
+// Removes only final exam entries (every term) — periodic exams, holidays, and manually-entered
+// non-final exams are untouched. Lets a student clear out a final exam timetable (e.g. re-added
+// via the Final Exam Timetable upload) without wiping the rest of their schedule.
+router.delete('/final', requireAuth, async (req, res) => {
+  await db.prepare("DELETE FROM exams WHERE user_id = ? AND exam_type = 'final'").run(req.session.userId);
   res.json({ ok: true });
 });
 

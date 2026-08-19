@@ -16,7 +16,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-rate-limit": "^8.6.2",
     "express-session": "^1.18.1",
+    "helmet": "^8.3.0",
     "multer": "^2.0.0",
     "obscenity": "^0.4.6",
     "pg": "^8.23.0"

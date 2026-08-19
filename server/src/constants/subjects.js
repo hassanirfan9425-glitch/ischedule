@@ -182,12 +182,38 @@ export const WEEKDAY_OFFSET_BY_KEY = Object.fromEntries(WEEKDAYS.map((w) => [w.k
 // counts toward a subject's average. Most subjects weight periodics 2x an AMS; a few exceptions
 // per the school's actual rubric (confirmed 2026-08, subject to trial-and-error refinement).
 const EQUAL_WEIGHT_SUBJECT_KEYS = new Set(['core_islamic_1', 'core_islamic_2', 'moral_education']);
-const BOOSTED_WEIGHT_SUBJECT_KEYS = new Set(['as_chemistry', 'as_biology', 'ap_physics_1']);
+const BOOSTED_WEIGHT_SUBJECT_KEYS = new Set(['as_chemistry', 'as_biology']);
 
 export function gradeWeights(subjectKey) {
   if (BOOSTED_WEIGHT_SUBJECT_KEYS.has(subjectKey)) return { ams: 1.5, periodic: 2.5 };
   if (EQUAL_WEIGHT_SUBJECT_KEYS.has(subjectKey)) return { ams: 1, periodic: 1 };
   return { ams: 1, periodic: 2 };
+}
+
+// Separate from gradeWeights() above: this controls how much a SUBJECT'S OWN average counts
+// toward the overall term average, not how AMS vs periodic count within that one subject's
+// average. Every elective AP subject (never a core subject — nothing core is AP) counts for
+// almost nothing toward the overall term number. Derived from SUBJECTS' own category tag rather
+// than a hardcoded key list, so a newly added AP elective picks this up automatically. Not
+// literally 0: a true zero weight would make a term's average NaN if every subject with a grade
+// that term happened to be AP-only.
+// NOTE: setting gradeWeights() itself to a small-but-EQUAL {ams, periodic} pair (tried first, see
+// academics.js's calculateTermSummary) does NOT achieve "negligible" — a weighted average only
+// depends on the RATIO between weights, so {0.05, 0.05} computes identically to {1, 1}. The actual
+// lever has to be this subject-level weight, applied when averaging subject averages together.
+const NEGLIGIBLE_OVERALL_WEIGHT_SUBJECT_KEYS = new Set(SUBJECTS.filter((s) => s.category === 'AP').map((s) => s.key));
+
+// AS subjects and A-Level externals in general count for MORE than a normal subject toward the
+// overall term average (opposite direction from the AP negligible weight above) — the school
+// treats these as a heavier academic load. Currently 1.25x; bump this one constant to 1.5 (already
+// requested as a likely next step) whenever asked, nothing else needs to change.
+const BOOSTED_OVERALL_WEIGHT_SUBJECT_KEYS = new Set(SUBJECTS.filter((s) => s.category === 'AS Level').map((s) => s.key));
+const BOOSTED_OVERALL_WEIGHT = 1.25;
+
+export function subjectOverallWeight(subjectKey) {
+  if (NEGLIGIBLE_OVERALL_WEIGHT_SUBJECT_KEYS.has(subjectKey)) return 0.05;
+  if (BOOSTED_OVERALL_WEIGHT_SUBJECT_KEYS.has(subjectKey)) return BOOSTED_OVERALL_WEIGHT;
+  return 1;
 }
 
 // A subcourse row is an AMS (weekly) entry if it's literally labeled "AMS" — anything else

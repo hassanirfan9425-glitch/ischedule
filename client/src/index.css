@@ -5,22 +5,24 @@
   --font-display: 'Fraunces', 'Karla', serif;
   --font-mono: 'JetBrains Mono', 'Consolas', monospace;
 
-  --bg: #f7f3ea;
+  --bg: #fdf3ec;
   --surface: #ffffff;
   --text: #1f1b16;
   --text-subtle: #6b6255;
-  --border: #d8cdb8;
+  --border: #e8c4a8;
 
-  /* Brand scale (theme-controlled) — default "purple & pink" theme. Saturated and vivid, just flat
-     (see --brand-fill below) instead of blended into a gradient. */
-  --brand-50: #faf5ff;
-  --brand-100: #f3e8ff;
-  --brand-300: #d8b4fe;
-  --brand-400: #c084fc;
-  --brand-500: #a855f7;
-  --brand-600: #9333ea;
-  --brand-700: #7e22ce;
-  --brand-rgb: 168, 85, 247;
+  /* Brand scale (theme-controlled) — default "terracotta & cream" theme. Saturated and vivid, just
+     flat (see --brand-fill below) instead of blended into a gradient. Purple & Pink (the old
+     default) now lives in its own [data-theme='purple_pink'] override block further down, exactly
+     like every other non-default theme. */
+  --brand-50: #fdf0e6;
+  --brand-100: #fadcc4;
+  --brand-300: #ec9d68;
+  --brand-400: #de7a3f;
+  --brand-500: #d2551f;
+  --brand-600: #b5441a;
+  --brand-700: #8f3414;
+  --brand-rgb: 210, 85, 31;
 
   --brand-fill: var(--brand-600);
   --shadow-brand: 0 6px 0 var(--brand-700), 0 8px 16px rgba(31, 27, 22, 0.16);
@@ -128,6 +130,86 @@
   --brand-rgb: 59, 130, 246;
 }
 
+/* Purple & Pink — the old default, kept exactly as it looked before (so it's a real "revert to the
+   old site" option), now living in its own override block like every other non-default theme. */
+[data-theme='purple_pink'] {
+  --bg: #f7f3ea;
+  --border: #d8cdb8;
+  --brand-50: #faf5ff;
+  --brand-100: #f3e8ff;
+  --brand-300: #d8b4fe;
+  --brand-400: #c084fc;
+  --brand-500: #a855f7;
+  --brand-600: #9333ea;
+  --brand-700: #7e22ce;
+  --brand-rgb: 168, 85, 247;
+}
+
+[data-theme='garnet'] {
+  --bg: #fdf1f3;
+  --border: #edb8c3;
+  --brand-50: #fdf1f4;
+  --brand-100: #fbdce3;
+  --brand-300: #e8829d;
+  --brand-400: #d14b73;
+  --brand-500: #b3123f;
+  --brand-600: #950f35;
+  --brand-700: #710b28;
+  --brand-rgb: 179, 18, 63;
+}
+
+[data-theme='sapphire'] {
+  --bg: #eef3fb;
+  --border: #b8cdea;
+  --brand-50: #eef4fc;
+  --brand-100: #d6e6f8;
+  --brand-300: #7fa8e0;
+  --brand-400: #3d78c9;
+  --brand-500: #1454b3;
+  --brand-600: #104496;
+  --brand-700: #0c3372;
+  --brand-rgb: 20, 84, 179;
+}
+
+[data-theme='emerald'] {
+  --bg: #eef8f2;
+  --border: #aedcc0;
+  --brand-50: #ecfaf1;
+  --brand-100: #cef3dc;
+  --brand-300: #6fd39c;
+  --brand-400: #35b978;
+  --brand-500: #0e9e5e;
+  --brand-600: #0b834d;
+  --brand-700: #08633b;
+  --brand-rgb: 14, 158, 94;
+}
+
+[data-theme='black_gold'] {
+  --bg: #f7f4ea;
+  --border: #ddcea0;
+  --brand-50: #fbf6e6;
+  --brand-100: #f5e9bf;
+  --brand-300: #e2c264;
+  --brand-400: #d3ab3f;
+  --brand-500: #c99a2e;
+  --brand-600: #a37c22;
+  --brand-700: #5c4713;
+  --brand-rgb: 201, 154, 46;
+}
+
+[data-theme='cyber'] {
+  --bg: #ecf9fb;
+  --border: #a6dde6;
+  --brand-50: #e6fbfd;
+  --brand-100: #c3f3f8;
+  --brand-300: #5fd8e6;
+  --brand-400: #22c3d8;
+  --brand-500: #06b6d4;
+  --brand-600: #0592ab;
+  --brand-700: #056d80;
+  --brand-rgb: 6, 182, 212;
+}
+
 @media (prefers-color-scheme: dark) {
   /* Classic only — Technical is always-dark by design and overrides all of this below anyway. */
   :root {
@@ -165,15 +247,16 @@
   --text-subtle: #6b8f74;
   --border: #1f3324;
 
-  /* Default "purple & pink" theme = magenta phosphor. */
-  --brand-50: rgba(192, 38, 211, 0.1);
-  --brand-100: rgba(192, 38, 211, 0.18);
-  --brand-300: #e879f9;
-  --brand-400: #f472f4;
-  --brand-500: #d926d9;
-  --brand-600: #c026d3;
-  --brand-700: #8b1fa8;
-  --brand-rgb: 192, 38, 211;
+  /* Default "terracotta & cream" theme = burnt-orange phosphor. Purple & Pink's old magenta
+     phosphor now lives in its own [data-theme='purple_pink'] compound block below. */
+  --brand-50: rgba(226, 87, 15, 0.1);
+  --brand-100: rgba(226, 87, 15, 0.18);
+  --brand-300: #ffb98a;
+  --brand-400: #ff9152;
+  --brand-500: #ff6a1f;
+  --brand-600: #e2570f;
+  --brand-700: #a8420c;
+  --brand-rgb: 226, 87, 15;
 
   --brand-fill: var(--brand-600);
   --shadow-brand: 0 6px 0 var(--brand-700), 0 0 18px rgba(var(--brand-rgb), 0.35);
@@ -278,6 +361,82 @@
   --brand-rgb: 0, 194, 224;
 }
 
+[data-ui-style='technical'][data-theme='purple_pink'] {
+  /* Old default's magenta phosphor, preserved as-is. */
+  --brand-50: rgba(192, 38, 211, 0.1);
+  --brand-100: rgba(192, 38, 211, 0.18);
+  --brand-300: #e879f9;
+  --brand-400: #f472f4;
+  --brand-500: #d926d9;
+  --brand-600: #c026d3;
+  --brand-700: #8b1fa8;
+  --brand-rgb: 192, 38, 211;
+}
+
+[data-ui-style='technical'][data-theme='garnet'] {
+  /* Wine-red phosphor */
+  --brand-50: rgba(224, 17, 88, 0.1);
+  --brand-100: rgba(224, 17, 88, 0.18);
+  --brand-300: #ff9dbb;
+  --brand-400: #ff5f92;
+  --brand-500: #ff1f66;
+  --brand-600: #e01158;
+  --brand-700: #a80d42;
+  --brand-rgb: 224, 17, 88;
+}
+
+[data-ui-style='technical'][data-theme='sapphire'] {
+  /* Cobalt-blue phosphor */
+  --brand-50: rgba(15, 92, 224, 0.1);
+  --brand-100: rgba(15, 92, 224, 0.18);
+  --brand-300: #9dc4ff;
+  --brand-400: #5a95ff;
+  --brand-500: #2170ff;
+  --brand-600: #0f5ce0;
+  --brand-700: #0a3fa0;
+  --brand-rgb: 15, 92, 224;
+}
+
+[data-ui-style='technical'][data-theme='emerald'] {
+  /* Emerald-green phosphor */
+  --brand-50: rgba(15, 224, 102, 0.1);
+  --brand-100: rgba(15, 224, 102, 0.18);
+  --brand-300: #8dffc4;
+  --brand-400: #4dff9e;
+  --brand-500: #1aff7a;
+  --brand-600: #0fe066;
+  --brand-700: #0aa84c;
+  --brand-rgb: 15, 224, 102;
+}
+
+[data-ui-style='technical'][data-theme='black_gold'] {
+  /* Gold phosphor — pale/bright enough to need an explicit text-color override, same reasoning
+     as the black_grey theme's ice-blue phosphor above. */
+  --brand-50: rgba(226, 165, 22, 0.1);
+  --brand-100: rgba(226, 165, 22, 0.18);
+  --brand-300: #ffe9a8;
+  --brand-400: #ffd766;
+  --brand-500: #ffc22e;
+  --brand-600: #e2a516;
+  --brand-700: #a87a0f;
+  --brand-rgb: 226, 165, 22;
+  --brand-text: #e2a516;
+  --brand-text-hover: #a87a0f;
+}
+
+[data-ui-style='technical'][data-theme='cyber'] {
+  /* Electric cyan phosphor — the digital-futurism theme, most at home in this always-dark
+     terminal style. */
+  --brand-50: rgba(0, 194, 217, 0.1);
+  --brand-100: rgba(0, 194, 217, 0.18);
+  --brand-300: #a3fbff;
+  --brand-400: #5ff2ff;
+  --brand-500: #14e6ff;
+  --brand-600: #00c2d9;
+  --brand-700: #008fa3;
+  --brand-rgb: 0, 194, 217;
+}
+
 /* ============================================================
    Orbit — third UI style. Space/star-map theme: always dark like Technical (not a light/dark
    toggle, a deliberate night-sky aesthetic), each brand theme becomes a different "nebula" color
@@ -293,15 +452,16 @@
   --text-subtle: #8f8ac4;
   --border: #26245f;
 
-  /* Default "purple & pink" theme = violet nebula. */
-  --brand-50: rgba(168, 85, 247, 0.08);
-  --brand-100: rgba(168, 85, 247, 0.16);
-  --brand-300: #d8b4fe;
-  --brand-400: #c084fc;
-  --brand-500: #a855f7;
-  --brand-600: #9333ea;
-  --brand-700: #7e22ce;
-  --brand-rgb: 168, 85, 247;
+  /* Default "terracotta & cream" theme = coral nebula. Purple & Pink's old violet nebula now lives
+     in its own [data-theme='purple_pink'] compound block below. */
+  --brand-50: rgba(210, 85, 31, 0.08);
+  --brand-100: rgba(210, 85, 31, 0.16);
+  --brand-300: #ffb08a;
+  --brand-400: #ff8752;
+  --brand-500: #f2652b;
+  --brand-600: #d2551f;
+  --brand-700: #a8421a;
+  --brand-rgb: 210, 85, 31;
 
   --brand-fill: var(--brand-600);
   --shadow-brand: 0 6px 0 var(--brand-700), 0 0 22px rgba(var(--brand-rgb), 0.4);
@@ -411,6 +571,90 @@
   --brand-rgb: 14, 165, 233;
   --brand-text: #38bdf8;
   --brand-text-hover: #a5e9ff;
+}
+
+[data-ui-style='orbit'][data-theme='purple_pink'] {
+  /* Old default's violet nebula, preserved as-is. */
+  --brand-50: rgba(168, 85, 247, 0.08);
+  --brand-100: rgba(168, 85, 247, 0.16);
+  --brand-300: #d8b4fe;
+  --brand-400: #c084fc;
+  --brand-500: #a855f7;
+  --brand-600: #9333ea;
+  --brand-700: #7e22ce;
+  --brand-rgb: 168, 85, 247;
+  --brand-text: #c084fc;
+  --brand-text-hover: #d8b4fe;
+}
+
+[data-ui-style='orbit'][data-theme='garnet'] {
+  /* Wine nebula */
+  --brand-50: rgba(179, 18, 63, 0.08);
+  --brand-100: rgba(179, 18, 63, 0.16);
+  --brand-300: #f5a8bd;
+  --brand-400: #e85d85;
+  --brand-500: #d4265f;
+  --brand-600: #b3123f;
+  --brand-700: #8a0e30;
+  --brand-rgb: 179, 18, 63;
+  --brand-text: #e85d85;
+  --brand-text-hover: #f5a8bd;
+}
+
+[data-ui-style='orbit'][data-theme='sapphire'] {
+  /* Sapphire nebula */
+  --brand-50: rgba(20, 84, 179, 0.08);
+  --brand-100: rgba(20, 84, 179, 0.16);
+  --brand-300: #a8c8f5;
+  --brand-400: #6699e8;
+  --brand-500: #2f6fd4;
+  --brand-600: #1454b3;
+  --brand-700: #0f3f87;
+  --brand-rgb: 20, 84, 179;
+  --brand-text: #6699e8;
+  --brand-text-hover: #a8c8f5;
+}
+
+[data-ui-style='orbit'][data-theme='emerald'] {
+  /* Jade nebula */
+  --brand-50: rgba(14, 136, 80, 0.08);
+  --brand-100: rgba(14, 136, 80, 0.16);
+  --brand-300: #8ee0b3;
+  --brand-400: #45c184;
+  --brand-500: #1a9e5e;
+  --brand-600: #0e8850;
+  --brand-700: #0a6a3d;
+  --brand-rgb: 14, 136, 80;
+  --brand-text: #45c184;
+  --brand-text-hover: #8ee0b3;
+}
+
+[data-ui-style='orbit'][data-theme='black_gold'] {
+  /* Gold nebula */
+  --brand-50: rgba(184, 135, 31, 0.08);
+  --brand-100: rgba(184, 135, 31, 0.16);
+  --brand-300: #f5dfa0;
+  --brand-400: #e8c25a;
+  --brand-500: #d4a52e;
+  --brand-600: #b8871f;
+  --brand-700: #8a6416;
+  --brand-rgb: 184, 135, 31;
+  --brand-text: #e8c25a;
+  --brand-text-hover: #f5dfa0;
+}
+
+[data-ui-style='orbit'][data-theme='cyber'] {
+  /* Cyan nebula */
+  --brand-50: rgba(6, 182, 212, 0.08);
+  --brand-100: rgba(6, 182, 212, 0.16);
+  --brand-300: #9df0ff;
+  --brand-400: #45dfff;
+  --brand-500: #0dc8e6;
+  --brand-600: #06b6d4;
+  --brand-700: #048196;
+  --brand-rgb: 6, 182, 212;
+  --brand-text: #45dfff;
+  --brand-text-hover: #9df0ff;
 }
 
 /* Faint starfield, Orbit only — a fixed dot-scatter behind everything, quieter than Technical's
@@ -1005,6 +1249,26 @@ h2 {
   animation: fadeInUp 0.4s ease-out both;
 }
 
+.settings-saved-toast {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin: 0 auto;
+  background: #22c55e;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 14px 4px 14px 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 80;
+  /* Deliberately not using transform: translateX(-50%) to center this — fadeInUp's own
+     transform: translateY(...) keyframes would fully overwrite it for the animation's duration
+     (an element only has one live `transform` value), leaving the toast unshifted and off-center. */
+  animation: fadeInUp 0.3s ease-out both;
+}
+
 @keyframes fadeInUp {
   0% { opacity: 0; transform: translateY(14px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -1018,7 +1282,7 @@ h2 {
   display: flex;
   gap: 4px;
   background: var(--brand-50);
-  border-radius: 999px;
+  border-radius: 16px 4px 16px 4px;
   padding: 5px;
   margin: 20px 0;
 }
@@ -1030,7 +1294,7 @@ h2 {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1.5px solid var(--glass-border);
-  border-radius: 999px;
+  border-radius: 16px 4px 16px 4px;
   padding: 5px;
   margin: 14px 0;
 }
@@ -1040,7 +1304,7 @@ h2 {
   padding: 11px 0;
   border: none;
   background: transparent;
-  border-radius: 999px;
+  border-radius: 12px 3px 12px 3px;
   cursor: pointer;
   color: var(--text-subtle);
   font-weight: 700;
@@ -1091,7 +1355,7 @@ h2 {
   border: 1.5px solid var(--glass-border);
   border-radius: 12px;
   padding: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   color: inherit;
   transition: transform 0.15s;
 }
@@ -1104,9 +1368,12 @@ h2 {
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   color: var(--brand-text);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--brand-fill);
+  display: inline-block;
 }
 
 .preview-card-empty {
@@ -1152,8 +1419,9 @@ h2 {
 
 .preview-average-value {
   font-family: var(--font-display);
-  font-size: 2.2rem;
-  font-weight: 700;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--brand-text);
 }
 
@@ -1169,7 +1437,7 @@ h2 {
   border: 1.5px solid var(--glass-border);
   border-radius: 12px;
   padding: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .suggestions-section ul {
@@ -1183,7 +1451,7 @@ h2 {
 
 .suggestions-section li {
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 4px;
   background: var(--brand-50);
   border: 1px solid var(--border);
   border-left: 4px solid var(--brand-500);
@@ -1336,6 +1604,20 @@ h2 {
   font-size: 0.8rem;
 }
 
+.grade-table-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* .see-all-btn's own margin-left:auto exists for when it's the only button in its row (pushes it
+   to the right edge) — with two of them sharing this row, that pushed each one apart instead of
+   keeping them together on the left where "+ Add grades" always lived. */
+.grade-table-actions-row .see-all-btn {
+  margin-left: 0;
+}
+
 .grade-add-form {
   display: flex;
   flex-direction: column;
@@ -1352,6 +1634,13 @@ h2 {
   gap: 10px;
 }
 
+/* Only in the calculator popup — the "+ Add Subject" form's own button row already sits below a
+   full bordered card (.grade-add-form) with its own breathing room, but here it sits directly
+   under a bare input, which needs the extra gap itself so the buttons don't read as glued to it. */
+.material-popup .grade-add-actions {
+  margin-top: 8px;
+}
+
 .grade-add-actions .primary-btn,
 .grade-add-actions .secondary-btn {
   margin-top: 0;
@@ -1360,6 +1649,7 @@ h2 {
 
 .grade-average-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
@@ -1371,7 +1661,7 @@ h2 {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: 999px;
+  border-radius: 14px 4px 14px 4px;
   background: var(--brand-fill);
   color: white;
   font-weight: 800;
@@ -1412,7 +1702,7 @@ h2 {
   font-weight: 800;
   letter-spacing: 0.02em;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 6px 2px 6px 2px;
   border: none;
   color: white;
   margin-left: 6px;
@@ -1594,6 +1884,102 @@ h2 {
   color: var(--red-bg);
 }
 
+/* Deliberately NOT a smaller copy of .grade-pass-badge/.grade-average-chip's solid-fill pill —
+   this is a "target marker": no fill, no border box at all, just the number flanked by small
+   corner-bracket ticks (a targeting-reticle read) so it can't be mistaken for a shrunken result
+   chip. Muted color while no goal is set yet (text reads "Goal"), full brand color once one
+   exists (text becomes the number) — color alone carries that state, same principle as the
+   pass/fail badges using color to carry meaning, just without their filled shape.
+   Clicking it always opens the calculator/goal popup — never an inline editor — so this is the
+   ONLY place goal-setting lives in the table, no duplicated controls. */
+.grade-goal-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 0 3px;
+  border: none;
+  background: transparent;
+  color: var(--text-subtle);
+  margin-left: 6px;
+  vertical-align: middle;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.grade-goal-badge::before,
+.grade-goal-badge::after {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 8px;
+}
+
+.grade-goal-badge::before {
+  border-top: 1.5px solid currentColor;
+  border-left: 1.5px solid currentColor;
+  margin-right: 4px;
+}
+
+.grade-goal-badge::after {
+  border-bottom: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  margin-left: 4px;
+}
+
+.grade-goal-badge:hover {
+  transform: translateY(-1px);
+}
+
+.grade-goal-badge-set {
+  color: var(--brand-text);
+}
+
+/* Technical: not the same bracket reticle recolored — a terminal-prompt chevron instead, matching
+   the phosphor-readout idiom the rest of Technical already uses (see .grade-pass-badge's override
+   below). Only a leading marker, no trailing one. */
+[data-ui-style='technical'] .grade-goal-badge::before {
+  border: none;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid currentColor;
+  width: 0;
+  height: 0;
+  margin-right: 5px;
+}
+
+[data-ui-style='technical'] .grade-goal-badge::after {
+  content: none;
+}
+
+[data-ui-style='technical'] .grade-goal-badge-set {
+  color: var(--brand-fill);
+  text-shadow: 0 0 4px currentColor;
+}
+
+/* Orbit: a short fading comet-tail line instead of the reticle brackets, matching the meteor/star
+   motif already used elsewhere in this theme (see OrbitMap's meteors). Only a leading marker, no
+   trailing one. */
+[data-ui-style='orbit'] .grade-goal-badge::before {
+  border: none;
+  width: 14px;
+  height: 1.5px;
+  background: linear-gradient(to right, transparent, currentColor);
+  margin-right: 5px;
+}
+
+[data-ui-style='orbit'] .grade-goal-badge::after {
+  content: none;
+}
+
+[data-ui-style='orbit'] .grade-goal-badge-set {
+  color: var(--brand-fill);
+  text-shadow: 0 0 2px currentColor;
+}
+
 .grade-disclaimer {
   margin-top: 8px;
   text-align: right;
@@ -1625,7 +2011,7 @@ h2 {
   padding: 10px 0;
   border: none;
   background: transparent;
-  border-radius: 999px;
+  border-radius: 12px 3px 12px 3px;
   cursor: pointer;
   color: var(--text-subtle);
   font-weight: 700;
@@ -1809,6 +2195,25 @@ textarea:focus {
   margin: 18px 0 0;
 }
 
+.reflection-dialog {
+  max-width: 420px;
+  padding: 32px 30px;
+}
+
+.reflection-dialog p {
+  font-size: 1.05rem;
+}
+
+.reflection-dialog-actions {
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.reflection-dialog-actions .secondary-btn {
+  padding: 15px 16px;
+}
+
 .material-popup {
   position: relative;
   background: var(--glass-bg-strong);
@@ -1912,6 +2317,18 @@ textarea:focus {
   opacity: 0.75;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.study-plan-exam-week {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px 1px 4px 1px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
 }
 
 .study-plan-days {
@@ -2072,7 +2489,7 @@ textarea:focus {
 
 .difficulty-btn {
   padding: 7px 13px;
-  border-radius: 999px;
+  border-radius: 10px 3px 10px 3px;
   border: 2px solid var(--border);
   background: var(--brand-50);
   color: var(--text-subtle);
@@ -2106,9 +2523,31 @@ textarea:focus {
   border-color: var(--red-border);
 }
 
+.calculator-result {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px 4px 12px 4px;
+  background: var(--brand-50);
+  border: 1.5px solid var(--border);
+}
+
+.calculator-result p {
+  margin: 4px 0;
+}
+
+.calculator-result-infeasible {
+  border-color: var(--red-border);
+  border-width: 2px;
+}
+
+.calculator-low-impact-note {
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+}
+
 .weekday-btn {
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: 10px 3px 10px 3px;
   border: 2px solid var(--border);
   background: var(--brand-50);
   color: var(--text-subtle);
@@ -2211,7 +2650,7 @@ textarea:focus {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border-radius: 999px;
+  border-radius: 12px 3px 12px 3px;
   border: 2.5px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -2346,7 +2785,12 @@ textarea:focus {
 
 .dashboard-header h1 {
   margin: 0;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-header .brand-name {
+  letter-spacing: 0.02em;
 }
 
 .header-actions {
@@ -2357,7 +2801,7 @@ textarea:focus {
 
 .icon-btn {
   padding: 10px 16px;
-  border-radius: 999px;
+  border-radius: 12px 3px 12px 3px;
   border: 2px solid var(--border);
   background: var(--brand-50);
   color: var(--text-subtle);
@@ -2379,7 +2823,7 @@ textarea:focus {
 
 .logout-btn {
   padding: 10px 18px;
-  border-radius: 999px;
+  border-radius: 12px 3px 12px 3px;
   border: 2px solid var(--border);
   background: var(--brand-50);
   color: var(--text-subtle);
@@ -2396,6 +2840,28 @@ textarea:focus {
 .logout-btn:hover {
   border-color: var(--danger);
   color: var(--danger-dark);
+}
+
+/* Classic Schedule page section headers ("Periodic Exams", "Final Exams", etc.) — a solid brand
+   block instead of plain text carries the same "stamped ink" identity as the cards below it. */
+.schedule-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 30px 0 14px;
+}
+
+.schedule-section-title::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background: var(--brand-fill);
+  border-radius: 4px;
 }
 
 .stats-strip {
@@ -2453,7 +2919,7 @@ textarea:focus {
   align-self: center;
   margin-left: auto;
   padding: 10px 16px;
-  border-radius: 999px;
+  border-radius: 12px 3px 12px 3px;
   border: 1.5px solid var(--glass-border);
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -2480,9 +2946,9 @@ textarea:focus {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  border-radius: 10px;
+  border-radius: 4px;
   background: var(--glass-bg);
-  border: 1.5px dashed var(--glass-border);
+  border: 2.5px dashed var(--glass-border);
 }
 
 .empty-state svg {
@@ -2553,7 +3019,7 @@ textarea:focus {
 }
 
 .exam-bubble:hover {
-  transform: translateY(-3px) rotate(-0.4deg);
+  transform: translateY(-3px);
 }
 
 .exam-bubble-material-hint {
@@ -2632,7 +3098,7 @@ textarea:focus {
   display: inline-block;
   margin-left: 6px;
   padding: 2px 9px;
-  border-radius: 999px;
+  border-radius: 6px 2px 6px 2px;
   background: rgba(255, 255, 255, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.4);
   font-weight: 700;
@@ -2652,7 +3118,7 @@ textarea:focus {
 }
 
 .holiday-bubble:hover {
-  transform: translateY(-3px) rotate(0.4deg);
+  transform: translateY(-3px);
 }
 
 .holiday-bubble-days {
@@ -2706,20 +3172,29 @@ textarea:focus {
   top: calc(20px + env(safe-area-inset-top));
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: 4px;
   border: 2.5px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: 1.3rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(31, 27, 22, 0.1);
-  transition: transform 0.15s, border-color 0.15s;
+  /* The one deliberately "3D" element in Classic — a stamped offset shadow in the theme's brand
+     color. Border stays the normal themed --border (not --text), so it never turns into a stray
+     white outline in dark mode. */
+  box-shadow: 3px 3px 0 var(--brand-700);
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.15s;
   z-index: 30;
 }
 
 .hamburger-btn:hover {
-  transform: translateY(-1px);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--brand-700);
   border-color: var(--brand-500);
+}
+
+.hamburger-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--brand-700);
 }
 
 .drawer-backdrop {
@@ -3456,6 +3931,26 @@ textarea:focus {
 @keyframes orbitPriorityPulse {
   0%, 100% { box-shadow: 0 0 8px 2px currentColor; }
   50% { box-shadow: 0 0 18px 6px currentColor; }
+}
+
+/* A final exam star keeps its normal difficulty-color glow (box-shadow, untouched) but also gets a
+   plain border ring — border is a separate property from box-shadow, so it stays visible through
+   the priority-pulse animation above without needing its own keyframes or combined selectors. */
+.orbit-star.final {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.orbit-star-final-tag {
+  display: inline-block;
+  margin-left: 3px;
+  padding: 1px 4px;
+  border-radius: 4px 1px 4px 1px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0b0b2a;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
 }
 
 /* Always visible — hiding these behind :hover broke touch entirely (nothing to hover on a phone,

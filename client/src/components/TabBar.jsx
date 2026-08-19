@@ -13,7 +13,7 @@ export default function TabBar({ activeTab, onSwitchTab }) {
         className={activeTab === 'schedule' ? 'page-tab active' : 'page-tab'}
         onClick={() => onSwitchTab('schedule')}
       >
-        Schedule
+        Calendar
       </button>
       <button
         type="button"

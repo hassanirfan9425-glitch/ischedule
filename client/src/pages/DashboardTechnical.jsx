@@ -47,7 +47,7 @@ function AllExamsSection({ exams, onExamClick, onBack }) {
       {exams.length === 0 ? (
         <EmptyState
           title="Nothing on the horizon"
-          hint="Upload your schedule or add exams manually to see them here."
+          hint="Upload your calendar or add exams manually to see them here."
         />
       ) : (
         <div className="ledger-table">
@@ -67,6 +67,9 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
   const [confirmingDeleteSchedule, setConfirmingDeleteSchedule] = useState(false);
   const [deletingSchedule, setDeletingSchedule] = useState(false);
   const [deleteScheduleError, setDeleteScheduleError] = useState('');
+  const [confirmingDeleteFinalSchedule, setConfirmingDeleteFinalSchedule] = useState(false);
+  const [deletingFinalSchedule, setDeletingFinalSchedule] = useState(false);
+  const [deleteFinalScheduleError, setDeleteFinalScheduleError] = useState('');
   const [choosingMaterialExam, setChoosingMaterialExam] = useState(null);
   const [attachingMaterialExam, setAttachingMaterialExam] = useState(null);
   const [manualMaterialExam, setManualMaterialExam] = useState(null);
@@ -94,6 +97,21 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
       setDeleteScheduleError(err.message);
     } finally {
       setDeletingSchedule(false);
+    }
+  };
+
+  const handleDeleteFinalSchedule = async () => {
+    setDeletingFinalSchedule(true);
+    setDeleteFinalScheduleError('');
+    try {
+      await api.deleteFinalSchedule();
+      const fresh = await api.getDashboard();
+      setData(fresh);
+      setConfirmingDeleteFinalSchedule(false);
+    } catch (err) {
+      setDeleteFinalScheduleError(err.message);
+    } finally {
+      setDeletingFinalSchedule(false);
     }
   };
 
@@ -131,6 +149,7 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
       attachingMaterialExam ||
         manualMaterialExam ||
         confirmingDeleteSchedule ||
+        confirmingDeleteFinalSchedule ||
         viewingMaterialExam ||
         choosingMaterialExam ||
         choosingScheduleAdd ||
@@ -148,6 +167,11 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
       if (confirmingDeleteSchedule) {
         setConfirmingDeleteSchedule(false);
         setDeleteScheduleError('');
+        return;
+      }
+      if (confirmingDeleteFinalSchedule) {
+        setConfirmingDeleteFinalSchedule(false);
+        setDeleteFinalScheduleError('');
         return;
       }
       if (viewingMaterialExam) {
@@ -201,7 +225,7 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
       <CommandBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
       <div className="binder-content">
         <header className="ledger-header">
-          <div className="ledger-header-title">Schedule</div>
+          <div className="ledger-header-title">Calendar</div>
           <h1>{greeting}</h1>
         </header>
 
@@ -218,9 +242,9 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
             <div className="plus-button" onClick={() => setChoosingScheduleAdd(true)} role="button" tabIndex={0}>
               +
             </div>
-            <div className="empty-landing-title">Add your school schedule</div>
+            <div className="empty-landing-title">Add your school calendar</div>
             <p className="empty-landing-hint">
-              Upload a PDF or image of your exam &amp; holiday schedule, or enter it manually, to
+              Upload a PDF or image of your exam &amp; holiday calendar, or enter it manually, to
               build your dashboard.
             </p>
           </div>
@@ -255,24 +279,33 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
                 <ExamSection
                   title="Periodic Exams"
                   emptyTitle="Nothing on the horizon"
-                  emptyHint="Upload your schedule or add exams manually to see them here."
+                  emptyHint="Upload your calendar or add exams manually to see them here."
                   exams={data.periodicExams}
                   onExamClick={handleExamClick}
                 />
                 <ExamSection
                   title="Final Exams"
                   emptyTitle="No finals scheduled yet"
-                  emptyHint="They'll show up here once your schedule includes them."
+                  emptyHint="They'll show up here once your calendar includes them."
                   exams={data.finalExams}
                   onExamClick={handleExamClick}
                 />
+                {data.finalExams.length > 0 && (
+                  <button
+                    type="button"
+                    className="secondary-btn danger-hover-btn schedule-delete-btn"
+                    onClick={() => setConfirmingDeleteFinalSchedule(true)}
+                  >
+                    Delete Final Calendar
+                  </button>
+                )}
 
                 <section>
                   <h2>Upcoming Holidays</h2>
                   {data.holidays.length === 0 ? (
                     <EmptyState
                       title="No holidays coming up"
-                      hint="Check back after your next schedule update."
+                      hint="Check back after your next calendar update."
                     />
                   ) : (
                     <div className="ledger-table">
@@ -293,20 +326,20 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
             className="secondary-btn danger-hover-btn schedule-delete-btn"
             onClick={() => setConfirmingDeleteSchedule(true)}
           >
-            Delete Schedule
+            Delete Calendar
           </button>
         )}
 
         {hasAnyScheduleData && (
-          <button type="button" className="fab-btn" onClick={() => setChoosingScheduleAdd(true)} title="Update your schedule">
+          <button type="button" className="fab-btn" onClick={() => setChoosingScheduleAdd(true)} title="Update your calendar">
             +
           </button>
         )}
 
         {confirmingDeleteSchedule && (
           <ConfirmDialog
-            message="Are you sure you want to delete your entire schedule? This removes every exam and holiday, including manually-entered ones. This cannot be undone."
-            confirmLabel="Delete Schedule"
+            message="Are you sure you want to delete your entire calendar? This removes every exam and holiday, including manually-entered ones. This cannot be undone."
+            confirmLabel="Delete Calendar"
             danger
             busy={deletingSchedule}
             error={deleteScheduleError}
@@ -315,6 +348,21 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
               setDeleteScheduleError('');
             }}
             onConfirm={handleDeleteSchedule}
+          />
+        )}
+
+        {confirmingDeleteFinalSchedule && (
+          <ConfirmDialog
+            message="Are you sure you want to delete your final exam calendar? This removes every final exam entry. Periodic exams and holidays are not affected. This cannot be undone."
+            confirmLabel="Delete Final Calendar"
+            danger
+            busy={deletingFinalSchedule}
+            error={deleteFinalScheduleError}
+            onCancel={() => {
+              setConfirmingDeleteFinalSchedule(false);
+              setDeleteFinalScheduleError('');
+            }}
+            onConfirm={handleDeleteFinalSchedule}
           />
         )}
 
@@ -347,7 +395,7 @@ export default function Dashboard({ greeting, onReupload, onManualEntry, activeT
 
         {choosingScheduleAdd && (
           <AddChoiceDialog
-            message="How would you like to add your schedule?"
+            message="How would you like to add your calendar?"
             onChooseAuto={() => {
               setChoosingScheduleAdd(false);
               onReupload();
