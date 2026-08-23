@@ -5,7 +5,7 @@ import { countdownText, APK_DOWNLOAD_URL } from '../utils.js';
 import ExamBubble from '../components/ExamBubbleClassic.jsx';
 import HolidayBubble from '../components/HolidayBubbleClassic.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import MaterialPopup from '../components/MaterialPopup.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
@@ -17,7 +17,7 @@ import { useBackHandler } from '../hooks/useBackButton.js';
 function EmptyState({ title, hint }) {
   return (
     <div className="empty-state">
-      <CalendarIcon size={22} />
+      <BrandIcon size={22} />
       <div>
         <div className="empty-state-title">{title}</div>
         {hint && <div className="empty-state-hint">{hint}</div>}
@@ -290,10 +290,10 @@ export default function Dashboard({
 
       <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
-          <CalendarIcon />
+          <BrandIcon />
           <div>
             <div className="brand-name" style={{ fontSize: '1.1rem' }}>
-              iCalendar
+              Cram
             </div>
             <h1 style={{ fontSize: '1.4rem' }}>{greeting}</h1>
           </div>

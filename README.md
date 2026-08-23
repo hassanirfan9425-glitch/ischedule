@@ -1,4 +1,4 @@
-# iSchedule
+# Cram
 
 A local website: sign up / log in, take a quick subject-difficulty quiz, upload a photo or PDF of
 your school's exam/holiday schedule, and get a dashboard of upcoming exams and holidays with

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../api.js';
 import { APK_DOWNLOAD_URL } from '../utils.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import AddChoiceDialog from '../components/AddChoiceDialog.jsx';
@@ -235,10 +235,10 @@ export default function Academics({
 
       <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
-          <CalendarIcon />
+          <BrandIcon />
           <div>
             <div className="brand-name" style={{ fontSize: '1.1rem' }}>
-              iGrade
+              Cram
             </div>
             <h1 style={{ fontSize: '1.4rem' }}>{greeting}</h1>
           </div>

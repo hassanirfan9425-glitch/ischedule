@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 
 // Static and tiny — fetching this from the server on every Settings open added a real, noticeable
 // (2-3s) delay before the swatches appeared, since it's a network round trip the rest of this page
@@ -66,8 +66,8 @@ export default function Settings({ user, onBack, onUserUpdated }) {
           ← Back to dashboard
         </button>
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">Study Compass</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
         <h1>Settings</h1>
 

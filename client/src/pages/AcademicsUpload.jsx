@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 
 const ACCEPTED = '.pdf,.png,.jpg,.jpeg,.webp,.gif';
 
@@ -33,7 +33,7 @@ export default function AcademicsUpload({ onComplete, onCancel }) {
   if (status === 'analyzing') {
     return (
       <div className="centered-screen">
-        <CalendarIcon size={40} />
+        <BrandIcon size={40} />
         <div className="spinner" style={{ marginTop: 16 }} />
         <p className="subtle" style={{ marginTop: 16, textAlign: 'center', maxWidth: 320 }}>
           Reading your grade report, pulling out every entry…
@@ -49,8 +49,8 @@ export default function AcademicsUpload({ onComplete, onCancel }) {
           ← Back to dashboard
         </button>
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">iGrade</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
         <h1>Attach your grade report</h1>
         <p className="subtle">

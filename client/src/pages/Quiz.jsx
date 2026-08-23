@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 
 function appliesToIdentity(subject, identity) {
   return Object.entries(subject.appliesWhen).every(([k, v]) => identity[k] === v);
@@ -203,8 +203,8 @@ export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutoria
           </button>
         )}
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">Study Compass</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
 
         {step === 'core' && (

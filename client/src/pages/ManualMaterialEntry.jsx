@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 
 function splitLines(text) {
   return text
@@ -44,8 +44,8 @@ export default function ManualMaterialEntry({ exam, onComplete, onCancel }) {
           ← Back to dashboard
         </button>
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">iCalendar</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
         <h1>Enter material for {exam.subjectLabel}</h1>
         <p className="subtle">

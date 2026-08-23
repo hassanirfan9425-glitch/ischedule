@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 import PrivacyTerms from './PrivacyTerms.jsx';
 
 const FEATURES = [
@@ -53,8 +53,8 @@ export default function AuthPage({ onAuth }) {
     <div className="centered-screen">
       <div className="auth-card">
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">Study Compass</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
         <h1>{mode === 'login' ? 'Welcome back!' : 'Create your account'}</h1>
         <p className="subtle">Your academic life, organized around you.</p>

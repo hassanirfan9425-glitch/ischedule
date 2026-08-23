@@ -1,10 +1,10 @@
-# Study Compass — Project Handoff
+# Cram — Project Handoff
 
 Written 2026-08-20. Complete reference for picking this project up in a fresh chat. Point-in-time snapshot — re-verify against actual code/DB if something with a specific number or file:line seems off.
 
 ## 1. What this app is
 
-"Study Compass" — exam schedule, grade, and study tracker for one specific UAE school's SABIS system (weekly "Periodic" assessments + termly "AMS" grades + Final exams). Branding is now **iCalendar** (was iSchedule) for the schedule/calendar side, **iGrade** for academics. Not generic — subject list, grade weights, exam types are hardcoded to this one school.
+"Cram" (rebranded from "Study Compass", which itself replaced older per-section names "iCalendar"/"iSchedule"/"iGrade" — all user-facing text now says "Cram" everywhere) — exam schedule, grade, and study tracker for one specific UAE school's SABIS system (weekly "Periodic" assessments + termly "AMS" grades + Final exams). Not generic — subject list, grade weights, exam types are hardcoded to this one school.
 
 ## 2. Access & deployment
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 import FinalExamReview from '../components/FinalExamReview.jsx';
 
 const ACCEPTED = '.pdf,.png,.jpg,.jpeg,.webp,.gif';
@@ -78,7 +78,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
   if (status === 'analyzing') {
     return (
       <div className="centered-screen">
-        <CalendarIcon size={40} />
+        <BrandIcon size={40} />
         <div className="spinner" style={{ marginTop: 16 }} />
         <p className="subtle" style={{ marginTop: 16, textAlign: 'center', maxWidth: 320 }}>
           Analyzing your calendar. This can take a few minutes while the agent works through the grid…
@@ -96,8 +96,8 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
           </button>
         )}
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">iCalendar</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
         <h1>Attach your school calendar</h1>
         <p className="subtle">Upload a PDF or image of the school calendar to build your own personalized calendar.</p>

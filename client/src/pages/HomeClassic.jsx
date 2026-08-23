@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { api } from '../api.js';
 import { countdownText, formatDate, APK_DOWNLOAD_URL } from '../utils.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import StudyPlanPopup from '../components/StudyPlanPopup.jsx';
@@ -230,7 +230,7 @@ export default function Home({
 
       <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
-          <CalendarIcon />
+          <BrandIcon />
           <div>
             <div className="brand-name" style={{ fontSize: '1.1rem' }}>
               Home

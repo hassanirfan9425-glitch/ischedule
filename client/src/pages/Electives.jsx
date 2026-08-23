@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
-import CalendarIcon from '../components/CalendarIcon.jsx';
+import BrandIcon from '../components/BrandIcon.jsx';
 
 // Lets a student change which extra (non-core) subjects they take at any time, without touching
 // their core subject ratings, identity answers, or periodic day — those stay exactly as they are.
@@ -99,8 +99,8 @@ export default function Electives({ onDone, onCancel }) {
           ← Back to dashboard
         </button>
         <div className="brand">
-          <CalendarIcon />
-          <span className="brand-name">Study Compass</span>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
         </div>
 
         <h1>Your externals</h1>

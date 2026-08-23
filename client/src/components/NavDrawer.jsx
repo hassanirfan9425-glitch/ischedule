@@ -1,4 +1,4 @@
-import CalendarIcon from './CalendarIcon.jsx';
+import BrandIcon from './BrandIcon.jsx';
 
 export default function NavDrawer({ open, onClose, items, highlightIndex = null }) {
   return (
@@ -7,8 +7,8 @@ export default function NavDrawer({ open, onClose, items, highlightIndex = null 
       <nav className={open ? 'nav-drawer open' : 'nav-drawer'}>
         <div className="nav-drawer-header">
           <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
-            <CalendarIcon size={24} />
-            <span className="brand-name">Study Compass</span>
+            <BrandIcon size={24} />
+            <span className="brand-name">Cram</span>
           </div>
           <button type="button" className="drawer-close" onClick={onClose} aria-label="Close menu">
             ✕

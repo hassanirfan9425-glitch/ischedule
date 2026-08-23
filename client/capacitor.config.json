@@ -1,6 +1,6 @@
 {
   "appId": "com.sabishub.app",
-  "appName": "Study Compass",
+  "appName": "Cram",
   "webDir": "dist",
   "server": {
     "url": "https://studycompass.netlify.app",
