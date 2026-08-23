@@ -249,60 +249,82 @@ export default function Home({
       )}
 
       {!loading && (
-        <>
+        <div className="bloom-home">
           <button
             type="button"
-            className="preview-card"
+            className="bloom-hero"
             data-tutorial="schedule-block"
             onClick={() => onSwitchTab('schedule')}
           >
-            <div className="preview-card-title">Calendar</div>
+            <div className="bloom-lbl">Next up</div>
             {upcomingExams.length === 0 ? (
-              <div className="preview-card-empty">No upcoming exams yet. Tap to add your calendar.</div>
+              <div className="bloom-empty">No upcoming exams yet. Tap to add your calendar.</div>
             ) : (
-              upcomingExams.map((exam) => (
-                <div className="preview-exam-row" key={exam.id}>
-                  <span className="preview-exam-subject">{exam.subjectLabel}</span>
-                  <span className="preview-exam-days">{countdownText(exam.daysUntil)}</span>
+              <>
+                <div className="bloom-big">
+                  {upcomingExams[0].subjectLabel} &middot; {countdownText(upcomingExams[0].daysUntil)}
                 </div>
-              ))
+                {upcomingExams.length > 1 && (
+                  <div className="bloom-hero-sub">
+                    {upcomingExams.slice(1).map((exam) => (
+                      <span key={exam.id}>
+                        {exam.subjectLabel} ({countdownText(exam.daysUntil)})
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </button>
 
-          <button
-            type="button"
-            className="preview-card"
-            data-tutorial="academic-block"
-            onClick={() => onSwitchTab('academics')}
-          >
-            <div className="preview-card-title">Academics</div>
-            {termsWithGrades.length === 0 ? (
-              <div className="preview-card-empty">No grades yet. Tap to add your grade report.</div>
-            ) : (
-              <div className="preview-average-list">
-                {termsWithGrades.map((t) => (
-                  <div className="preview-average" key={t.term}>
-                    <span className="preview-average-value">{Math.round(t.overallAverage)}</span>
-                    <span className="preview-average-label">Term {t.term} average</span>
-                    {topStreakSubject && latestTermWithGrades && t.term === latestTermWithGrades.term && (
-                      <span
-                        className={`streak-badge streak-badge-full ${
-                          topStreakSubject.amsStreakStatus === 'atRisk' ? 'streak-badge-atrisk' : ''
-                        } ${topStreakAnim ? `streak-anim-${topStreakAnim.type}` : ''}`.trim()}
-                      >
-                        🔥 {topStreakSubject.amsStreak}-week streak in {topStreakSubject.subjectLabel}
-                      </span>
-                    )}
+          <div className="bloom-row2">
+            <button
+              type="button"
+              className="bloom-card tonal"
+              data-tutorial="academic-block"
+              onClick={() => onSwitchTab('academics')}
+            >
+              <div className="bloom-lbl">Average</div>
+              {termsWithGrades.length === 0 ? (
+                <div className="bloom-big" style={{ fontSize: '0.95rem' }}>
+                  No grades yet
+                </div>
+              ) : (
+                termsWithGrades.map((t) => (
+                  <div className="bloom-big" key={t.term}>
+                    {Math.round(t.overallAverage)}%
                   </div>
-                ))}
+                ))
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="bloom-card tonal"
+              data-tutorial="academic-block"
+              onClick={() => onSwitchTab('academics')}
+            >
+              <div className="bloom-lbl">Streak</div>
+              <div className="bloom-big" style={{ fontSize: topStreakSubject ? '1.1rem' : '0.95rem' }}>
+                {topStreakSubject ? (
+                  <span
+                    className={`${
+                      topStreakSubject.amsStreakStatus === 'atRisk' ? 'streak-badge-atrisk' : ''
+                    } ${topStreakAnim ? `streak-anim-${topStreakAnim.type}` : ''}`.trim()}
+                  >
+                    🔥 {topStreakSubject.amsStreak} weeks
+                  </span>
+                ) : (
+                  'No streak yet'
+                )}
               </div>
-            )}
-          </button>
+            </button>
+          </div>
 
           {latestTermWithGrades && latestTermWithGrades.suggestions.length > 0 && (
-            <div className="suggestions-section" data-tutorial="suggestions-section">
-              <div className="preview-card-title">Suggestions</div>
-              <ul>
+            <div className="bloom-card surface" data-tutorial="suggestions-section">
+              <div className="bloom-lbl">Suggestions</div>
+              <ul className="bloom-suggestions-list">
                 {latestTermWithGrades.suggestions.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
@@ -313,20 +335,17 @@ export default function Home({
           {planExams.length > 0 && (
             <button
               type="button"
-              className="preview-card"
+              className="bloom-card tonal"
               data-tutorial="study-plan-block"
               onClick={() => setViewingStudyPlan(true)}
             >
-              <div className="preview-card-title">Study Plan</div>
+              <div className="bloom-lbl">Study plan</div>
               {nextTask ? (
-                <div className="preview-exam-row">
-                  <span className="preview-exam-subject">
-                    {nextTask.subjectLabel}: {nextTask.focus}
-                  </span>
-                  <span className="preview-exam-days">{formatDate(nextTask.date)}</span>
+                <div className="bloom-big" style={{ fontSize: '0.95rem' }}>
+                  {nextTask.subjectLabel}: {nextTask.focus} &middot; {formatDate(nextTask.date)}
                 </div>
               ) : (
-                <div className="preview-card-empty">Tap to view or generate a day-by-day plan for any upcoming exam.</div>
+                <div className="bloom-empty">Tap to view or generate a day-by-day plan for any upcoming exam.</div>
               )}
             </button>
           )}
@@ -334,7 +353,7 @@ export default function Home({
           {(pendingReflection?.examToReflect || pendingReflection?.nudge) && (
             <button
               type="button"
-              className="preview-card"
+              className="bloom-card tonal"
               data-tutorial="reflection-block"
               onClick={() => {
                 if (pendingReflection.nudge?.autoApplied) {
@@ -346,30 +365,26 @@ export default function Home({
                 }
               }}
             >
-              <div className="preview-card-title">Reflection</div>
+              <div className="bloom-lbl">Reflection</div>
               {pendingReflection.nudge?.autoApplied ? (
-                <div className="preview-exam-row">
-                  <span className="preview-exam-subject">
-                    {pendingReflection.nudge.subjectLabel} auto-adjusted to{' '}
-                    {difficultyCatalog.find((d) => d.key === pendingReflection.nudge.newDifficulty)?.label ??
-                      pendingReflection.nudge.newDifficulty}
-                  </span>
+                <div className="bloom-big" style={{ fontSize: '0.95rem' }}>
+                  {pendingReflection.nudge.subjectLabel} auto-adjusted to{' '}
+                  {difficultyCatalog.find((d) => d.key === pendingReflection.nudge.newDifficulty)?.label ??
+                    pendingReflection.nudge.newDifficulty}
                 </div>
               ) : pendingReflection.nudge ? (
-                <div className="preview-exam-row">
-                  <span className="preview-exam-subject">Re-rate {pendingReflection.nudge.subjectLabel}?</span>
+                <div className="bloom-big" style={{ fontSize: '0.95rem' }}>
+                  Re-rate {pendingReflection.nudge.subjectLabel}?
                 </div>
               ) : (
-                <div className="preview-exam-row">
-                  <span className="preview-exam-subject">
-                    How did {pendingReflection.examToReflect.subjectLabel}
-                    {pendingReflection.examToReflect.weekNumber ? ` (Week ${pendingReflection.examToReflect.weekNumber})` : ''} go?
-                  </span>
+                <div className="bloom-big" style={{ fontSize: '0.95rem' }}>
+                  How did {pendingReflection.examToReflect.subjectLabel}
+                  {pendingReflection.examToReflect.weekNumber ? ` (Week ${pendingReflection.examToReflect.weekNumber})` : ''} go?
                 </div>
               )}
             </button>
           )}
-        </>
+        </div>
       )}
 
       {confirmingDelete && (

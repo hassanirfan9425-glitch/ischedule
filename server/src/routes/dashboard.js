@@ -71,17 +71,20 @@ router.get('/', requireAuth, async (req, res) => {
     .all(userId, todayIso);
 
   const materialByExamId = Object.fromEntries(
-    (await db.prepare('SELECT exam_id, periodic_code, quizzes, questions, details FROM exam_materials WHERE user_id = ?').all(userId)).map(
-      (r) => [
-        r.exam_id,
-        {
-          periodicCode: r.periodic_code,
-          quizzes: JSON.parse(r.quizzes),
-          questions: JSON.parse(r.questions),
-          details: JSON.parse(r.details || '[]'),
-        },
-      ]
-    )
+    (
+      await db
+        .prepare('SELECT exam_id, periodic_code, quizzes, questions, details, past_papers FROM exam_materials WHERE user_id = ?')
+        .all(userId)
+    ).map((r) => [
+      r.exam_id,
+      {
+        periodicCode: r.periodic_code,
+        quizzes: JSON.parse(r.quizzes),
+        questions: JSON.parse(r.questions),
+        details: JSON.parse(r.details || '[]'),
+        pastPapers: JSON.parse(r.past_papers || '[]'),
+      },
+    ])
   );
 
   const allExams = examRows

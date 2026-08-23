@@ -89,27 +89,20 @@ async function processScheduleUpload({ userId, uploadId, file }) {
       }
 
       const exams = Array.isArray(result.exams) ? result.exams : [];
+      // Shifted up front so the review screen (and the eventual insert) always agree on the real
+      // date — nothing downstream of this needs to know about the beta year-shift at all.
+      const usableExams = exams
+        .filter((e) => e.subjectLabel && e.date)
+        .map((e) => ({ ...e, date: shiftScheduleDate(e.date) }));
 
-      const persistFinals = transaction(async () => {
-        // Additive relative to the rest of the schedule: only this term's final exams are
-        // replaced — periodic exams, holidays, and every other term's finals are untouched.
-        await db
-          .prepare("DELETE FROM exams WHERE user_id = ? AND exam_type = 'final' AND term = ?")
-          .run(userId, term);
-
-        const insertExam = db.prepare(`
-          INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, date, time, notes)
-          VALUES (?, ?, ?, ?, 'final', ?, ?, ?, ?)
-        `);
-        for (const e of exams) {
-          if (!e.subjectLabel || !e.date) continue;
-          const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
-          await insertExam.run(userId, uploadId, subjectKey, e.subjectLabel, term, shiftScheduleDate(e.date), e.time ?? null, e.notes ?? null);
-        }
-
-        await db.prepare('UPDATE schedule_uploads SET status = ? WHERE id = ?').run('done', uploadId);
-      });
-      await persistFinals();
+      // Final-exam extraction is prone to the AI misattributing a cell to the wrong subject or
+      // column (dense, non-uniform grid documents) — rather than committing straight to the
+      // student's calendar, park the result and let them review/delete entries first. A wrong
+      // entry left in for the student to catch later is silent bad data; a wrong entry they can
+      // reject in the review screen is a five-second fix.
+      await db
+        .prepare('UPDATE schedule_uploads SET status = ?, pending_data = ? WHERE id = ?')
+        .run('needs_review', JSON.stringify({ term, exams: usableExams }), uploadId);
       return;
     }
 
@@ -217,7 +210,66 @@ router.get('/status', requireAuth, async (req, res) => {
   const latest = await db
     .prepare('SELECT * FROM schedule_uploads WHERE user_id = ? ORDER BY id DESC LIMIT 1')
     .get(req.session.userId);
-  res.json({ upload: latest || null });
+  if (!latest) return res.json({ upload: null });
+  const { pending_data, ...rest } = latest;
+  res.json({ upload: { ...rest, pendingData: pending_data ? JSON.parse(pending_data) : null } });
+});
+
+// The student reviews the extracted final exams (client can drop rows it thinks are wrong) before
+// any of it touches their real calendar. `exams` here is whatever subset of the parsed list the
+// client kept — trusted as-is since it only ever narrows what the AI already proposed for this
+// exact upload, never adds anything new.
+router.post('/finalize', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const { uploadId, exams } = req.body || {};
+  if (!uploadId || !Array.isArray(exams)) {
+    return res.status(400).json({ error: 'Missing uploadId or exams.' });
+  }
+
+  const upload = await db
+    .prepare("SELECT * FROM schedule_uploads WHERE id = ? AND user_id = ? AND status = 'needs_review'")
+    .get(uploadId, userId);
+  if (!upload) {
+    return res.status(404).json({ error: 'No pending review found for this upload.' });
+  }
+  const pending = JSON.parse(upload.pending_data || '{}');
+  const term = Number.isInteger(pending.term) ? pending.term : null;
+  if (term === null) {
+    return res.status(400).json({ error: 'This upload has no term on record.' });
+  }
+
+  const persistFinals = transaction(async () => {
+    await db
+      .prepare("DELETE FROM exams WHERE user_id = ? AND exam_type = 'final' AND term = ?")
+      .run(userId, term);
+
+    const insertExam = db.prepare(`
+      INSERT INTO exams (user_id, upload_id, subject_key, subject_label, exam_type, term, date, time, notes)
+      VALUES (?, ?, ?, ?, 'final', ?, ?, ?, ?)
+    `);
+    for (const e of exams) {
+      if (!e.subjectLabel || !e.date) continue;
+      const subjectKey = e.matchedSubjectKey && SUBJECT_BY_KEY[e.matchedSubjectKey] ? e.matchedSubjectKey : null;
+      // Dates were already shifted (beta year-shift) when the upload was first parsed, before
+      // being handed to the student for review — insert exactly what they approved, unmodified.
+      await insertExam.run(userId, uploadId, subjectKey, e.subjectLabel, term, e.date, e.time ?? null, e.notes ?? null);
+    }
+
+    await db.prepare("UPDATE schedule_uploads SET status = 'done', pending_data = NULL WHERE id = ?").run(uploadId);
+  });
+  await persistFinals();
+  res.json({ ok: true });
+});
+
+// The student backs out of the review screen entirely — nothing they saw gets saved.
+router.post('/discard', requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+  const { uploadId } = req.body || {};
+  if (!uploadId) return res.status(400).json({ error: 'Missing uploadId.' });
+  await db
+    .prepare("UPDATE schedule_uploads SET status = 'discarded', pending_data = NULL WHERE id = ? AND user_id = ? AND status = 'needs_review'")
+    .run(uploadId, userId);
+  res.json({ ok: true });
 });
 
 // Wipes the whole schedule (both AI-parsed and manually-entered exams, plus holidays) back to

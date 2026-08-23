@@ -11,25 +11,28 @@ export default function ExamBubble({ exam, onClick }) {
   return (
     <button
       type="button"
-      className={`exam-bubble color-${exam.color}${exam.priority ? ' priority-flash' : ''}`}
+      className={`exam-row color-${exam.color}${exam.priority ? ' priority-flash' : ''}`}
       onClick={() => onClick(exam)}
     >
-      <div className="exam-bubble-days">{countdownText(exam.daysUntil)}</div>
-      <div className="exam-bubble-subject">{exam.subjectLabel}</div>
-      <div className="exam-bubble-date">
-        {dateLabel}
-        {exam.time ? ` · ${exam.time}` : ''}
-      </div>
-      {(exam.term || exam.weekNumber || exam.difficulty) && (
-        <div className="exam-bubble-meta">
-          {exam.term ? `Term ${exam.term}` : ''} {exam.weekNumber ? `· Week ${exam.weekNumber}` : ''}
-          {exam.difficulty && (
-            <span className="exam-bubble-difficulty">{difficultyLabel(exam.difficulty)}</span>
-          )}
+      <span className="exam-row-dot" />
+      <div className="exam-row-body">
+        <div className="exam-row-top">
+          <span className="exam-row-subject">{exam.subjectLabel}</span>
+          <span className="exam-row-days">{countdownText(exam.daysUntil)}</span>
         </div>
-      )}
-      <div className="exam-bubble-material-hint">
-        {hasMaterial ? 'View material' : 'Add material'}
+        <div className="exam-row-date">
+          {dateLabel}
+          {exam.time ? ` · ${exam.time}` : ''}
+        </div>
+        {(exam.term || exam.weekNumber || exam.difficulty) && (
+          <div className="exam-row-meta">
+            {exam.term ? `Term ${exam.term}` : ''} {exam.weekNumber ? `· Week ${exam.weekNumber}` : ''}
+            {exam.difficulty && (
+              <span className="exam-row-difficulty">{difficultyLabel(exam.difficulty)}</span>
+            )}
+          </div>
+        )}
+        <div className="exam-row-hint">{hasMaterial ? 'View material' : 'Add material'}</div>
       </div>
     </button>
   );

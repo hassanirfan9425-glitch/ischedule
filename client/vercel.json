@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':!android' ':!capacitor.config.json' ':!scripts/generate-icon-sources.mjs' ':!assets' ':!../.github'",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://ischedule-ccaj.onrender.com/api/:path*"
+    }
+  ]
+}

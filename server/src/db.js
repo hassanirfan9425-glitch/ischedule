@@ -132,8 +132,11 @@ export async function initDb() {
       original_name TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'processing',
       error TEXT,
+      pending_data TEXT,
       uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE schedule_uploads ADD COLUMN IF NOT EXISTS pending_data TEXT;
 
     CREATE TABLE IF NOT EXISTS exams (
       id SERIAL PRIMARY KEY,
@@ -174,10 +177,12 @@ export async function initDb() {
       quizzes TEXT NOT NULL DEFAULT '[]',
       questions TEXT NOT NULL DEFAULT '[]',
       details TEXT NOT NULL DEFAULT '[]',
+      past_papers TEXT NOT NULL DEFAULT '[]',
       uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
     ALTER TABLE exam_materials ADD COLUMN IF NOT EXISTS details TEXT NOT NULL DEFAULT '[]';
+    ALTER TABLE exam_materials ADD COLUMN IF NOT EXISTS past_papers TEXT NOT NULL DEFAULT '[]';
 
     CREATE TABLE IF NOT EXISTS study_plans (
       id SERIAL PRIMARY KEY,

@@ -3,7 +3,7 @@ import { formatDate } from '../utils.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
 export default function MaterialPopup({ exam, onClose, onUpdate, onDelete }) {
-  const { quizzes, questions, details = [] } = exam.material;
+  const { quizzes, questions, details = [], pastPapers = [] } = exam.material;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -36,7 +36,7 @@ export default function MaterialPopup({ exam, onClose, onUpdate, onDelete }) {
             {dateLabel && <div className="material-popup-date">{dateLabel}</div>}
           </div>
 
-          {quizzes.length === 0 && questions.length === 0 && details.length === 0 ? (
+          {quizzes.length === 0 && questions.length === 0 && details.length === 0 && pastPapers.length === 0 ? (
             <p className="subtle">No material was found in the attached file.</p>
           ) : (
             <>
@@ -66,6 +66,21 @@ export default function MaterialPopup({ exam, onClose, onUpdate, onDelete }) {
                   <ul>
                     {details.map((item, i) => (
                       <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {pastPapers.length > 0 && (
+                <div className="material-group">
+                  <h3>Past Papers</h3>
+                  <ul>
+                    {pastPapers.map((p, i) => (
+                      <li key={i}>
+                        <a href={p.url} target="_blank" rel="noopener noreferrer">
+                          {p.label}
+                        </a>
+                        {p.questions && <span className="material-past-paper-questions"> · {p.questions}</span>}
+                      </li>
                     ))}
                   </ul>
                 </div>

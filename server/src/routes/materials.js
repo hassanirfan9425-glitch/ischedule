@@ -12,6 +12,7 @@ import { aiCallLimiter, aiCostLimiter } from '../middleware/aiRateLimit.js';
 const MATERIAL_ANALYSIS_COST = 1;
 const STUDY_PLAN_COST = 1;
 import { parseMaterial } from '../services/materialParser.js';
+import { buildPastPaperLink } from '../utils/pastPaperLinks.js';
 import { generateStudyPlan } from '../services/studyPlanGenerator.js';
 import { SUBJECT_BY_KEY, studyPlanDays } from '../constants/subjects.js';
 import { getTodayIso } from '../utils/uaeDate.js';
@@ -75,10 +76,26 @@ router.post('/:examId', requireAuth, aiCostLimiter(MATERIAL_ANALYSIS_COST), aiCa
         subjectLabel: exam.subject_label,
       });
 
+      // Turn each raw {subjectCode, variant, session, year, questions} reference into a real link —
+      // entries that don't build a valid link (missing/malformed data) are dropped rather than
+      // stored as a broken one.
+      const pastPapers = result.pastPapers
+        .map((p) => {
+          const link = buildPastPaperLink(p);
+          return link ? { ...link, questions: p.questions } : null;
+        })
+        .filter(Boolean);
+
       // A fresh upload replaces any existing material for this exam — UNLESS this analysis found
-      // nothing at all (no quizzes, no questions, no fallback details), in which case leave
-      // whatever's already stored untouched rather than wiping out good data with an empty result.
-      if (result.quizzes.length === 0 && result.questions.length === 0 && result.details.length === 0) {
+      // nothing at all (no quizzes, no questions, no fallback details, no past papers), in which
+      // case leave whatever's already stored untouched rather than wiping out good data with an
+      // empty result.
+      if (
+        result.quizzes.length === 0 &&
+        result.questions.length === 0 &&
+        result.details.length === 0 &&
+        pastPapers.length === 0
+      ) {
         return res.status(422).json({
           error: 'No material could be found in this file. Nothing was changed.',
         });
@@ -86,8 +103,8 @@ router.post('/:examId', requireAuth, aiCostLimiter(MATERIAL_ANALYSIS_COST), aiCa
 
       await db
         .prepare(
-          `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions, details)
-           VALUES (?, ?, 'ai', ?, ?, ?, ?, ?, ?)
+          `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions, details, past_papers)
+           VALUES (?, ?, 'ai', ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(exam_id) DO UPDATE SET
              user_id = excluded.user_id,
              source = 'ai',
@@ -97,6 +114,7 @@ router.post('/:examId', requireAuth, aiCostLimiter(MATERIAL_ANALYSIS_COST), aiCa
              quizzes = excluded.quizzes,
              questions = excluded.questions,
              details = excluded.details,
+             past_papers = excluded.past_papers,
              uploaded_at = NOW()`
         )
         .run(
@@ -107,7 +125,8 @@ router.post('/:examId', requireAuth, aiCostLimiter(MATERIAL_ANALYSIS_COST), aiCa
           result.periodicCode,
           JSON.stringify(result.quizzes),
           JSON.stringify(result.questions),
-          JSON.stringify(result.details)
+          JSON.stringify(result.details),
+          JSON.stringify(pastPapers)
         );
 
       res.json({
@@ -116,6 +135,7 @@ router.post('/:examId', requireAuth, aiCostLimiter(MATERIAL_ANALYSIS_COST), aiCa
         quizzes: result.quizzes,
         questions: result.questions,
         details: result.details,
+        pastPapers,
       });
     } catch (parseErr) {
       res.status(500).json({ error: `Could not analyze the material: ${parseErr.message || parseErr}` });
@@ -142,8 +162,8 @@ router.post('/:examId/manual', requireAuth, async (req, res) => {
 
   await db
     .prepare(
-      `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions, details)
-       VALUES (?, ?, 'manual', NULL, NULL, NULL, ?, ?, '[]')
+      `INSERT INTO exam_materials (exam_id, user_id, source, filename, original_name, periodic_code, quizzes, questions, details, past_papers)
+       VALUES (?, ?, 'manual', NULL, NULL, NULL, ?, ?, '[]', '[]')
        ON CONFLICT(exam_id) DO UPDATE SET
          user_id = excluded.user_id,
          source = 'manual',
@@ -153,6 +173,7 @@ router.post('/:examId/manual', requireAuth, async (req, res) => {
          quizzes = excluded.quizzes,
          questions = excluded.questions,
          details = '[]',
+         past_papers = '[]',
          uploaded_at = NOW()`
     )
     .run(examId, userId, JSON.stringify(quizzes), JSON.stringify(questions));

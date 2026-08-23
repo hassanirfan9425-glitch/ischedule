@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
+import FinalExamReview from '../components/FinalExamReview.jsx';
 
 const ACCEPTED = '.pdf,.png,.jpg,.jpeg,.webp,.gif';
 
@@ -9,6 +10,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState('idle'); // idle | analyzing | error
   const [error, setError] = useState('');
+  const [review, setReview] = useState(null); // { uploadId, term, exams } once a final-exam upload needs a look
   const inputRef = useRef(null);
 
   function pickFile(f) {
@@ -20,10 +22,15 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
   async function pollUntilDone() {
     // The AI pipeline runs in the background on the server (see schedule.js) so this request
     // returns instantly — poll status instead of waiting on one long request, since that's what
-    // was hitting Netlify's ~30s proxy timeout in production.
+    // was hitting Netlify's ~30s proxy timeout in production. Returns a review descriptor for a
+    // final-exam upload that needs a look before it touches the calendar, or null once a general
+    // calendar upload has already committed on its own.
     while (true) {
       const { upload } = await api.getScheduleStatus();
-      if (upload?.status === 'done') return;
+      if (upload?.status === 'done') return null;
+      if (upload?.status === 'needs_review') {
+        return { uploadId: upload.id, term: upload.pendingData.term, exams: upload.pendingData.exams };
+      }
       if (upload?.status === 'error') {
         throw new Error(upload.error || 'Could not analyze the calendar.');
       }
@@ -37,12 +44,35 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
     setError('');
     try {
       await api.uploadSchedule(file);
-      await pollUntilDone();
-      await onComplete();
+      const pendingReview = await pollUntilDone();
+      if (pendingReview) {
+        setReview(pendingReview);
+      } else {
+        await onComplete();
+      }
     } catch (err) {
       setError(err.message);
       setStatus('error');
     }
+  }
+
+  if (review) {
+    return (
+      <FinalExamReview
+        uploadId={review.uploadId}
+        term={review.term}
+        exams={review.exams}
+        onDone={async () => {
+          setReview(null);
+          await onComplete();
+        }}
+        onCancel={() => {
+          setReview(null);
+          setStatus('idle');
+          setFile(null);
+        }}
+      />
+    );
   }
 
   if (status === 'analyzing') {

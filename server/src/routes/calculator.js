@@ -153,67 +153,136 @@ router.post('/subject-target', requireAuth, async (req, res) => {
   });
 });
 
-// Mode (b): hold every other subject's average fixed, solve for one subject's own average needed
-// to hit a target overall term average.
+// Mode (b): hold every subject NOT selected fixed at its current average, and solve for what the
+// selected subject(s) need to hit a target overall term average. With one selected subject this is
+// a single linear equation, one unknown — a direct solve. With several selected at once, it's one
+// equation with several unknowns (infinitely many combinations reach the same overall average), so
+// instead of picking one arbitrary combination, this returns a few genuinely useful ones:
+//   - "balanced": every selected subject moves to the same average.
+//   - one "spotlight" scenario per selected subject (only when 2+ are selected): every OTHER
+//     selected subject is maxed at 100, and this endpoint solves for what the remaining one alone
+//     needs — the highest/lowest "swap it around" pairing for two subjects generalizes cleanly to
+//     "max everyone else in the selection, solve for this one" for any number of subjects.
 router.post('/overall-target', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  const { term, subjectKey, subjectLabel, targetOverallAverage } = req.body || {};
+  const { term, subjects, targetOverallAverage } = req.body || {};
 
   if (!Number.isInteger(term)) {
     return res.status(400).json({ error: 'term is required.' });
   }
-  const resolvedLabel = typeof subjectLabel === 'string' ? subjectLabel.trim() : '';
-  if (!resolvedLabel) {
-    return res.status(400).json({ error: 'A subject is required.' });
+  if (!Array.isArray(subjects) || subjects.length === 0) {
+    return res.status(400).json({ error: 'At least one subject is required.' });
   }
   const targetNum = Number(targetOverallAverage);
   if (!Number.isFinite(targetNum) || targetNum < 0 || targetNum > 100) {
     return res.status(400).json({ error: 'targetOverallAverage must be between 0 and 100.' });
   }
 
-  const resolvedKey = subjectKey || null;
-  const identity = subjectIdentity(resolvedKey, resolvedLabel);
+  const requested = subjects.map((s) => ({
+    subjectKey: s.subjectKey || null,
+    subjectLabel: typeof s.subjectLabel === 'string' ? s.subjectLabel.trim() : '',
+    identity: subjectIdentity(s.subjectKey || null, s.subjectLabel),
+  }));
+  if (requested.some((s) => !s.subjectLabel)) {
+    return res.status(400).json({ error: 'Every subject needs a name.' });
+  }
 
   const rawEntries = await db.prepare('SELECT * FROM grade_entries WHERE user_id = ? AND term = ?').all(userId, term);
   const { subjectAverages, overallAverage: currentOverallAverage } = calculateTermSummary(rawEntries);
   const valid = subjectAverages.filter((s) => s.average !== null);
+  const validByIdentity = new Map(valid.map((s) => [subjectIdentity(s.subjectKey, s.subjectLabel), s]));
 
-  const target = valid.find((s) => subjectIdentity(s.subjectKey, s.subjectLabel) === identity);
-  if (!target) {
+  const missing = requested.filter((s) => !validByIdentity.has(s.identity));
+  if (missing.length > 0) {
     return res.status(422).json({
-      error: `${resolvedLabel} doesn't have any grades yet this term, so it isn't counted in your overall average yet. Add at least one grade for it before solving for it here.`,
+      error: `${missing.map((s) => s.subjectLabel).join(', ')} ${
+        missing.length === 1 ? "doesn't" : "don't"
+      } have any grades yet this term, so ${
+        missing.length === 1 ? "it isn't" : "they aren't"
+      } counted in your overall average yet. Add at least one grade before solving for ${
+        missing.length === 1 ? 'it' : 'them'
+      } here.`,
     });
   }
 
-  const wS = subjectOverallWeight(target.subjectKey);
-  let sumOthers = 0;
-  let weightOthers = 0;
-  for (const s of valid) {
-    if (subjectIdentity(s.subjectKey, s.subjectLabel) === identity) continue;
-    const w = subjectOverallWeight(s.subjectKey);
-    sumOthers += s.average * w;
-    weightOthers += w;
-  }
-  const weightTotal = weightOthers + wS;
+  const requestedIdentities = new Set(requested.map((s) => s.identity));
+  const selected = requested.map((s) => {
+    const v = validByIdentity.get(s.identity);
+    return { ...s, currentAverage: v.average, weight: subjectOverallWeight(v.subjectKey) };
+  });
 
-  // targetOverall = (sumOthers + neededAvg*wS) / weightTotal  =>  solve for neededAvg
-  const neededSubjectAverage = (targetNum * weightTotal - sumOthers) / wS;
-  const bestPossibleOverall = (sumOthers + 100 * wS) / weightTotal;
-  const worstPossibleOverall = (sumOthers + 0 * wS) / weightTotal;
+  let sumFixed = 0;
+  let weightFixed = 0;
+  for (const s of valid) {
+    if (requestedIdentities.has(subjectIdentity(s.subjectKey, s.subjectLabel))) continue;
+    const w = subjectOverallWeight(s.subjectKey);
+    sumFixed += s.average * w;
+    weightFixed += w;
+  }
+  const weightSelectedTotal = selected.reduce((sum, s) => sum + s.weight, 0);
+  const weightTotal = weightFixed + weightSelectedTotal;
+  // The combined weighted contribution every selected subject must supply together to land the
+  // overall average exactly on target, everything else held at its current value.
+  const neededWeightedSum = targetNum * weightTotal - sumFixed;
+
+  const balancedAverage = neededWeightedSum / weightSelectedTotal;
+  const bestPossibleOverall = (sumFixed + 100 * weightSelectedTotal) / weightTotal;
+  const worstPossibleOverall = sumFixed / weightTotal;
   const swing = bestPossibleOverall - worstPossibleOverall;
   const lowImpact = swing < LOW_IMPACT_OVERALL_SWING;
 
+  const scenarios = [
+    {
+      name: 'balanced',
+      label: selected.length === 1 ? `${selected[0].subjectLabel}'s needed average` : 'Split evenly across all of them',
+      values: Object.fromEntries(selected.map((s) => [s.identity, balancedAverage])),
+      feasible: balancedAverage >= 0 && balancedAverage <= 100,
+    },
+  ];
+
+  if (selected.length >= 2) {
+    for (const spotlight of selected) {
+      const others = selected.filter((s) => s.identity !== spotlight.identity);
+      const othersMaxedSum = sumFixed + 100 * others.reduce((sum, s) => sum + s.weight, 0);
+      const neededForSpotlight = (targetNum * weightTotal - othersMaxedSum) / spotlight.weight;
+      const otherNames = others.map((s) => s.subjectLabel);
+      const namesJoined =
+        otherNames.length === 1 ? otherNames[0] : `${otherNames.slice(0, -1).join(', ')} and ${otherNames[otherNames.length - 1]}`;
+      const verb = otherNames.length === 1 ? 'gets' : 'get';
+      scenarios.push({
+        name: `spotlight:${spotlight.identity}`,
+        label: `If ${namesJoined} ${verb} a perfect 100, ${spotlight.subjectLabel} needs`,
+        values: {
+          ...Object.fromEntries(others.map((s) => [s.identity, 100])),
+          [spotlight.identity]: neededForSpotlight,
+        },
+        feasible: neededForSpotlight >= 0 && neededForSpotlight <= 100,
+      });
+    }
+  }
+
   res.json({
-    currentSubjectAverage: target.average,
     currentOverallAverage,
-    neededSubjectAverage,
-    feasible: neededSubjectAverage >= 0 && neededSubjectAverage <= 100,
+    target: targetNum,
+    subjects: selected.map((s) => ({
+      subjectKey: s.subjectKey,
+      subjectLabel: s.subjectLabel,
+      identity: s.identity,
+      currentAverage: s.currentAverage,
+      weight: s.weight,
+    })),
+    scenarios,
     bestPossibleOverall,
     worstPossibleOverall,
-    subjectOverallWeight: wS,
     lowImpact,
     lowImpactMessage: lowImpact
-      ? `${target.subjectLabel} barely affects your overall average. Even a perfect 100 would only bring your overall to ${bestPossibleOverall.toFixed(1)} (a swing of just ${swing.toFixed(1)} points across the full 0-100 range for this subject). Hitting a specific target here won't meaningfully move your overall average.`
+      ? `${selected.map((s) => s.subjectLabel).join(' and ')} barely affect${
+          selected.length === 1 ? 's' : ''
+        } your overall average. Even a perfect 100 across ${
+          selected.length === 1 ? 'it' : 'all of them'
+        } would only bring your overall to ${bestPossibleOverall.toFixed(1)} (a swing of just ${swing.toFixed(
+          1
+        )} points). Hitting a specific target here won't meaningfully move your overall average.`
       : null,
   });
 });

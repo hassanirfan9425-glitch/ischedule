@@ -23,12 +23,58 @@ consecutive graded periods on the same day (commonly labeled "P1 (<start>-<end>)
 9:40-10:55, P2 10:55-11:40").
 
 CRITICAL column-identification warning: "${TARGET_GRADE_COLUMN}" is its own STANDALONE column header —
-just those three words, nothing paired with it. It sits immediately next to (and is easily confused with)
-a DIFFERENT column headed "Grade 10S UAE / Grade 11S GULF", which also contains the text "11S" but is NOT
-the same column — that paired column is for Grade 10S UAE and Grade 11S GULF students, neither of which is
-"${TARGET_GRADE_COLUMN}". Before reading any cell, re-confirm the exact header text of the column it's in:
-if that header has anything else paired with "11S" (like "10S UAE /" before it or "GULF" after it), it is
-the WRONG column and must be skipped entirely, no matter how close it sits to the right one.
+just those three words, nothing paired with it. It has confusable neighbors on BOTH sides, and mixing up
+either one is a real, documented failure — do not treat one side as more dangerous than the other:
+- On one side sits a DIFFERENT column headed "Grade 10S UAE / Grade 11S GULF", which also contains the text
+  "11S" but is NOT the same column — that paired column is for Grade 10S UAE and Grade 11S GULF students.
+- On the OTHER side sits "Grade 11L UAE" — this is the single most dangerous confusion in this whole
+  document, because it is immediately adjacent to "${TARGET_GRADE_COLUMN}" and differs from it by only one
+  letter ("S" vs "L"). "Grade 11L UAE" is the Literature-track column and is a COMPLETELY different set of
+  students — never pull an entry from it, and never let its cell "fill in" for a slot where
+  "${TARGET_GRADE_COLUMN}" itself looks blank.
+Before reading any cell, re-confirm the exact header text of the column it's in, letter by letter — if that
+header says "11L" instead of "11S", or has anything else paired with "11S" (like "10S UAE /" before it or
+"GULF" after it), it is the WRONG column and must be skipped entirely, no matter how close it sits.
+
+CRITICAL row-alignment warning: this grid does NOT have uniform row heights across columns. Each column's
+populated cells float to whatever vertical position matches only that grade's own exam slots that day —
+two columns sitting side by side can have their cells start at completely different heights within the same
+day's block. Never assume a cell lines up with its neighbor just because they look horizontally close on the
+page; always trace the column's own header straight down to find its true cells, independent of where
+neighboring columns' cells happen to sit.
+
+CRITICAL duplicate-looking-entry warning: it is completely normal, and correct, for the SAME subject name
+(e.g. "Chemistry") to appear more than once at the exact same time slot, each under a DIFFERENT column — a
+real, documented failure mode is skipping or merging one of these because it looks like a duplicate of a
+neighboring column's cell already noted. It is not a duplicate. Every column's cell is independent data for
+that column's own students, even when the subject name and time happen to be identical to a neighboring
+column's cell in the same row. When a time slot has several columns populated at once (a common pattern,
+e.g. one slot showing "Chemistry" under one column, "History / AP History" under the next, "Chemistry" again
+under a third, and "AP History" under a fourth, all at the same time), count every column's cell in that slot
+separately and independently verify whether "${TARGET_GRADE_COLUMN}" specifically has a populated cell there
+— never skip it just because a same-named or adjacent-looking cell was already recorded for a different
+column at that same time.
+
+Secondary disambiguation signal (use only when position alone is genuinely too ambiguous to call, never as
+your primary evidence): "${TARGET_GRADE_COLUMN}" is a Science-track ("S") column, so its own exams are
+consistently STEM subjects (Math, Applied Math, Further Math, Chemistry, Physics, Biology, Statistics,
+Calculus, AS/AP sciences). A same-time-slot Literature-track ("L") column right next to it (e.g. "Grade 11L
+UAE") consistently shows humanities-leaning alternatives instead (History/AP History, English electives,
+IGCSE Literature, SAT/IELTS). If two adjacent, identically-worded cells at the same time slot are ambiguous
+by position alone, and one time-slot's OTHER paired cells clearly split along this S-vs-L subject pattern,
+that pattern is real signal for which one belongs to "${TARGET_GRADE_COLUMN}" — but subjects like Economics,
+Business Studies, and core English/electives are taken by both tracks and give no such signal, so fall back
+to careful position-tracing when the subjects don't cleanly split this way.
+
+CRITICAL when-genuinely-unsure rule: some time slots show the SAME subject name repeated across three, four,
+or more columns in a row with nothing — not content, not the S/L pattern, nothing — to tell them apart except
+raw pixel position (Mathematics and Economics both do this repeatedly in real documents of this kind, since
+both subjects are taken by many different grade levels and tracks at once). A wrong-column entry is a much
+worse outcome than a missing one: it silently puts a real exam in front of the wrong student. So: if, after
+carefully tracing "${TARGET_GRADE_COLUMN}"'s own header straight down, you are still not genuinely confident
+which of several identical-looking cells is truly under it — DO NOT pick one anyway. Leave that time slot out
+of your results entirely rather than guess. It is far better to omit an entry the student can add manually
+than to report one that actually belongs to a different grade.
 
 The document's title (near the top, often in colored text) states which term this timetable is for, e.g.
 "Term 1 Final Exam Timetable" — that is the ONLY source of truth for the term number. If the title is
@@ -62,6 +108,19 @@ exactly as such — never match it against any subject whose name merely contain
 between two glossary lines, re-read both lines' full code text carefully before deciding, and prefer null
 over a guess you're not confident in.
 
+CRITICAL "AS"/"AP" prefix warning — a documented, repeated failure mode: a cell prefixed with "AS" or "AP"
+names a COMPLETELY DIFFERENT course from its plain, unprefixed name, even when the student is rated in the
+plain version. "AS Chemistry" is NOT "Chemistry". "AP Physics 1" (or "AP Physics 2", "AP Physics C") is NOT
+"Physics". "AP English" (in any form — "AP English (M.C)", "AP English Comp", "AP English Lang") is NOT
+"English". "AP Calculus AB/BC" is NOT "Math"/"Mathematics". Never match an "AS "/"AP "-prefixed cell against
+the plain-named subject just because the student takes the plain version and the words overlap — only match
+it if the student is separately rated in that EXACT AS/AP subject (a distinct glossary key of its own, e.g.
+"as_chemistry", "ap_physics_c_mechanics"). If the student has no matching AS/AP subject rated, set
+matchedSubjectKey to null for that cell and still report it as its own separate entry with its real AS/AP
+subjectLabel — never fold it into a different, plain-named entry, and never let it replace or overwrite a
+real plain-named cell that also exists elsewhere at a different time. These are two independent exams even
+when they share a root word.
+
 Only ever set matchedSubjectKey to one of the keys above, or null if genuinely nothing matches. Work
 carefully and take your time. Think step by step at each turn. Do not skip ahead to JSON until explicitly
 asked.`;
@@ -81,7 +140,11 @@ async function callGemini(contents) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents,
-      generationConfig: { maxOutputTokens: 32768, temperature: 0.2 },
+      // Zero temperature, not the app's usual 0.2 — this is a precise extraction task over a
+      // fixed document, not creative generation, and run-to-run randomness has directly caused
+      // real, observed inconsistency (the same cell read correctly on one pass and dropped on
+      // the next).
+      generationConfig: { maxOutputTokens: 32768, temperature: 0 },
     }),
   });
 
@@ -146,10 +209,12 @@ export async function parseFinalExamSchedule({ filePath, mimeType, selectedSubje
   indicates. If you cannot confidently determine the term number from the title, say so explicitly instead
   of guessing.
 - List EVERY grade-level column header exactly as written, left to right, including the ones paired with
-  another grade (e.g. "Grade 10S UAE / Grade 11S GULF"). Then explicitly point out which single column is
-  the standalone "${TARGET_GRADE_COLUMN}" header (nothing paired with it) and confirm it is a DIFFERENT
-  column from "Grade 10S UAE / Grade 11S GULF", even though both contain "11S" — state both columns'
-  position (e.g. "3rd from left" vs "4th from left") to prove you're distinguishing them correctly.
+  another grade (e.g. "Grade 10S UAE / Grade 11S GULF") and the standalone "Grade 11L UAE" column. Then
+  explicitly point out which single column is the standalone "${TARGET_GRADE_COLUMN}" header (nothing
+  paired with it) and confirm it is a DIFFERENT column from BOTH "Grade 10S UAE / Grade 11S GULF" (which
+  also contains "11S") AND "Grade 11L UAE" (which sits immediately next to it and differs by only one
+  letter) — state all three columns' position (e.g. "3rd from left", "4th from left", "5th from left") to
+  prove you're distinguishing them correctly, not just the first pair.
 - List the day-of-week and calendar-date rows down the left edge (e.g. "Monday, 17 Nov 2025"), in order.
 - Note any cells in the "${TARGET_GRADE_COLUMN}" column that look faint, ambiguous, or hard to read.
 Respond with your structural analysis only, in plain text — no JSON yet.`
@@ -158,11 +223,16 @@ Respond with your structural analysis only, in plain text — no JSON yet.`
   await askTurn(
     contents,
     filePart,
-    `Now go through every day/date row in order and read ONLY the "${TARGET_GRADE_COLUMN}" column. For
-each populated cell in that column, note: the exact subject name as written, the time range (merging a
-split P1/P2 pair into one combined time value for that subject, as instructed above), the calendar date
-for that row, and which of the known subject-code glossary keys it matches (or null — only match against
-the student's own subjects, listed below). Skip any row where this column is empty.
+    `Now go through every day/date row in order and read ONLY the "${TARGET_GRADE_COLUMN}" column. For each
+time slot on that day, trace the "${TARGET_GRADE_COLUMN}" header straight down independently of every other
+column — do not infer its cell from what neighboring columns show at that same time, even when a neighboring
+column has an identical or similar-looking subject name there (see the duplicate-looking-entry warning
+above; that is expected, not a sign you already recorded it). For each populated cell you find this way,
+note: the exact subject name as written, the time range (merging a split P1/P2 pair into one combined time
+value for that subject, as instructed above), the calendar date for that row, and which of the known
+subject-code glossary keys it matches (or null — only match against the student's own subjects, listed
+below). Skip only a time slot where "${TARGET_GRADE_COLUMN}" itself is genuinely blank, never because a
+neighboring column already had a similar-looking cell there.
 
 Student's subjects (only match against these):
 ${subjectList}
@@ -176,12 +246,20 @@ Respond with your findings only, in plain list form — no JSON yet.`
     `Self-review pass: re-examine the image/PDF once more. Specifically check:
 - Did you correctly read the term number from the title? If it's genuinely unclear, keep it null rather
   than guessing.
-- For EVERY entry you're about to report, re-verify its column header one more time is the exact standalone
-  text "${TARGET_GRADE_COLUMN}" with nothing paired next to it — not "Grade 10S UAE / Grade 11S GULF" or
-  any other paired column that happens to contain "11S". Remove any entry that actually came from the
-  wrong column.
+- For EVERY entry you're about to report, re-verify its column header one more time letter by letter is the
+  exact standalone text "${TARGET_GRADE_COLUMN}" with nothing paired next to it — not "Grade 10S UAE / Grade
+  11S GULF", not "Grade 11L UAE", not any other column that merely looks close. Remove any entry that
+  actually came from the wrong column.
 - Did you miss any row in the "${TARGET_GRADE_COLUMN}" column, especially near the top or bottom of the
   page, or on a later page if this document has more than one?
+- Specifically re-check every time slot where multiple columns are populated at once (e.g. several
+  different subjects, or the same subject name, appearing side by side across columns at the same time) —
+  this is a documented failure mode where "${TARGET_GRADE_COLUMN}"'s own cell gets skipped because it looks
+  like a duplicate of a neighboring column's cell. Trace "${TARGET_GRADE_COLUMN}" independently at every one
+  of these busy time slots and add its entry if you missed it.
+- For any entry where several columns showed the exact same subject name with nothing but position to tell
+  them apart, apply the when-genuinely-unsure rule above: if you cannot truly justify why this specific cell
+  (not a neighbor's) belongs to "${TARGET_GRADE_COLUMN}", remove it rather than leave a guess in the results.
 - Any P1/P2 split you should have merged into a single entry but didn't (or vice versa)?
 - Any subject-matching mistakes against the student's subject list?
 

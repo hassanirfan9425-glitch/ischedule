@@ -74,6 +74,7 @@ export default function GradeTable({
   subjectGoals,
   overallGoal,
   onOpenGoal,
+  hideOverallSummary = false,
 }) {
   const { term, entries, subjectAverages } = termData;
 
@@ -417,30 +418,32 @@ export default function GradeTable({
 
       <p className="subtle grade-table-hint">Click any blank cell to enter that week's grade.</p>
 
-      <div className="grade-average-row">
-        <button type="button" className="secondary-btn" onClick={onRecalculate} disabled={recalculating}>
-          {recalculating ? 'Recalculating…' : 'Recalculate Average'}
-        </button>
-        {displayedAverage !== null && displayedAverage !== undefined && (
-          <div className="grade-average-chip">
-            <span className="grade-average-value">{Math.round(displayedAverage)}</span>
-            {delta && (
-              <span className={`grade-average-delta grade-average-delta-${delta.direction}`}>
-                {delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '–'}
-                {delta.direction !== 'same' ? ` ${Math.abs(delta.amount).toFixed(1)}` : ''}
-              </span>
-            )}
-          </div>
-        )}
-        <button
-          type="button"
-          className={overallGoal ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'}
-          title={overallGoal ? `Overall goal: ${overallGoal.targetAverage}` : 'Set an overall goal for this term'}
-          onClick={() => onOpenGoal('overall', term)}
-        >
-          {overallGoal ? overallGoal.targetAverage : 'Set Overall Goal'}
-        </button>
-      </div>
+      {!hideOverallSummary && (
+        <div className="grade-average-row">
+          <button type="button" className="secondary-btn" onClick={onRecalculate} disabled={recalculating}>
+            {recalculating ? 'Recalculating…' : 'Recalculate Average'}
+          </button>
+          {displayedAverage !== null && displayedAverage !== undefined && (
+            <div className="grade-average-chip">
+              <span className="grade-average-value">{Math.round(displayedAverage)}</span>
+              {delta && (
+                <span className={`grade-average-delta grade-average-delta-${delta.direction}`}>
+                  {delta.direction === 'up' ? '▲' : delta.direction === 'down' ? '▼' : '–'}
+                  {delta.direction !== 'same' ? ` ${Math.abs(delta.amount).toFixed(1)}` : ''}
+                </span>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className={overallGoal ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'}
+            title={overallGoal ? `Overall goal: ${overallGoal.targetAverage}` : 'Set an overall goal for this term'}
+            onClick={() => onOpenGoal('overall', term)}
+          >
+            {overallGoal ? overallGoal.targetAverage : 'Set Overall Goal'}
+          </button>
+        </div>
+      )}
       <p className="grade-disclaimer">
         This is a rough estimate based on the entries you've added, not your exact official average.
       </p>

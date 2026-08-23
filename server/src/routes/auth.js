@@ -35,10 +35,13 @@ function publicUser(row) {
 }
 
 router.post('/signup', authLimiter, async (req, res) => {
-  const { username, name, password } = req.body || {};
+  const { username, name, password, acceptedTerms } = req.body || {};
 
   if (!username || !name || !password) {
     return res.status(400).json({ error: 'Username, name, and password are all required.' });
+  }
+  if (!acceptedTerms) {
+    return res.status(400).json({ error: 'You must accept the Privacy Policy and Terms to sign up.' });
   }
   if (username.trim().length < 3) {
     return res.status(400).json({ error: 'Username must be at least 3 characters.' });

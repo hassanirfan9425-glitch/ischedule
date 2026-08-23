@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api.js';
 import CalendarIcon from '../components/CalendarIcon.jsx';
+import PrivacyTerms from './PrivacyTerms.jsx';
 
 const FEATURES = [
   'Gives an organized schedule personalized for you',
@@ -24,6 +25,8 @@ export default function AuthPage({ onAuth }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [viewingPolicy, setViewingPolicy] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -33,13 +36,17 @@ export default function AuthPage({ onAuth }) {
       const data =
         mode === 'login'
           ? await api.login(username, password)
-          : await api.signup(username, name, password);
+          : await api.signup(username, name, password, acceptedTerms);
       onAuth(data.user);
     } catch (err) {
       setError(err.message);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (viewingPolicy) {
+    return <PrivacyTerms onBack={() => setViewingPolicy(false)} />;
   }
 
   return (
@@ -102,9 +109,27 @@ export default function AuthPage({ onAuth }) {
             />
           </label>
 
+          {mode === 'signup' && (
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+              />
+              I have read and agree to the{' '}
+              <button type="button" className="back-link" onClick={() => setViewingPolicy(true)}>
+                Privacy Policy &amp; Terms
+              </button>
+            </label>
+          )}
+
           {error && <p className="error-text">{error}</p>}
 
-          <button type="submit" className="primary-btn" disabled={submitting}>
+          <button
+            type="submit"
+            className="primary-btn"
+            disabled={submitting || (mode === 'signup' && !acceptedTerms)}
+          >
             {submitting ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
           </button>
         </form>

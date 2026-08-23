@@ -260,7 +260,7 @@ export default function Academics({
           <div className="grade-table-actions-row">
             <button
               type="button"
-              className="see-all-btn"
+              className="bloom-btn-primary"
               data-tutorial="academics-add"
               onClick={() => setChoosingAdd(true)}
             >
@@ -268,34 +268,74 @@ export default function Academics({
             </button>
             <button
               type="button"
-              className="see-all-btn"
+              className="bloom-btn-secondary"
               data-tutorial="academics-goal"
               onClick={() => setGoalPopupContext({})}
             >
               What grade do I need?
             </button>
           </div>
-          {data.terms.map((termData) => (
-            <GradeTable
-              key={termData.term}
-              termData={termData}
-              subjects={subjects}
-              defaultSubjects={defaultSubjects}
-              displayedAverage={
-                termData.term in displayedAverages ? displayedAverages[termData.term] : termData.overallAverage
-              }
-              delta={deltas[termData.term]}
-              recalculating={recalculatingTerm === termData.term}
-              onRecalculate={() => handleRecalculate(termData.term)}
-              onAddEntry={handleAddEntry}
-              onDeleteEntry={handleDeleteEntry}
-              onChangeTerm={handleChangeTerm}
-              onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
-              subjectGoals={termData.goals?.subjects || {}}
-              overallGoal={termData.goals?.overall || null}
-              onOpenGoal={handleOpenGoal}
-            />
-          ))}
+          {data.terms.map((termData) => {
+            const avg =
+              termData.term in displayedAverages ? displayedAverages[termData.term] : termData.overallAverage;
+            const delta = deltas[termData.term];
+            return (
+              <div key={termData.term} className="bloom-term-wrap">
+                <div className="bloom-hero bloom-static-hero">
+                  <div className="bloom-lbl">Term {termData.term} overall</div>
+                  <div className="bloom-big bloom-term-avg">
+                    {avg != null ? `${Math.round(avg)}%` : 'No grades yet'}
+                  </div>
+                  {delta && delta.direction !== 'same' && (
+                    <div className={`bloom-delta bloom-delta-${delta.direction}`}>
+                      {delta.direction === 'up' ? '▲' : '▼'} {Math.abs(delta.amount).toFixed(1)} pts
+                    </div>
+                  )}
+                  <div className="bloom-hero-actions">
+                    <button
+                      type="button"
+                      className="bloom-hero-recalc-btn"
+                      onClick={() => handleRecalculate(termData.term)}
+                      disabled={recalculatingTerm === termData.term}
+                    >
+                      {recalculatingTerm === termData.term ? 'Recalculating…' : 'Recalculate Average'}
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        termData.goals?.overall ? 'grade-goal-badge grade-goal-badge-set' : 'grade-goal-badge'
+                      }
+                      title={
+                        termData.goals?.overall
+                          ? `Overall goal: ${termData.goals.overall.targetAverage}`
+                          : 'Set an overall goal for this term'
+                      }
+                      onClick={() => handleOpenGoal('overall', termData.term)}
+                    >
+                      {termData.goals?.overall ? termData.goals.overall.targetAverage : 'Set Overall Goal'}
+                    </button>
+                  </div>
+                </div>
+                <GradeTable
+                  termData={termData}
+                  subjects={subjects}
+                  defaultSubjects={defaultSubjects}
+                  displayedAverage={avg}
+                  delta={delta}
+                  recalculating={recalculatingTerm === termData.term}
+                  onRecalculate={() => handleRecalculate(termData.term)}
+                  onAddEntry={handleAddEntry}
+                  onDeleteEntry={handleDeleteEntry}
+                  onChangeTerm={handleChangeTerm}
+                  onDeleteTerm={(term) => setConfirmingDeleteTerm(term)}
+                  subjectGoals={termData.goals?.subjects || {}}
+                  overallGoal={termData.goals?.overall || null}
+                  onOpenGoal={handleOpenGoal}
+                  hideOverallSummary
+                />
+              </div>
+            );
+          })}
         </>
       )}
 

@@ -20,8 +20,8 @@ export const api = {
   me: () => request('/auth/me'),
   login: (username, password) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
-  signup: (username, name, password) =>
-    request('/auth/signup', { method: 'POST', body: JSON.stringify({ username, name, password }) }),
+  signup: (username, name, password, acceptedTerms) =>
+    request('/auth/signup', { method: 'POST', body: JSON.stringify({ username, name, password, acceptedTerms }) }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   deleteAccount: () => request('/auth/account', { method: 'DELETE' }),
   updateProfile: (fields) => request('/auth/profile', { method: 'PATCH', body: JSON.stringify(fields) }),
@@ -46,6 +46,10 @@ export const api = {
   getScheduleStatus: () => request('/schedule/status'),
   deleteSchedule: () => request('/schedule', { method: 'DELETE' }),
   deleteFinalSchedule: () => request('/schedule/final', { method: 'DELETE' }),
+  finalizeScheduleReview: (uploadId, exams) =>
+    request('/schedule/finalize', { method: 'POST', body: JSON.stringify({ uploadId, exams }) }),
+  discardScheduleReview: (uploadId) =>
+    request('/schedule/discard', { method: 'POST', body: JSON.stringify({ uploadId }) }),
 
   getManualExams: () => request('/manual-exams'),
   addManualExam: (exam) => request('/manual-exams', { method: 'POST', body: JSON.stringify(exam) }),

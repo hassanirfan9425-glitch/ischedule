@@ -32,8 +32,13 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
     initialContext?.kind === 'subject'
       ? { subjectKey: initialContext.subjectKey || null, subjectLabel: initialContext.subjectLabel }
       : null;
-  const [pickedIdentity, setPickedIdentity] = useState(
-    lockedSubject ? subjectIdentity(lockedSubject.subjectKey, lockedSubject.subjectLabel) : ''
+  // Per-Subject mode stays single-select — Calculate and goal-saving both point at exactly one
+  // subject's own entries. Overall Term mode allows picking several subjects: each selected
+  // subject gets its own independent "what would THIS one need, holding every other subject's
+  // average fixed" answer against the same shared target overall average — a real calculation
+  // per subject (calculateOverallTarget called once per pick), not a made-up multi-subject solve.
+  const [pickedIdentities, setPickedIdentities] = useState(
+    lockedSubject ? [subjectIdentity(lockedSubject.subjectKey, lockedSubject.subjectLabel)] : []
   );
 
   const termData = terms.find((t) => t.term === selectedTerm);
@@ -44,36 +49,59 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
     subjectLabel: s.subjectLabel,
   }));
 
-  const selected = lockedSubject
-    ? { ...lockedSubject, identity: subjectIdentity(lockedSubject.subjectKey, lockedSubject.subjectLabel) }
-    : subjectOptions.find((s) => s.identity === pickedIdentity) || null;
+  const selectedList = lockedSubject
+    ? [{ ...lockedSubject, identity: subjectIdentity(lockedSubject.subjectKey, lockedSubject.subjectLabel) }]
+    : subjectOptions.filter((s) => pickedIdentities.includes(s.identity));
+  // Per-Subject mode only ever has 0 or 1 entries here (picking always replaces). Overall mode can
+  // have several — `selected` is only meaningful for the single-subject case.
+  const selected = selectedList.length === 1 ? selectedList[0] : null;
 
   const existingGoal =
-    mode === 'overall' ? termData?.goals?.overall || null : selected ? termData?.goals?.subjects?.[selected.identity] || null : null;
+    mode === 'overall'
+      ? termData?.goals?.overall || null
+      : selected
+        ? termData?.goals?.subjects?.[selected.identity] || null
+        : null;
 
   const [targetValue, setTargetValue] = useState(existingGoal ? String(existingGoal.targetAverage) : '');
   const [submitting, setSubmitting] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  // Overall mode's Calculate returns one response covering every selected subject at once (a set
+  // of named scenarios — see handleCalculate) — kept separate from `result` (Per-Subject's
+  // single-subject shape) rather than overloading one state with two different response shapes.
+  const [overallResult, setOverallResult] = useState(null);
   const [savedNotice, setSavedNotice] = useState('');
 
-  function switchMode(nextMode) {
-    setMode(nextMode);
-    setPickedIdentity('');
-    setTargetValue('');
+  function resetTransient() {
     setResult(null);
+    setOverallResult(null);
     setError('');
     setSavedNotice('');
   }
 
-  function selectSubject(identity) {
-    setPickedIdentity(identity);
+  function switchMode(nextMode) {
+    setMode(nextMode);
+    setPickedIdentities([]);
+    setTargetValue('');
+    resetTransient();
+  }
+
+  // Per-Subject mode: picking a subject replaces the selection (Calculate/goal both need exactly
+  // one concrete subject to point at).
+  function pickSingleSubject(identity) {
+    setPickedIdentities([identity]);
     const goal = termData?.goals?.subjects?.[identity];
     setTargetValue(goal ? String(goal.targetAverage) : '');
-    setResult(null);
-    setError('');
-    setSavedNotice('');
+    resetTransient();
+  }
+
+  // Overall Term mode: picking toggles that subject in/out of the multi-select set used for the
+  // per-subject "what would this one need" breakdown.
+  function toggleSubject(identity) {
+    setPickedIdentities((prev) => (prev.includes(identity) ? prev.filter((id) => id !== identity) : [...prev, identity]));
+    resetTransient();
   }
 
   function parsedTarget() {
@@ -83,7 +111,7 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
   }
 
   async function handleCalculate() {
-    if (!selected) {
+    if (selectedList.length === 0) {
       setError('Pick a subject first.');
       return;
     }
@@ -95,6 +123,7 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
     setSubmitting(true);
     setError('');
     setResult(null);
+    setOverallResult(null);
     try {
       if (mode === 'subject') {
         const data = await api.calculateSubjectTarget({
@@ -105,13 +134,15 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
         });
         setResult(data);
       } else {
+        // One call covering every selected subject at once — the backend returns a "balanced"
+        // scenario (everyone moves evenly) plus, for 2+ subjects, one "spotlight" scenario per
+        // subject (every other selected subject maxed at 100, solve for this one alone).
         const data = await api.calculateOverallTarget({
           term: selectedTerm,
-          subjectKey: selected.subjectKey,
-          subjectLabel: selected.subjectLabel,
+          subjects: selectedList.map((s) => ({ subjectKey: s.subjectKey, subjectLabel: s.subjectLabel })),
           targetOverallAverage: targetNum,
         });
-        setResult(data);
+        setOverallResult(data);
       }
     } catch (err) {
       setError(err.message);
@@ -129,13 +160,19 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
     setSavingGoal(true);
     setError('');
     try {
-      await onSetGoal({
-        term: selectedTerm,
-        kind: mode,
-        subjectKey: mode === 'subject' ? selected?.subjectKey : null,
-        subjectLabel: mode === 'subject' ? selected?.subjectLabel : null,
-        targetAverage: targetNum,
-      });
+      if (mode === 'subject') {
+        await onSetGoal({
+          term: selectedTerm,
+          kind: 'subject',
+          subjectKey: selected?.subjectKey,
+          subjectLabel: selected?.subjectLabel,
+          targetAverage: targetNum,
+        });
+      } else {
+        // The overall goal is a single term-wide number, not tied to whichever subjects are
+        // selected for the Calculate breakdown above.
+        await onSetGoal({ term: selectedTerm, kind: 'overall', subjectKey: null, subjectLabel: null, targetAverage: targetNum });
+      }
       setSavedNotice('Goal saved.');
     } catch (err) {
       setError(err.message);
@@ -179,11 +216,9 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
                 className={selectedTerm === t.term ? 'tab active' : 'tab'}
                 onClick={() => {
                   setSelectedTerm(t.term);
-                  setPickedIdentity('');
+                  setPickedIdentities([]);
                   setTargetValue('');
-                  setResult(null);
-                  setError('');
-                  setSavedNotice('');
+                  resetTransient();
                 }}
               >
                 Term {t.term}
@@ -206,7 +241,9 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
         {!lockedSubject && (
           <>
             <p className="subtle" style={{ margin: 0 }}>
-              {mode === 'subject' ? 'Pick a subject and a target average for it.' : 'Pick a subject to solve for a target overall term average.'}
+              {mode === 'subject'
+                ? 'Pick a subject and a target average for it.'
+                : 'Pick one or more subjects to see what each would need to reach a target overall average.'}
             </p>
             {subjectOptions.length === 0 ? (
               <p className="subtle">No graded subjects yet this term. Add a grade first, or open this from a subject's Goal badge.</p>
@@ -216,8 +253,8 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
                   <button
                     type="button"
                     key={s.identity}
-                    className={pickedIdentity === s.identity ? 'manual-subject-row active' : 'manual-subject-row'}
-                    onClick={() => selectSubject(s.identity)}
+                    className={pickedIdentities.includes(s.identity) ? 'manual-subject-row active' : 'manual-subject-row'}
+                    onClick={() => (mode === 'subject' ? pickSingleSubject(s.identity) : toggleSubject(s.identity))}
                   >
                     {s.subjectLabel}
                   </button>
@@ -227,10 +264,14 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
           </>
         )}
 
-        {selected && (
+        {selectedList.length > 0 && (
           <>
             <label>
-              {mode === 'subject' ? 'Target average for this subject' : 'Target overall average'}
+              {mode === 'subject'
+                ? 'Target average for this subject'
+                : selectedList.length === 1
+                  ? 'Target overall average'
+                  : `Target overall average (checked against all ${selectedList.length} selected subjects)`}
               <input
                 type="number"
                 min="0"
@@ -239,6 +280,7 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
                 onChange={(e) => {
                   setTargetValue(e.target.value);
                   setResult(null);
+                  setOverallResult(null);
                   setSavedNotice('');
                 }}
               />
@@ -317,24 +359,57 @@ export default function GradeCalculatorPopup({ terms, currentTerm, initialContex
           </div>
         )}
 
-        {result && mode === 'overall' && (
-          <div className={`calculator-result ${result.feasible ? '' : 'calculator-result-infeasible'}`}>
-            <p>
-              Current overall average: <strong>{result.currentOverallAverage.toFixed(1)}</strong>
+        {overallResult && mode === 'overall' && (
+          <>
+            <p style={{ marginTop: 10 }}>
+              Current overall average: <strong>{overallResult.currentOverallAverage.toFixed(1)}</strong>
             </p>
-            {result.lowImpact ? (
-              <p className="calculator-low-impact-note">{result.lowImpactMessage}</p>
-            ) : result.feasible ? (
-              <p>
-                {selected?.subjectLabel} needs to average <strong>{result.neededSubjectAverage.toFixed(1)}</strong> to hit that overall target.
-              </p>
+            {overallResult.lowImpact ? (
+              <p className="calculator-low-impact-note">{overallResult.lowImpactMessage}</p>
             ) : (
-              <p>
-                Not reachable through this subject alone. Even a perfect 100 in {selected?.subjectLabel} only brings your overall to{' '}
-                <strong>{result.bestPossibleOverall.toFixed(1)}</strong>.
-              </p>
+              overallResult.scenarios.map((sc) => {
+                // Spotlight scenarios already say "if the others get 100" in the label itself, so
+                // only the one subject actually being solved for needs its number called out here.
+                // Repeating everyone's value (including the 100s already named above) would just
+                // restate the label. The balanced scenario has no single "needs" figure, so it
+                // lists every subject's value instead.
+                const spotlightIdentity = sc.name.startsWith('spotlight:') ? sc.name.slice('spotlight:'.length) : null;
+                const spotlightSubject = spotlightIdentity
+                  ? overallResult.subjects.find((s) => s.identity === spotlightIdentity)
+                  : null;
+                return (
+                  <div
+                    key={sc.name}
+                    className={`calculator-result ${sc.feasible ? '' : 'calculator-result-infeasible'}`}
+                    style={{ marginTop: 8 }}
+                  >
+                    <p style={{ fontWeight: 700, margin: '0 0 4px' }}>{sc.label}</p>
+                    {sc.feasible ? (
+                      spotlightSubject ? (
+                        <p>
+                          <strong>{sc.values[spotlightSubject.identity].toFixed(1)}</strong>
+                        </p>
+                      ) : (
+                        <p>
+                          {overallResult.subjects.map((subj, i) => (
+                            <span key={subj.identity}>
+                              {i > 0 ? ', ' : ''}
+                              {subj.subjectLabel}: <strong>{sc.values[subj.identity].toFixed(1)}</strong>
+                            </span>
+                          ))}
+                        </p>
+                      )
+                    ) : (
+                      <p>
+                        Not reachable this way. Even at the extremes, the best this scenario gets your overall to is{' '}
+                        <strong>{overallResult.bestPossibleOverall.toFixed(1)}</strong>.
+                      </p>
+                    )}
+                  </div>
+                );
+              })
             )}
-          </div>
+          </>
         )}
       </div>
     </div>

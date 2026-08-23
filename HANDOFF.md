@@ -1,157 +1,87 @@
 # Study Compass — Project Handoff
 
-Written 2026-08-16. This is meant to be a complete reference for picking this project up in a fresh chat, not just a "what changed recently" note. Point-in-time snapshot — re-verify against the actual code/DB if something here seems off, especially anything with a specific number or file:line in it.
+Written 2026-08-20. Complete reference for picking this project up in a fresh chat. Point-in-time snapshot — re-verify against actual code/DB if something with a specific number or file:line seems off.
 
 ## 1. What this app is
 
-"Study Compass" (branded **iSchedule** in the Classic UI's own header/logo) — an exam schedule, grade, and study tracker built for a specific UAE school's SABIS-style system (weekly "Periodic" assessments + termly "AMS" grades + Final exams, specific subject codes, specific grade-weighting rubric). Not a generic study app — a lot of the logic (subject list, grade weights, exam types) is hardcoded to match this one school's actual system.
+"Study Compass" — exam schedule, grade, and study tracker for one specific UAE school's SABIS system (weekly "Periodic" assessments + termly "AMS" grades + Final exams). Branding is now **iCalendar** (was iSchedule) for the schedule/calendar side, **iGrade** for academics. Not generic — subject list, grade weights, exam types are hardcoded to this one school.
 
 ## 2. Access & deployment
 
 - **Repo root**: `C:\Users\hassan irfan\claude projects\exam-tracker`
-- **GitHub**: `https://github.com/hassanirfan9425-glitch/ischedule.git` (remote `origin`)
-- **Git state as of writing**: branch `ui-style-selector`. Last checkpoint commit `4e56cb7`. Run `git status` and `git log --oneline -5` first thing in a new session — do not trust this file over the actual repo state.
-- **Frontend hosting**: Netlify, deploys from `client/` (`client/netlify.toml` — build command `npm run build`, publishes `dist/`, skips deploys for pushes that only touch Android/CI files to save deploy credits).
-- **Backend hosting**: Render, deploys from `server/`. No `render.yaml` in-repo — configured in Render's dashboard directly, tied to this GitHub repo.
-- **Database**: Neon Postgres. Single `DATABASE_URL` connection string in `server/.env` (exists locally, gitignored — not reproduced here). Local dev and production point at **separate** databases.
-- **Other required env vars** (`server/.env`, see `server/.env.example` for the full annotated list): `GEMINI_API_KEY` (free tier, powers every AI feature below), `SESSION_SECRET`, `PORT` (default 4000), and in production only `NODE_ENV=production` + `CLIENT_ORIGIN` (the live Netlify URL, needed for CORS + cross-site session cookies). `client/.env.example` has one var, `VITE_API_URL` (the live Render URL + `/api`), unset for local dev since Vite proxies `/api` locally.
-- **Run locally**: `cd server && npm start` (or `npm run dev`, which is `node --watch-path=src`, auto-restarts on backend changes — including `db.js` schema edits, which re-run on every restart since they're idempotent `CREATE TABLE IF NOT EXISTS` / `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`) in one terminal; `cd client && npm run dev` in another.
-- **`FAKE_TODAY=YYYY-MM-DD`** in `server/.env` overrides "today" everywhere for deterministic testing — see section 6.
-- **Known stale doc**: `README.md`'s "Stack" section still says `Node + Express + SQLite`. That's outdated — the app migrated to Postgres/Neon a while back (see memory `project_neon_migration_reason.md`). Not urgent, but fix it next time you're touching docs.
-- **Android app**: built via Capacitor from `client/`, GitHub Actions workflow builds the APK. Wraps the live Netlify URL, not a separate codebase.
+- **GitHub**: `hassanirfan9425-glitch/ischedule.git`. Production branch is **`master`** (not `main`). Local work happens on branch `ui-style-selector`, which contains everything `master` has plus more — push with `git push origin ui-style-selector:master` (clean fast-forward). Last pushed commit `33b84ed`.
+- **GitHub Actions**: `.github/workflows/build-apk.yml` triggers on **every** push to `master` (no path filter) — builds + signs an Android APK, publishes to a GitHub release. Android app is currently **broken** (not diagnosed, deferred to post-beta — decide then whether to fix or drop it from the release).
+- **Frontend hosting**: Netlify. **Two Netlify identities exist on this account** — team "hackathon group 8" (misleading name, old hackathon project, but this genuinely is the team hosting the real site) under `theminecraftguyboi12@gmail.com`, vs. team `hassanirfan9425-glit...` under a different email. The real one is "hackathon group 8." A duplicate/orphaned site (`cute-chebakia-21506a`, created Aug 9, served nothing) was silently double-deploying on every push and was deleted this session.
+  - **Netlify credits are currently maxed out** (300/300 used, ~20 deploys at 15 credits each) — running on "operational credits" (~30 left). **Production deploys are paused** until the next billing cycle or an upgrade. A `git push` still works, but Netlify will NOT build/deploy it — the live site keeps serving whatever's already deployed. Check this before assuming a push went live.
+  - `client/netlify.toml` proxies `/api/*` to the Render backend (see cookie fix below) and skips deploys for Android/CI-only-touching pushes.
+- **Backend hosting**: Render, deploys from `server/`, URL `https://ischedule-ccaj.onrender.com`. No `render.yaml` — configured in Render's dashboard directly.
+- **Database**: **migrated from Neon to Supabase this session** (both local dev and production now point at the same Supabase DB — resolves an earlier bug where they were silently on two different Neon databases). Reason: Neon's free tier meters by compute-hours and hits a hard outage when exhausted; Supabase's free tier is a fixed compute allocation that degrades to "slow" instead of "down" under abuse — safer failure mode for a small live app. Supabase project ID `hsfvsbwdszpywtrvpjhi`, region `ap-northeast-2` (Seoul — not close to the UAE, fine for this traffic level). **Must use the Session Pooler connection string, not Direct Connection** (direct host doesn't resolve on IPv4-only networks) — and **do not append `?sslmode=require`** to it (conflicts with the app's own `ssl: { rejectUnauthorized: false }` config in `db.js` and throws a cert error; the app's own config already handles this correctly).
+- **Env vars** (`server/.env`, gitignored): `GEMINI_API_KEY`, `SESSION_SECRET`, `PORT`, `DATABASE_URL` (Supabase session-pooler string, no sslmode param), and in production `NODE_ENV=production` + `CLIENT_ORIGIN`. `SCHEDULE_YEAR_SHIFT=1` is currently set (see section 6) — temporary, remove once the real current-year calendar is published. `FAKE_TODAY` has been removed (was a dev-only testing override, no longer present).
+- **Run locally**: `cd server && npm run dev` (auto-restarts on file changes, but **not** on `.env` changes — kill and restart manually after editing `.env`) in one terminal; `cd client && npm run dev` in another.
+- **Known stale doc**: `README.md` still says `Node + Express + SQLite` — actually Postgres/Supabase. Not fixed yet.
 
-## 3. Feature inventory (what the app actually does, end to end)
+## 3. Feature inventory
 
-**Auth & onboarding**
-- Username/password signup+login (bcrypt), session-based auth via `express-session` stored in Postgres (`connect-pg-simple`, table `user_sessions`) — not JWT, not in-memory.
-- Mandatory onboarding: a quiz where the student rates every **core subject** (English, Math, Mechanics, Chemistry, Economics, Physics — always required) plus any **conditional core subjects** (Arabic / Islamic 1 / Islamic 2, gated by an Arab/Muslim identity question pair) and any **elective subjects** they pick from a categorized list (AS Level, AP, Languages), each on a 5-point difficulty scale (`very_easy` → `very_hard`). Also picks which weekday their "Periodic" assessments land on (`periodic_day`), used to pin an exact date to otherwise week-level-only schedule entries.
-- Schedule/grades are explicitly **optional** after the quiz — reachable any time via "+" prompts, not forced during onboarding.
-- Electives can be edited later without redoing the whole quiz ("Change Externals" in the menu → `Electives.jsx`).
-- Quiz can be retaken any time, pre-filled with current answers.
+**Auth & onboarding** — unchanged from before: bcrypt + session auth in Postgres (`connect-pg-simple`), mandatory difficulty quiz, optional schedule/grades after.
 
-**Schedule**
-- Add a schedule two ways: AI-parsed (upload a photo/PDF of the school's exam+holiday timetable, multi-step Gemini pipeline in `scheduleParser.js` matches subject codes against the student's own rated subjects + always-included AUTO_SUBJECTS), or fully manual entry.
-- Three exam types: `weekly`, `saturday` (both surfaced together to the student as one combined "Periodic Exams" section — internally still separate for parsing), and `final`.
-- Exams scoped to "current term" (inferred from the soonest upcoming exam) for the main dashboard sections, with an "all upcoming exams" view for looking further ahead.
-- Color-coded red/orange/green/gray by difficulty rating; a "priority" flag when a hard-rated exam is close enough (window scales with difficulty — 14 days for hard/very hard, 7 for medium, 4 for easy/very easy).
-- Holidays parsed/shown alongside exams.
-- Re-uploading a schedule replaces the previous one entirely (delete-then-insert in a transaction).
-- Materials can be attached to any exam (AI-parsed from an upload, or typed in manually) — practice quizzes, questions, and free-text "details", used later by the Study Plan Generator.
+**Calendar (formerly "Schedule")** — rebranded to "Calendar" throughout the UI this session (tab label, headers, empty states, delete buttons, tutorial copy) since students don't think of it as a schedule they own, they think of it as the school's calendar. Two upload paths:
+- **General calendar** (`scheduleParser.js`, up to 6 AI turns) — weekly grid of Periodic/AMS/holidays.
+- **Final exam timetable** (`finalExamParser.js`, 3 AI turns) — standalone document, reads one hardcoded grade column (`Grade 11S UAE`).
+- A cheap classifier call (`scheduleClassifier.js`) picks which pipeline runs automatically.
+- **Upload is now asynchronous** (rebuilt this session): the endpoint returns instantly with an `uploadId`, parsing continues in the background, client polls `GET /schedule/status` every 3s. This was a required fix, not a nice-to-have — see section 6.
+- **Term 1 Week 1 auto-correction**: the school's printed calendar labels that week "AMS" but it actually runs as a Grid Exam (every other term's first week correctly prints "Grid") — `schedule.js` now relabels this automatically on every upload.
+- **`SCHEDULE_YEAR_SHIFT`**: temporary beta-only env flag, shifts every parsed exam/holiday date forward by N years so testers uploading last year's PDF see it as live/current. Schedule dates only — grades/materials/study-plan logic still uses the real date.
 
-**Academics (grades)**
-- Add grades two ways: AI-parsed screenshot of the school's SDP grade report, or manual entry, into a 14-fixed-week grid per term.
-- Grades are per-subcourse — a subject has multiple rows (e.g. "AMS" plus periodic subcourses like "Composition", "Pure Mathematics"). `isAmsSubcourse()` checks for the literal label "AMS".
-- **Weighted averaging**: AMS vs Periodic entries are weighted differently per subject (`gradeWeights()` in `constants/subjects.js`) — most subjects are periodic×2 / AMS×1, three exceptions (Islamic 1/2, Moral Education) are equal-weight, three exceptions (AS Chemistry, AS Biology, AP Physics 1) are boosted (periodic×2.5 / AMS×1.5). Per-subject weighted average, then a plain average of every subject's average for the term headline number.
-- Pass/fail badge per subject: average ≥ 60 passes (`PASSING_GRADE`).
-- **Current term auto-detection**: inferred from the date range each term's exams span on the student's own uploaded schedule, falling back to the nearest term if today's in a gap, or term 1 if there's no schedule at all. Student can manually reassign a whole term's entries if it guessed wrong.
-- **AI suggestions**: regenerated only when the overall average moves ≥2.5 points since the last batch (not on every edit) — cost control, not just a nice-to-have.
-- **AMS streak tracker**: AMS-only (never periodic), needs ≥2 consecutive 90+ grades to appear at all, shown as a 🔥+number badge. Grace-dip mechanic: one below-90 week after an active streak doesn't reset it, it goes "at risk" (greyed, count preserved) for exactly one more entry — a 90+ right after recovers it, a second consecutive dip breaks it to zero. Full state machine is `calculateAmsStreakInfo()` in `academics.js`. Has unlock/death CSS animations client-side (`useStreakAnimation` hook, transition-detected between renders, never fires on first mount).
+**Academics (grades)** — unchanged core (AI/manual grade entry, two-tier weighting, AMS streaks, current-term auto-detection), plus new this session:
+- **Grade goals + "what grade do I need" calculator** — one merged popup (`GradeCalculatorPopup.jsx`), reachable from a small badge next to each subject's average and the overall average chip. Set a target (per-subject or whole-term overall), get told what you need on remaining assessments — pulls real remaining exam counts from the uploaded calendar where one exists (AMS = every week until the final exam's own week, from the schedule's own week-number data; Periodic = actual remaining scheduled exams), falls back to "next AMS + next periodic" if no calendar's uploaded. Server-side math only (`calculator.js`, reuses `academics.js`'s `calculateTermSummary` so there's one source of truth for averaging logic).
+- **v1 limitation**: solves for exactly one hypothetical remaining assessment — more than one unknown is underdetermined.
 
-**AI Study Plan Generator**
-- Pick any upcoming *periodic* exam (finals excluded — they're school-wide, not a single subject's material to plan around), for any subject, even months out.
-- Requires material already attached to that exam (both client-hidden and server-enforced 400 if missing) — a plan needs something concrete to schedule.
-- Plan length is driven by the subject's quiz-rated difficulty (`studyPlanDays()`): very_easy=3, easy=4, medium=5, hard=7, very_hard=14 days, always anchored to end right before the exam date.
-- 60-second server-enforced cooldown between generations for the same exam (429 + client-side live countdown) — stops accidental AI-quota burn from double-taps/regenerate spam.
-- All generated plans persisted (`study_plans` table, one row per exam, upsert on regenerate) and always accessible via a picker, not just the exam that triggered generation.
-- Home page shows a live preview: the single nearest not-yet-passed task across every saved plan.
+**Reflections & difficulty nudge** — the "open thread" from the last handoff is now fully built, not just decided. After a periodic exam passes, `ReflectionPopup.jsx` asks worse/about-right/better than expected. `reflections.js` compares that against the subject's quiz-rated difficulty and the actual grade; a mismatch surfaces `DifficultyNudgePopup.jsx` offering a one-level re-rate, which (if accepted) actually changes that subject's study plan length and priority flagging going forward — the one feedback loop in the app that updates its own inputs rather than just displaying data.
 
-**Home dashboard**
-- One shared component structure per UI style (`HomeClassic` / `HomeTechnical` / `HomeOrbit`), each with: Schedule preview, Academics preview (average + AMS streak for whichever subject currently has the highest streak, shown as a short sentence not a bare number), Suggestions (if any), Study Plan preview.
+**Study Plan Generator** — unchanged core, plus: material can now be attached directly from the Study Plan popup (`StudyPlanPopup.jsx` gained `onAddMaterial`) instead of forcing a detour to the Calendar tab — reuses the existing `MaterialUpload`/`ManualMaterialEntry` full-page-takeover components. Exam picker rows now show a `T{term} WK{week}` tag.
 
-**Settings**
-- Username/name edit, 6 color themes, 3 UI styles.
+**Three UI styles** — unchanged (Classic/Technical/Orbit), goal badges redesigned this session per-style (reticle brackets / terminal chevron / comet tail, explicitly not emoji per direct instruction).
 
-**Tutorial**
-- First-time driven tour (Classic only — its steps target Classic-specific DOM like the hamburger drawer; every new signup defaults to Classic anyway). Gated by `users.tutorial_seen` (defaults `true` at the column level so existing accounts skip it; explicitly `false` on signup).
-- Walks: Home (intro, schedule block, academics block, suggestions, study plan) → every menu item → Settings (color theme, UI style) → Schedule (example, add, priority, material, holidays) → Academics (example, add, estimate) → finish.
-- Quiz page has its own separate, non-blocking companion cards (`tutorialActive` prop) — different mechanism from the driven Home tour.
-- **"Restart Tutorial"** menu item (added this session, see section 5) re-runs the full tour any time, independent of the one-time `tutorial_seen` flag.
+## 4. Data model — additions since last handoff
 
-**Three UI styles** (`data-ui-style` attribute on `<html>`, set from `user.uiStyle`)
-- **Classic** (default, internal value `classic`): warm cream background, serif display headings (Fraunces) + Karla body text, glassy soft cards, hamburger nav drawer. The one deliberately "3D" element is the hamburger/menu button — an offset stamped shadow in the theme's brand color (see section 5, this took several iterations to land on).
-- **Technical** ("High-Tech" in UI copy, internal value stays `technical` — display label changed, not the stored value): CRT-terminal aesthetic, scanline overlay, command-bar navigation (`studycompass:~$` prompt), monospace type, Heat Grid academics view, Mission Log.
-- **Orbit** (internal value `orbit`): space/star-map theme, radial `OrbitMap` visualization on the Schedule page (exams as stars in concentric urgency rings), `OrbitDial` circular nav.
-- Only the pages with divergent nav chrome are actually split per style (`Home`/`Dashboard`/`Academics` wrapper components dispatching to `*Classic.jsx`/`*Technical.jsx`/`*Orbit.jsx`, plus exam/holiday bubble components). Everything else (Settings, Quiz, AuthPage, Upload, ManualEntry, GradeTable, dialogs, popups) is a single shared component reskinned purely through `[data-ui-style='X']` CSS token overrides — no JSX branching. `More.jsx` (account actions page) is shared between Technical and Orbit; Classic uses its hamburger drawer instead and has no `More` page.
-- 6 color themes (`[data-theme='X']` blocks) apply orthogonally on top of any UI style — exam-difficulty colors (red/orange/green/gray) are semantic and never change with the theme.
+- **`grade_goals`**: `id, user_id, term, goal_identity (subjectKey || 'label:'+subjectLabel, or 'overall'), subject_key, subject_label, target_average, created_at, updated_at`, unique per `(user_id, term, goal_identity)`.
+- **`exam_reflections`**: `id, exam_id (unique), user_id, subject_key, term, rating, nudge_dismissed_at, created_at`.
+- Everything from the previous handoff's data model (users, user_subjects, schedule_uploads, exams, holidays, exam_materials, study_plans, grade_entries, grade_suggestions, user_sessions) is unchanged.
 
-## 4. Data model (Postgres, via `server/src/db.js`)
+## 5. Backend structure — additions since last handoff
 
-All schema is defined as idempotent `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` in `initDb()`, run on every server start.
+New route files: `goals.js` (grade goal upsert/delete), `calculator.js` (the two calculator endpoints). New service files: `scheduleClassifier.js`, `finalExamParser.js`. New: `server/src/middleware/aiRateLimit.js` (see section 6), `server/src/utils/scheduleYearShift.js`.
 
-- **`users`**: `id, username (CITEXT, unique, case-insensitive), name, password_hash, onboarded, periodic_day, theme (default purple_pink), ui_style (default classic), tutorial_seen (default true), created_at`
-- **`user_subjects`**: `id, user_id, subject_key, difficulty` — unique per (user, subject). One row per subject the student rated in the quiz.
-- **`schedule_uploads`**: `id, user_id, filename, original_name, status (processing/done/error), error, uploaded_at` — one row per schedule upload attempt.
-- **`exams`**: `id, user_id, upload_id, subject_key (nullable), subject_label, exam_type (weekly/saturday/final), term, week_number, date, date_start, date_end, time, notes, source (ai/manual)`.
-- **`holidays`**: `id, user_id, upload_id, label, date_start, date_end, term, week_number`.
-- **`exam_materials`**: `id, exam_id (unique — one per exam), user_id, source (ai/manual), filename, original_name, periodic_code, quizzes (JSON array), questions (JSON array), details (JSON array), uploaded_at`.
-- **`study_plans`**: `id, exam_id (unique), user_id, plan (JSON), generated_at (TIMESTAMPTZ — was TIMESTAMP originally, fixed this session, see section 5)`.
-- **`grade_entries`**: `id, user_id, term, subject_key (nullable), subject_label, subcourse_label, week_number, grade (REAL), source (manual/ai), created_at`.
-- **`grade_suggestions`**: `id, user_id, term, suggestions (JSON), baseline_average, generated_at` — unique per (user, term).
-- **`user_sessions`**: managed entirely by `connect-pg-simple`, not hand-defined in `db.js`.
-- All user-owned tables cascade-delete via `ON DELETE CASCADE` on `user_id`/`exam_id` FKs — deleting a user or an exam cleans up everything under it automatically.
-- `db.js` also provides a **SQLite-`?`-placeholder-to-Postgres-`$N` compat layer** (the app was originally written against `node:sqlite` and migrated later — every query still uses `?` placeholders, translated automatically) and an auto-`RETURNING id` append on INSERTs, plus a `transaction()` helper using `AsyncLocalStorage` so nested `db.prepare()` calls inside a transaction callback transparently reuse the same checked-out connection.
+`schedule.js`'s upload route was restructured: the AI classify/parse/persist logic now lives in a standalone `processScheduleUpload()` function that runs after the HTTP response is already sent, not inside the request/response cycle.
 
-## 5. Backend structure
+## 6. Key cross-cutting logic
 
-`server/src/index.js` — Express bootstrap. CORS locked to `CLIENT_ORIGIN`, JSON body parsing, Postgres-backed sessions (30-day cookie, `sameSite:'none'`+`secure:true` in production since frontend/backend are cross-origin), routes mounted under `/api/*`, 15-minute server timeout (schedule parsing is a multi-step AI pipeline that can take a while).
+**AI rate limiting** (`aiRateLimit.js`) — calibrated against Google's actual dashboard, not guessed: `gemini-flash-lite-latest` free tier is 15 RPM / 500 RPD **project-wide**, not per-user. Two layers: `aiCallLimiter` (10/hour per user, shapes individual abuse) and a shared budget pool at 80% of the real ceiling (`12/minute`, `400/day`) via `aiCostLimiter(cost)` middleware for routes that always call Gemini, or `tryConsumeAiBudget(cost)` for conditional call sites (suggestion regen skips silently on exhaustion instead of failing the request). Verified under real concurrent load this session (9 and 50 simulated simultaneous users against the live site) — zero crashes, limiter held correctly both times.
 
-Route files (`server/src/routes/`):
-- `auth.js` — signup/login/logout/me/delete-account/profile update/tutorial-complete.
-- `subjects.js` — the subject catalog (`GET /`) and the student's own quiz answers (`GET /mine`, `POST /mine` replaces the whole set in a transaction).
-- `schedule.js` — AI schedule upload, upload status, delete-schedule.
-- `manualExams.js` — manual exam CRUD (separate from the AI-upload flow's exams, but same `exams` table, distinguished by `source`), plus a `/finish` endpoint to mark onboarded when manual entry is the path taken.
-- `dashboard.js` — the main `GET /` that assembles periodic/final exams + holidays for Home/Schedule pages, with all the term-scoping/priority-sorting/exact-date-pinning logic.
-- `themes.js` — the 6-theme catalog.
-- `materials.js` — exam material CRUD + the Study Plan Generator endpoints (cooldown, generation, bulk fetch).
-- `academics.js` — grade CRUD, term auto-detection, weighted averaging, AMS streak calculation, suggestion regeneration gating.
+**Cross-browser cookie fix** — root cause of a real reported bug (worked in Chrome, failed silently on all Safari/iOS): session cookie was cross-site (Netlify domain ≠ Render domain), requiring `sameSite: 'none'`, which Safari's default "Prevent Cross-Site Tracking" blocks outright. Fixed by having Netlify proxy `/api/*` to Render (`client/netlify.toml`), making every request same-origin from the browser's view. Cookie is now `sameSite: 'lax'` (`server/src/index.js`), works everywhere.
 
-AI service files (`server/src/services/`), all Gemini-based:
-- `scheduleParser.js` — multi-step agentic pipeline reading the schedule photo/PDF.
-- `materialParser.js` — reads uploaded study material.
-- `gradeParser.js` — reads the SDP grade report screenshot.
-- `suggestionGenerator.js` — generates academic suggestions from grades + difficulty ratings.
-- `studyPlanGenerator.js` — generates the day-by-day study plan JSON.
+**The Netlify proxy has a ~30 second timeout**, unrelated to and much shorter than Render's own 15-minute server timeout. This broke schedule upload (the only endpoint slow enough to hit it) with a bare 504 in production — fixed by making upload asynchronous, see section 3. Keep this ceiling in mind before adding any other long-running synchronous endpoint.
 
-`server/src/utils/uaeDate.js` — `getTodayIso()`, the single source of truth for "what day is it" across the whole backend (see section 6).
+**Timezone / difficulty / grade weighting / AMS streak** — unchanged from previous handoff, still accurate. See `server/src/utils/uaeDate.js`, `server/src/constants/subjects.js`, `academics.js`'s `calculateAmsStreakInfo()`.
 
-## 6. Key cross-cutting logic worth knowing before touching anything date- or difficulty-related
+## 7. Frontend structure — additions since last handoff
 
-- **Timezone**: the school is in the UAE. `getTodayIso()` (`server/src/utils/uaeDate.js`) uses `Intl.DateTimeFormat` with `timeZone: 'Asia/Dubai'` so "today" flips at UAE midnight regardless of the server's own system timezone — a naive UTC-based "today" would lag UAE by up to 4 hours. Respects `FAKE_TODAY` env override for dev. Every route that needs "today" (`dashboard.js`, `academics.js`, `materials.js`) goes through this one function now — don't reintroduce a raw `new Date().toISOString().slice(0,10)` anywhere.
-- **Difficulty system** (`server/src/constants/subjects.js`): 5 levels, `very_easy` through `very_hard`. Drives four separate things that are each tuned independently, don't assume they share thresholds: `difficultyColor` (red/orange/green/gray for exam bubbles), `difficultyRank` (sort order, harder = higher priority), `priorityWindowDays` (14/7/4 days depending on difficulty — how close an exam needs to be before it's flagged), and `studyPlanDays` (3–14 days — how long a generated study plan runs).
-- **Grade weighting** (`gradeWeights()`): three tiers — boosted (AS Chemistry/Biology, AP Physics 1: periodic×2.5/AMS×1.5), equal (Islamic 1/2, Moral Education: 1/1), everything else (periodic×2/AMS×1). This is trial-and-error tuned against the school's actual rubric, not derived from anything — if a student reports their calculated average doesn't match their real one, this is the first place to check.
-- **AMS streak** (`calculateAmsStreakInfo()` in `academics.js`): chronological state machine over AMS-only entries, floor 90, min length 2, one-dip grace period before breaking. Fully described in section 3.
-
-## 7. Frontend structure
-
-- `client/src/pages/` — one file per page, with `*Classic.jsx`/`*Technical.jsx`/`*Orbit.jsx` variants for the four split pages (Home, Dashboard, Academics, plus the shared-but-conditionally-rendered `More`/`MoreOrbit`). Everything else in this folder is a single shared page.
-- `client/src/components/` — shared dialogs/popups (`ConfirmDialog`, `AddChoiceDialog`, `MaterialPopup`, `StudyPlanPopup`), per-style exam/holiday bubbles (`ExamBubbleClassic/Technical/Orbit`, `HolidayBubbleClassic/Technical/Orbit`), per-style nav (`NavDrawer` for Classic, `CommandBar` for Technical, `OrbitDial`+`OrbitMap` for Orbit), `GradeTable` (shared, no per-style branching), `HeatGrid`/`MissionLog` (Technical/Orbit-specific academics visualizations), `TutorialOverlay`.
-- `client/src/hooks/` — `useBackButton.js` (a shared stack so Android hardware back-button presses close the topmost open overlay/dialog/drawer before falling back to tab navigation, see `App.jsx`'s `CapacitorApp.addListener('backButton', ...)`), `useTutorial.js`, `useStreakAnimation.js` (before/after comparison across renders to detect streak unlock/death transitions, keyed by subject identity, never fires on first mount).
-- `client/src/tutorial/tutorialSteps.js` — the tour content, declarative: each step fully specifies the app state it needs via `onEnter` rather than assuming the previous step left things in the right shape.
-- **Cross-theme CSS convention** (`client/src/index.css`, one large file): a base `:root` token block (Classic's own values, since Classic is the default/unstamped style), then `[data-theme='X']` blocks for the 6 color themes (override brand-*/bg/border), then `[data-ui-style='technical']`/`[data-ui-style='orbit']` blocks that redefine the same token set for their own look, then compound `[data-ui-style='X'][data-theme='Y']` blocks where a style needs per-theme tuning beyond just swapping the brand color (e.g. Technical/Orbit's glow intensity). Component classes are largely style-exclusive by naming (e.g. `.exam-bubble` only ever renders in Classic's JSX) — but a few base component classes (`.fab-btn`, `.see-all-btn`) are shared verbatim across styles via shared component files, so a style-specific tweak to one of those needs an explicit `[data-ui-style='classic'] .fab-btn { ... }` scope, not a direct edit to the base rule, or it'll leak into the other styles.
-- **Old backup files present but unused**: `client/src/index.css.backup-soft-theme`, `.backup-soft-theme-v2`, `client/src/components/CalendarIcon.jsx.backup-soft-theme(-v2)` — leftover from an earlier redesign, not imported anywhere, safe to ignore or delete if you're cleaning up.
+New components: `GradeCalculatorPopup.jsx`, `DifficultyNudgePopup.jsx`, `ReflectionPopup.jsx`. `SideTabs.jsx` confirmed genuinely dead (not imported anywhere, superseded by `NavDrawer`/`CommandBar`/`OrbitDial`) — safe to delete. `client/src/utils.js`'s `API_BASE` now always resolves to `/api` (relative) — the `VITE_API_URL` env var indirection was removed since the Netlify proxy handles both dev and prod uniformly now.
 
 ## 8. Standing conventions / preferences
 
-(These live in the auto-memory system too and will load automatically in a new chat — repeated here so this doc is self-contained.)
-- **No em dashes anywhere in user-facing app copy** — use commas, periods, colons, or semicolons instead.
-- **Colors flat but vivid, never muted.** No handwritten/script fonts anywhere.
-- **Batch local work, push once** — don't push to trigger repeated Netlify/Render deploys just to test something that can be checked locally first.
-- **Be cost-conscious across every service**, not just Netlify: Render, GitHub Actions, Neon, and any Gemini API calls.
-- **Test once after a fix, not repeatedly** — a clean `npx vite build` plus one targeted real-interaction check is the expected verification depth, not an exhaustive re-test loop.
-- **Feature sprint window**: extra AI/API quota until **2026-08-19** — lean into building more before then, then expect a lull until the real 26/27 exam schedule is released (see memory `project_feature_sprint_window.md`).
+- **No em dashes in user-facing app copy.**
+- **Colors flat but vivid, never muted.** No handwritten/script fonts.
+- **Never push without being explicitly told to, in the moment** — this was tightened further this session: even after being told to push once, ask again (with a reason) before any subsequent push, don't treat one approval as blanket permission.
+- **Mind resource costs across every service** — Netlify, Render, GitHub Actions, Supabase/database compute, Gemini API. This session directly surfaced why: a stress test measurably ate into Supabase's compute budget in minutes, and Netlify deploy credits ran out from (partly) an orphaned duplicate site nobody caught for 11 days.
+- **Always delete test/throwaway accounts after use** — create, verify, delete, every time.
+- **Beta testing**: ~9 testers, about to start as of this writing. 3-phase plan: 1 week beta → 1 week fixing real feedback → full release. Once beta is live, priority is stabilizing and responding to real feedback, not building new surface area.
+- The "feature sprint window" mentioned in the previous handoff (extra quota until 2026-08-19) has passed — that phase is over.
 
-## 9. What happened this session (most recent work, for continuity)
+## 9. Known open items
 
-1. **UAE timezone fix** — see section 6. Also fixed `study_plans.generated_at` from `TIMESTAMP` to `TIMESTAMPTZ` (was silently drifting hours off, which would have made the study-plan cooldown never actually block).
-2. **Classic UI rework** — went through several rejected iterations (a broad "sharpened neo-brutalist" hard-shadow treatment on every card, tried white shadow → purple shadow → fixed dark-ink shadow, each rejected for looking bad in some context) before landing on: **only the hamburger/menu button** keeps a deliberate 3D effect (offset stamped shadow in `var(--brand-700)`, normal `var(--border)` border, not white/ink), everything else (exam bubbles, holiday bubbles, stat chips, Home preview cards, suggestions box, FAB, "see all" button) reverted to its original soft/rounded styling. Header's bottom rule reverted to the original thin hairline (a bold white/ink line was tried and looked bad, especially in dark mode). Fixed a casing bug where "iSchedule"/"Home"/"iGrade" briefly got forced uppercase.
-3. **Tutorial additions**: reworded the Suggestions step to lead with "these are personalized"; added a new Study Plan step right after it (`data-tutorial="study-plan-block"` on the Home preview card); added a **"Restart Tutorial"** menu item right below "Change Externals" (`useTutorial.js` got a `restart()` method, `App.jsx` got a `manualTutorialRestart` state OR'd into `tutorialDriven`, `MENU_ITEMS` in `tutorialSteps.js` updated to keep the drawer-highlight index aligned with the new item).
-
-All of the above verified with clean `npx vite build`s after each batch. **Not** verified with a fresh full browser walkthrough of the tutorial/menu changes specifically — worth a quick manual click-through next session (Retake Quiz → Change Externals → Restart Tutorial → Settings in the drawer, confirm the tour restarts from step 1 and includes the new Study Plan step).
-
-## 10. Open threads (discussed, not yet built)
-
-- **Post-exam reflection feature** — mid-discussion, no decision made on scope. Two options were on the table:
-  1. **Simple journal**: one-tap prompt after an exam passes ("How did Math go?" — worse/about right/better than expected), pure self-reflection log, no other behavior changes.
-  2. **Smart feedback loop**: same prompt, but compared against the subject's quiz-rated difficulty and the eventual actual grade, potentially nudging the student to re-rate a subject's difficulty — which would then actually affect study plan length and priority flagging elsewhere. More work (new table/column, detection trigger, reconciliation logic) but the version that makes the rest of the app smarter over time.
-  - Ask the user which scope before building anything.
-- **`SCHEDULE_YEAR_SHIFT` for beta testing** — not implemented. Beta testers only have the old 25/26 schedule PDF to upload (the real 26/27 one isn't out yet). Plan: a temporary env-var-gated date shift applied to parsed exam/holiday dates on upload, so the old schedule's dates land a year forward and look like live current exams, without needing a global `FAKE_TODAY` override (which would also affect grades/materials/study-plan date logic for everyone). Remove the env var once the real schedule is available; beta testers' data will likely need wiping at that point since it's built around the shifted old schedule. Full context in memory `project_beta_testing.md`.
+- **No general rate limit on non-AI routes** (manual grade entry, dashboard reads, etc.) — identified, not built. Not a cost risk (no Gemini calls involved) but someone could flood their own account with junk data or keep the database compute needlessly awake.
+- **Android app is broken** — not diagnosed. Decide post-beta whether to fix or drop the Android download option.
+- **Netlify deploys are paused** (credits exhausted) — resolves on next billing cycle or an upgrade. Check current status before assuming any future push will actually go live on the frontend.
+- **`SCHEDULE_YEAR_SHIFT`** must be removed once the real current-year calendar is published — beta testers' schedule data will likely need wiping/reshifting at that point since it's built around the artificially-shifted old calendar.
+- `finalExamParser.js` hardcoded to one grade column; calculator only handles one hypothetical remaining assessment. Both known v1 scope limits, not bugs.
