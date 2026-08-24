@@ -1527,6 +1527,126 @@ h2 {
   animation: fadeInUp 0.4s ease-out both;
 }
 
+.settings-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+
+.settings-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 10px;
+  position: sticky;
+  top: 24px;
+}
+
+.settings-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.settings-sidebar-item:hover {
+  background: var(--brand-50);
+}
+
+.settings-sidebar-item.active {
+  background: var(--brand-fill);
+}
+
+.settings-sidebar-item.active .settings-category-label,
+.settings-sidebar-item.active .settings-category-hint,
+.settings-sidebar-item.active .settings-category-icon {
+  color: white;
+}
+
+.settings-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1.5px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 30px 34px;
+  min-width: 0;
+}
+
+.settings-category-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--brand-text);
+}
+
+.settings-category-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-category-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.settings-category-hint {
+  font-size: 0.76rem;
+  color: var(--text-subtle);
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+  }
+
+  .settings-sidebar-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+    min-width: 84px;
+  }
+
+  .settings-category-hint {
+    display: none;
+  }
+}
+
 .settings-saved-toast {
   position: fixed;
   bottom: calc(24px + env(safe-area-inset-bottom));
@@ -2379,6 +2499,35 @@ textarea {
   font-family: var(--font-family);
 }
 
+.password-field {
+  position: relative;
+  display: flex;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-btn:hover {
+  color: var(--brand-text);
+}
+
 input:focus,
 textarea:focus {
   outline: none;
@@ -2620,6 +2769,26 @@ textarea:focus {
 .material-past-paper-questions {
   color: var(--text-subtle);
   font-weight: 400;
+}
+
+.material-past-paper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.material-ms-pill {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 /* Study Plan — StudyPlanPopup.jsx, reached from a "Study Plan" card on Home (all three UI styles).
@@ -3724,7 +3893,27 @@ textarea:focus {
 .nav-drawer-items {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+}
+
+.nav-drawer-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-drawer-group-label {
+  margin: 4px 0 4px 14px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.nav-drawer-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 8px;
 }
 
 .nav-drawer-item {
@@ -3749,7 +3938,21 @@ textarea:focus {
 }
 
 .nav-drawer-icon {
-  font-size: 1.1rem;
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--text-subtle);
+}
+
+.nav-drawer-item-danger {
+  color: var(--danger-dark);
+}
+
+.nav-drawer-item-danger .nav-drawer-icon {
+  color: var(--danger-dark);
+}
+
+.nav-drawer-item-danger:hover {
+  background: var(--bg-danger, rgba(255, 93, 162, 0.1));
 }
 
 .nav-drawer-item.tutorial-highlight {

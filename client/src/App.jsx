@@ -255,7 +255,7 @@ export default function App() {
       <Home
         {...sharedProps}
         forceDrawerOpen={tutorialDriven && tutorial.forceDrawerOpen}
-        drawerHighlightIndex={tutorialDriven ? tutorial.drawerHighlightIndex : null}
+        drawerHighlightLabel={tutorialDriven ? tutorial.drawerHighlightLabel : null}
       />
     );
   }

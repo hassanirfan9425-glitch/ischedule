@@ -5,6 +5,7 @@ import { countdownText, APK_DOWNLOAD_URL } from '../utils.js';
 import ExamBubble from '../components/ExamBubbleClassic.jsx';
 import HolidayBubble from '../components/HolidayBubbleClassic.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
+import { QuizIcon, SwapIcon, SettingsIcon, DownloadIcon, LogoutIcon, TrashIcon } from '../components/NavIcons.jsx';
 import BrandIcon from '../components/BrandIcon.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import MaterialPopup from '../components/MaterialPopup.jsx';
@@ -265,15 +266,30 @@ export default function Dashboard({
   }
 
   // Add more entries here any time — the drawer just renders whatever's in this list.
-  const navItems = [
-    { label: 'Retake Quiz', onClick: onRetakeQuiz },
-    { label: 'Change Externals', onClick: onEditElectives },
-    { label: 'Settings', onClick: onSettings },
-    { label: 'Log Out', onClick: onLogout },
-    { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
-    ...(Capacitor.isNativePlatform()
-      ? []
-      : [{ label: 'Download App', onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
+  const navGroups = [
+    {
+      label: 'Preferences',
+      items: [
+        { label: 'Retake Quiz', icon: <QuizIcon />, onClick: onRetakeQuiz },
+        { label: 'Change Externals', icon: <SwapIcon />, onClick: onEditElectives },
+      ],
+    },
+    {
+      label: 'App',
+      items: [
+        { label: 'Settings', icon: <SettingsIcon />, onClick: onSettings },
+        ...(Capacitor.isNativePlatform()
+          ? []
+          : [{ label: 'Download App', icon: <DownloadIcon />, onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
+      ],
+    },
+    {
+      label: 'Account',
+      items: [
+        { label: 'Log Out', icon: <LogoutIcon />, onClick: onLogout },
+        { label: 'Delete Account', icon: <TrashIcon />, danger: true, onClick: () => setConfirmingDelete(true) },
+      ],
+    },
   ];
 
   return (
@@ -286,7 +302,7 @@ export default function Dashboard({
       >
         ☰
       </button>
-      <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} items={navItems} />
+      <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} groups={navGroups} />
 
       <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>
         <div className="brand" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>

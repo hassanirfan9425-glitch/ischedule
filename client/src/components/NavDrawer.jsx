@@ -1,6 +1,6 @@
 import BrandIcon from './BrandIcon.jsx';
 
-export default function NavDrawer({ open, onClose, items, highlightIndex = null }) {
+export default function NavDrawer({ open, onClose, groups, highlightLabel = null }) {
   return (
     <>
       <div className={open ? 'drawer-backdrop open' : 'drawer-backdrop'} onClick={onClose} />
@@ -15,19 +15,31 @@ export default function NavDrawer({ open, onClose, items, highlightIndex = null 
           </button>
         </div>
         <div className="nav-drawer-items">
-          {items.map((item, i) => (
-            <button
-              type="button"
-              key={item.label}
-              className={i === highlightIndex ? 'nav-drawer-item tutorial-highlight' : 'nav-drawer-item'}
-              onClick={() => {
-                onClose();
-                item.onClick();
-              }}
-            >
-              {item.icon && <span className="nav-drawer-icon">{item.icon}</span>}
-              {item.label}
-            </button>
+          {groups.map((group, gi) => (
+            <div className="nav-drawer-group" key={group.label}>
+              <p className="nav-drawer-group-label">{group.label}</p>
+              {group.items.map((item) => (
+                <button
+                  type="button"
+                  key={item.label}
+                  className={[
+                    'nav-drawer-item',
+                    item.label === highlightLabel ? 'tutorial-highlight' : '',
+                    item.danger ? 'nav-drawer-item-danger' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => {
+                    onClose();
+                    item.onClick();
+                  }}
+                >
+                  {item.icon && <span className="nav-drawer-icon">{item.icon}</span>}
+                  {item.label}
+                </button>
+              ))}
+              {gi < groups.length - 1 && <div className="nav-drawer-divider" />}
+            </div>
           ))}
         </div>
       </nav>

@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { countdownText, formatDate, APK_DOWNLOAD_URL } from '../utils.js';
 import BrandIcon from '../components/BrandIcon.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
+import { QuizIcon, SwapIcon, TutorialIcon, SettingsIcon, DownloadIcon, LogoutIcon, TrashIcon } from '../components/NavIcons.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import StudyPlanPopup from '../components/StudyPlanPopup.jsx';
 import ReflectionPopup from '../components/ReflectionPopup.jsx';
@@ -27,7 +28,7 @@ export default function Home({
   activeTab,
   onSwitchTab,
   forceDrawerOpen = false,
-  drawerHighlightIndex = null,
+  drawerHighlightLabel = null,
 }) {
   const [dashboardData, setDashboardData] = useState(null);
   const [academicsData, setAcademicsData] = useState(null);
@@ -131,17 +132,32 @@ export default function Home({
     setDrawerOpen(false);
   });
 
-  const navItems = [
-    { label: 'Retake Quiz', onClick: onRetakeQuiz },
-    { label: 'Change Externals', onClick: onEditElectives },
-    { label: 'Restart Tutorial', onClick: onRestartTutorial },
-    { label: 'Settings', onClick: onSettings },
-    { label: 'Log Out', onClick: onLogout },
-    { label: 'Delete Account', onClick: () => setConfirmingDelete(true) },
-    // Pointless (and slightly odd) to offer downloading the app from inside the app itself.
-    ...(Capacitor.isNativePlatform()
-      ? []
-      : [{ label: 'Download App', onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
+  const navGroups = [
+    {
+      label: 'Preferences',
+      items: [
+        { label: 'Retake Quiz', icon: <QuizIcon />, onClick: onRetakeQuiz },
+        { label: 'Change Externals', icon: <SwapIcon />, onClick: onEditElectives },
+        { label: 'Restart Tutorial', icon: <TutorialIcon />, onClick: onRestartTutorial },
+      ],
+    },
+    {
+      label: 'App',
+      items: [
+        { label: 'Settings', icon: <SettingsIcon />, onClick: onSettings },
+        // Pointless (and slightly odd) to offer downloading the app from inside the app itself.
+        ...(Capacitor.isNativePlatform()
+          ? []
+          : [{ label: 'Download App', icon: <DownloadIcon />, onClick: () => window.open(APK_DOWNLOAD_URL, '_blank') }]),
+      ],
+    },
+    {
+      label: 'Account',
+      items: [
+        { label: 'Log Out', icon: <LogoutIcon />, onClick: onLogout },
+        { label: 'Delete Account', icon: <TrashIcon />, danger: true, onClick: () => setConfirmingDelete(true) },
+      ],
+    },
   ];
 
   const upcomingExams = dashboardData
@@ -224,8 +240,8 @@ export default function Home({
       <NavDrawer
         open={drawerOpen || forceDrawerOpen}
         onClose={() => setDrawerOpen(false)}
-        items={navItems}
-        highlightIndex={drawerHighlightIndex}
+        groups={navGroups}
+        highlightLabel={drawerHighlightLabel}
       />
 
       <header className="dashboard-header" style={{ paddingLeft: 'calc(108px + env(safe-area-inset-left))' }}>

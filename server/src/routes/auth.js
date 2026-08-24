@@ -164,6 +164,30 @@ router.patch('/profile', requireAuth, async (req, res) => {
   res.json({ user: publicUser(updated) });
 });
 
+// Requires the current password before accepting a new one — without this, anyone with an
+// already-open session on a shared/unlocked device could permanently lock the real owner out by
+// setting a new password without ever knowing the old one. Shares authLimiter with login/signup
+// so brute-forcing the current-password field is throttled the same way as guessing it at login.
+router.patch('/password', requireAuth, authLimiter, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new password are both required.' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  }
+
+  const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);
+  const valid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!valid) {
+    return res.status(401).json({ error: 'Current password is incorrect.' });
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, req.session.userId);
+  res.json({ ok: true });
+});
+
 router.post('/tutorial-complete', requireAuth, async (req, res) => {
   await db.prepare('UPDATE users SET tutorial_seen = true WHERE id = ?').run(req.session.userId);
   const updated = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);

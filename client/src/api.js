@@ -25,6 +25,8 @@ export const api = {
   logout: () => request('/auth/logout', { method: 'POST' }),
   deleteAccount: () => request('/auth/account', { method: 'DELETE' }),
   updateProfile: (fields) => request('/auth/profile', { method: 'PATCH', body: JSON.stringify(fields) }),
+  changePassword: (currentPassword, newPassword) =>
+    request('/auth/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) }),
   completeTutorial: () => request('/auth/tutorial-complete', { method: 'POST' }),
 
   getThemes: () => request('/themes'),

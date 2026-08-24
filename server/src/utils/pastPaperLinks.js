@@ -20,9 +20,10 @@ export function buildPastPaperLink({ subjectCode, variant, session, year }) {
     return null;
   }
   const yy = String(year % 100).padStart(2, '0');
-  const filename = `${subjectCode}_${sessionCode}${yy}_qp_${variant}.pdf`;
+  const base = `https://pastpapers.papacambridge.com/directories/CAIE/CAIE-pastpapers/upload/${subjectCode}_${sessionCode}${yy}`;
   return {
-    url: `https://pastpapers.papacambridge.com/directories/CAIE/CAIE-pastpapers/upload/${filename}`,
+    url: `${base}_qp_${variant}.pdf`,
+    markSchemeUrl: `${base}_ms_${variant}.pdf`,
     label: `${SESSION_LABEL[session]} ${year} · Paper ${variant}`,
   };
 }

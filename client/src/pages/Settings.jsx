@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import BrandIcon from '../components/BrandIcon.jsx';
+import { PaletteIcon, AutomationIcon, ProfileIcon, LockIcon, EyeIcon } from '../components/NavIcons.jsx';
+
+const CATEGORIES = [
+  { key: 'appearance', label: 'Appearance', hint: 'Color theme, UI style', icon: <PaletteIcon /> },
+  { key: 'automation', label: 'Automation', hint: 'AI auto difficulty', icon: <AutomationIcon /> },
+  { key: 'profile', label: 'Profile', hint: 'Username, name', icon: <ProfileIcon /> },
+  { key: 'security', label: 'Security', hint: 'Password', icon: <LockIcon /> },
+];
 
 // Static and tiny — fetching this from the server on every Settings open added a real, noticeable
 // (2-3s) delay before the swatches appeared, since it's a network round trip the rest of this page
@@ -22,6 +30,7 @@ const THEMES = [
 ];
 
 export default function Settings({ user, onBack, onUserUpdated }) {
+  const [category, setCategory] = useState(CATEGORIES[0].key);
   const [username, setUsername] = useState(user.username);
   const [name, setName] = useState(user.name);
   const [theme, setTheme] = useState(user.theme);
@@ -31,6 +40,13 @@ export default function Settings({ user, onBack, onUserUpdated }) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const savedToastTimer = useRef(null);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   useEffect(() => {
     return () => clearTimeout(savedToastTimer.current);
@@ -59,18 +75,32 @@ export default function Settings({ user, onBack, onUserUpdated }) {
     }
   }
 
-  return (
-    <div className="centered-screen">
-      <div className="settings-card">
-        <button type="button" className="back-link" onClick={onBack}>
-          ← Back to dashboard
-        </button>
-        <div className="brand">
-          <BrandIcon />
-          <span className="brand-name">Cram</span>
-        </div>
-        <h1>Settings</h1>
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPasswordError('');
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("New passwords don't match.");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setShowSavedToast(true);
+      clearTimeout(savedToastTimer.current);
+      savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 2500);
+    } catch (err) {
+      setPasswordError(err.message);
+    } finally {
+      setSavingPassword(false);
+    }
+  }
 
+  const categoryContent = {
+    appearance: (
+      <>
         <h2 style={{ marginTop: 20 }}>Color theme</h2>
         <div className="theme-picker" data-tutorial="color-theme">
           {THEMES.map((t) => (
@@ -117,7 +147,15 @@ export default function Settings({ user, onBack, onUserUpdated }) {
           </button>
         </div>
 
-        <h2>AI auto difficulty</h2>
+        {error && <p className="error-text">{error}</p>}
+        <button type="button" className="primary-btn" onClick={handleSaveProfile} disabled={savingProfile}>
+          {savingProfile ? 'Saving…' : 'Save changes'}
+        </button>
+      </>
+    ),
+    automation: (
+      <>
+        <h2 style={{ marginTop: 20 }}>AI auto difficulty</h2>
         <p className="subtle" style={{ marginTop: -8 }}>
           When a post-exam reflection doesn't match how you rated a subject and your grades back that up, let
           the AI adjust that subject's difficulty automatically instead of asking you first. Off by default.
@@ -139,7 +177,15 @@ export default function Settings({ user, onBack, onUserUpdated }) {
           </button>
         </div>
 
-        <h2>Profile</h2>
+        {error && <p className="error-text">{error}</p>}
+        <button type="button" className="primary-btn" onClick={handleSaveProfile} disabled={savingProfile}>
+          {savingProfile ? 'Saving…' : 'Save changes'}
+        </button>
+      </>
+    ),
+    profile: (
+      <>
+        <h2 style={{ marginTop: 20 }}>Profile</h2>
         <form onSubmit={handleSaveProfile} className="auth-form">
           <label>
             Username
@@ -156,6 +202,99 @@ export default function Settings({ user, onBack, onUserUpdated }) {
             {savingProfile ? 'Saving…' : 'Save changes'}
           </button>
         </form>
+      </>
+    ),
+    security: (
+      <>
+        <h2 style={{ marginTop: 20 }}>Password</h2>
+        <form onSubmit={handleChangePassword} className="auth-form">
+          <label>
+            Current password
+            <div className="password-field">
+              <input
+                type={showPasswords ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPasswords((v) => !v)}
+                aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'}
+              >
+                <EyeIcon off={showPasswords} />
+              </button>
+            </div>
+          </label>
+          <label>
+            New password
+            <input
+              type={showPasswords ? 'text' : 'password'}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </label>
+          <label>
+            Confirm new password
+            <input
+              type={showPasswords ? 'text' : 'password'}
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </label>
+
+          {passwordError && <p className="error-text">{passwordError}</p>}
+
+          <button type="submit" className="primary-btn" disabled={savingPassword}>
+            {savingPassword ? 'Saving…' : 'Change password'}
+          </button>
+        </form>
+      </>
+    ),
+  };
+
+  return (
+    <div className="settings-page">
+      <div className="settings-page-header">
+        <button type="button" className="back-link" onClick={onBack}>
+          ← Back to dashboard
+        </button>
+        <div className="brand" style={{ marginBottom: 0 }}>
+          <BrandIcon />
+          <span className="brand-name">Cram</span>
+        </div>
+      </div>
+
+      <div className="settings-layout">
+        <div className="settings-sidebar">
+          {CATEGORIES.map((c) => (
+            <button
+              type="button"
+              key={c.key}
+              className={c.key === category ? 'settings-sidebar-item active' : 'settings-sidebar-item'}
+              onClick={() => setCategory(c.key)}
+            >
+              <span className="settings-category-icon">{c.icon}</span>
+              <span className="settings-category-text">
+                <span className="settings-category-label">{c.label}</span>
+                <span className="settings-category-hint">{c.hint}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="settings-panel">
+          <h1>{CATEGORIES.find((c) => c.key === category).label}</h1>
+          {categoryContent[category]}
+        </div>
       </div>
 
       {showSavedToast && <div className="settings-saved-toast">Changes saved successfully!</div>}

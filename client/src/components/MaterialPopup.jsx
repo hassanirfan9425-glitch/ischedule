@@ -75,11 +75,23 @@ export default function MaterialPopup({ exam, onClose, onUpdate, onDelete }) {
                   <h3>Past Papers</h3>
                   <ul>
                     {pastPapers.map((p, i) => (
-                      <li key={i}>
-                        <a href={p.url} target="_blank" rel="noopener noreferrer">
-                          {p.label}
-                        </a>
-                        {p.questions && <span className="material-past-paper-questions"> · {p.questions}</span>}
+                      <li key={i} className="material-past-paper-row">
+                        <span>
+                          <a href={p.url} target="_blank" rel="noopener noreferrer">
+                            {p.label}
+                          </a>
+                          {p.questions && <span className="material-past-paper-questions"> · {p.questions}</span>}
+                        </span>
+                        {p.markSchemeUrl && (
+                          <a
+                            href={p.markSchemeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="material-ms-pill"
+                          >
+                            Mark scheme
+                          </a>
+                        )}
                       </li>
                     ))}
                   </ul>

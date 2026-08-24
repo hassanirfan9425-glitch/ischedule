@@ -3,11 +3,11 @@ import { Capacitor } from '@capacitor/core';
 // Every step fully declares the app state it needs (active tab, Settings open/closed, drawer
 // open/closed + which item is highlighted) rather than relying on the previous step having left
 // things in the right shape — keeps `next()`/`back()` symmetric and each step self-contained.
-function appState(ctx, { tab = 'home', settings = false, drawerOpen = false, drawerIndex = null } = {}) {
+function appState(ctx, { tab = 'home', settings = false, drawerOpen = false, drawerLabel = null } = {}) {
   ctx.onSwitchTab(tab);
   ctx.setViewingSettings(settings);
   ctx.setForceDrawerOpen(drawerOpen);
-  ctx.setDrawerHighlightIndex(drawerIndex);
+  ctx.setDrawerHighlightLabel(drawerLabel);
 }
 
 // Mirrors the navItems order built in HomeClassic.jsx — "Download App" only exists there when not
@@ -69,11 +69,11 @@ export const tutorialSteps = [
     highlight: '[data-tutorial="reflection-block"]',
     onEnter: (ctx) => appState(ctx, { tab: 'home' }),
   },
-  ...MENU_ITEMS.map((item, i) => ({
+  ...MENU_ITEMS.map((item) => ({
     id: `menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`,
     section: 'Menu',
     body: item.body ? `${item.label}: ${item.body}` : item.label,
-    onEnter: (ctx) => appState(ctx, { tab: 'home', drawerOpen: true, drawerIndex: i }),
+    onEnter: (ctx) => appState(ctx, { tab: 'home', drawerOpen: true, drawerLabel: item.label }),
   })),
   {
     id: 'settings-color-theme',

@@ -7,13 +7,13 @@ import { tutorialSteps } from '../tutorial/tutorialSteps.js';
 export function useTutorial(active, { onSwitchTab, setViewingSettings }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [forceDrawerOpen, setForceDrawerOpen] = useState(false);
-  const [drawerHighlightIndex, setDrawerHighlightIndex] = useState(null);
+  const [drawerHighlightLabel, setDrawerHighlightLabel] = useState(null);
 
   const currentStep = tutorialSteps[stepIndex];
 
   useEffect(() => {
     if (!active) return;
-    currentStep.onEnter?.({ onSwitchTab, setViewingSettings, setForceDrawerOpen, setDrawerHighlightIndex });
+    currentStep.onEnter?.({ onSwitchTab, setViewingSettings, setForceDrawerOpen, setDrawerHighlightLabel });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, stepIndex]);
 
@@ -24,7 +24,7 @@ export function useTutorial(active, { onSwitchTab, setViewingSettings }) {
     isFirst: stepIndex === 0,
     isLast: stepIndex === tutorialSteps.length - 1,
     forceDrawerOpen,
-    drawerHighlightIndex,
+    drawerHighlightLabel,
     next: () => setStepIndex((i) => Math.min(i + 1, tutorialSteps.length - 1)),
     back: () => setStepIndex((i) => Math.max(i - 1, 0)),
     restart: () => setStepIndex(0),

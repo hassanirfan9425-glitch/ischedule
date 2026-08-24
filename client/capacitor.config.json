@@ -3,7 +3,7 @@
   "appName": "Cram",
   "webDir": "dist",
   "server": {
-    "url": "https://studycompass.netlify.app",
+    "url": "https://studycram.vercel.app",
     "androidScheme": "https"
   },
   "android": {
