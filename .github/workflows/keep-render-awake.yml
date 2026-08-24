@@ -4,9 +4,17 @@ name: Keep Render Backend Awake
 # waking it back up takes 30-50+ seconds — during which a request can land before the server is
 # fully ready. Pinging a lightweight endpoint well inside that 15-minute window keeps the service
 # from ever going idle long enough to sleep, so users never hit the cold-start wait/error cycle.
+#
+# Deliberately NOT round-the-clock: Render's free plan grants only 750 instance-hours/month per
+# workspace (running time only — spun-down time is free), and exceeding that suspends every free
+# service in the workspace until next month. 24/7 pinging uses ~744 hours in a 31-day month, a
+# 6-hour margin for the whole month — too thin. This only pings hours 4-21 UTC (08:00-02:00 UAE
+# time, covering all realistic usage), leaving a real 6-hour overnight window (02:00-08:00 UAE)
+# where it actually sleeps and stops counting against the monthly cap: ~558 hours/month worst
+# case, ~192 hours of margin.
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/10 4-21 * * *'
   workflow_dispatch:
 
 jobs:
