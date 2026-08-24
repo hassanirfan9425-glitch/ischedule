@@ -1,0 +1,19 @@
+name: Keep Render Backend Awake
+
+# Render's free tier spins the backend down after ~15 minutes with no incoming HTTP requests, and
+# waking it back up takes 30-50+ seconds — during which a request can land before the server is
+# fully ready. Pinging a lightweight endpoint well inside that 15-minute window keeps the service
+# from ever going idle long enough to sleep, so users never hit the cold-start wait/error cycle.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          curl -sf --max-time 30 https://ischedule-ccaj.onrender.com/api/health || \
+            echo "Ping failed or timed out — not treated as a failure, just means it was already asleep this time."
