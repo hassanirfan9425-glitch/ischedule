@@ -56,9 +56,13 @@ export default function App() {
   }
 
   useEffect(() => {
+    // A transient DB blip on the server can make this one request fail even though the session
+    // itself is fine — one retry after a beat means that doesn't look like an unexpected logout.
     api
       .me()
+      .catch(() => new Promise((resolve) => setTimeout(resolve, 1500)).then(() => api.me()))
       .then((data) => setUser(data.user))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
