@@ -82,7 +82,24 @@ app.use('/api/calculator', calculatorRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-await initDb();
+// The Supabase pooler hostname resolves through an AWS ELB that occasionally returns a bad DNS
+// answer even to hardened public resolvers (confirmed live) — if that happens to land on this one
+// startup query, the whole process used to crash before it ever got a chance to serve anything.
+// A few retries with a short pause covers the transient case without masking a real outage.
+async function initDbWithRetry(attempts = 5, delayMs = 3000) {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await initDb();
+      return;
+    } catch (err) {
+      if (i === attempts) throw err;
+      console.error(`initDb() failed (attempt ${i}/${attempts}), retrying in ${delayMs}ms:`, err.message);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
+await initDbWithRetry();
 
 const server = app.listen(PORT, () => {
   console.log(`exam-tracker server listening on http://localhost:${PORT}`);

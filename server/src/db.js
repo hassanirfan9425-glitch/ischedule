@@ -1,7 +1,18 @@
 import pg from 'pg';
+import dns from 'node:dns';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 const { Pool } = pg;
+
+// Supabase's pooler hostname resolves through an AWS ELB (confirmed live: aws-0-*.pooler.supabase.com
+// -> a *.elb.amazonaws.com CNAME) rather than a stable single-host record. Pointing Node at known
+// public resolvers instead of whatever the host/container provides rules out "our own resolver is
+// uniquely bad" as a cause — but it's only a partial mitigation: the ELB itself has been observed
+// (live, against 1.1.1.1 and 8.8.8.8 directly) intermittently returning nxdomain for this exact
+// hostname and then resolving fine seconds later, which no client-side resolver choice can prevent.
+// The retry in initDbWithRetry() (see index.js) and pool.on('error') below are what actually keep
+// the app usable through that.
+dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set. Add it to server/.env (see server/.env.example).');
