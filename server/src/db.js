@@ -12,6 +12,16 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+// node-postgres emits 'error' on the pool when an idle client hits a background problem (a DNS
+// blip resolving Supabase's pooler host, a dropped connection, etc). With no listener, Node's
+// default behavior for an unhandled EventEmitter 'error' is to crash the entire process — which is
+// exactly what took the whole server down for a transient, self-resolving DNS hiccup. Logging it
+// here instead means only requests actively in flight during the blip fail; the pool recovers and
+// serves the next request normally.
+pool.on('error', (err) => {
+  console.error('Postgres pool error (non-fatal, pool will recover):', err.message);
+});
+
 // Lets db.prepare(...) calls made *inside* a transaction() callback transparently reuse the same
 // checked-out client, instead of each grabbing a separate connection from the pool — without this,
 // BEGIN/COMMIT/ROLLBACK on one connection wouldn't actually wrap statements run on others.
