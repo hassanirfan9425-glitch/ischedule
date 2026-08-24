@@ -302,6 +302,7 @@ export default function Academics({
                   <div className="bloom-big bloom-term-avg">
                     {avg != null ? `${Math.round(avg)}%` : 'No grades yet'}
                   </div>
+                  {avg != null && <div className="bloom-hero-disclaimer">Estimate only, not your official average</div>}
                   {delta && delta.direction !== 'same' && (
                     <div className={`bloom-delta bloom-delta-${delta.direction}`}>
                       {delta.direction === 'up' ? '▲' : '▼'} {Math.abs(delta.amount).toFixed(1)} pts

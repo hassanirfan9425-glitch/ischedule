@@ -402,6 +402,14 @@
   font-size: 2rem;
 }
 
+[data-ui-style='classic'] .bloom-hero-disclaimer {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: white;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
 [data-ui-style='classic'] .bloom-delta {
   display: inline-block;
   margin-top: 8px;
