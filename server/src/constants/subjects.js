@@ -19,12 +19,6 @@ export const CONDITIONAL_CORE_SUBJECTS = [
   { key: 'core_islamic_2', label: 'Islamic 2', scheduleCode: 'Islamic 2', appliesWhen: { arab: false, muslim: true } },
 ];
 
-export function applicableConditionalCoreSubjects(identity) {
-  return CONDITIONAL_CORE_SUBJECTS.filter((s) =>
-    Object.entries(s.appliesWhen).every(([k, v]) => identity[k] === v)
-  );
-}
-
 // Automatically included for every student (administrative/school-wide blocks, not something
 // students "take" or rate) — never shown in the quiz, but still matched by the schedule parser
 // and shown on the dashboard (uncolored, since there's no difficulty rating for them).

@@ -1020,27 +1020,6 @@ h2 {
   font-size: 0.94rem;
 }
 
-.auth-features {
-  list-style: none;
-  margin: 16px 0 4px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.auth-features li {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 0.85rem;
-  color: var(--text-subtle);
-}
-
-.auth-features li svg {
-  flex-shrink: 0;
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -1067,9 +1046,7 @@ h2 {
 }
 
 /* ============================================================
-   The Binder — vertical side tabs + ledger row layout.
-   Replaces the old hamburger/drawer/top-pill-tabs and card-grid
-   bubbles entirely. See SideTabs.jsx, More.jsx, ExamBubble.jsx.
+   Command bar — top nav bar shared across the Classic layout.
    ============================================================ */
 
 .command-bar-wrap {
@@ -1519,10 +1496,8 @@ h2 {
   }
 }
 
-.auth-card,
 .quiz-card,
-.upload-card,
-.settings-card {
+.upload-card {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -1533,6 +1508,242 @@ h2 {
   max-width: 440px;
   box-shadow: var(--glass-shadow);
   animation: fadeInUp 0.4s ease-out both;
+}
+
+/* Login/signup — deliberately card-less: a quiet, editorial page instead of a
+   floating box, per the "Quiet Editorial" direction chosen from 5 options. */
+.auth-quiet-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-quiet-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auth-quiet-blob-a {
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, var(--brand-300) 0%, transparent 70%);
+  opacity: 0.22;
+  top: -120px;
+  left: -110px;
+  animation: authBlobDriftA 16s ease-in-out infinite;
+}
+
+.auth-quiet-blob-b {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, var(--brand-400) 0%, transparent 70%);
+  opacity: 0.18;
+  bottom: -110px;
+  right: -90px;
+  animation: authBlobDriftB 19s ease-in-out infinite;
+}
+
+@keyframes authBlobDriftA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(28px, 22px) scale(1.08); }
+}
+
+@keyframes authBlobDriftB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-22px, -18px) scale(1.1); }
+}
+
+.auth-quiet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.auth-quiet .brand-icon {
+  margin-bottom: 22px;
+  animation: authRiseIn 0.6s ease-out 0.05s both, authMarkPulse 3.6s ease-in-out 1.1s infinite;
+  transform-origin: center;
+}
+
+.auth-quiet-title {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+  background: linear-gradient(100deg, var(--text) 40%, var(--brand-600) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: authRiseIn 0.6s ease-out 0.15s both;
+}
+
+.auth-quiet-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--text-subtle);
+  font-size: 1rem;
+  margin: 10px 0 0;
+  animation: authRiseIn 0.6s ease-out 0.25s both;
+}
+
+.auth-quiet-rule {
+  width: 46px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-300));
+  border-radius: 2px;
+  margin: 28px 0 30px;
+  animation: authRuleIn 0.5s ease-out 0.4s both;
+}
+
+.auth-quiet-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+  font-family: var(--font-display);
+  animation: authRiseIn 0.6s ease-out 0.5s both;
+}
+
+.auth-quiet-switch button {
+  all: unset;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+  transition: color 0.15s ease;
+}
+
+.auth-quiet-switch button:hover {
+  color: var(--brand-600);
+}
+
+.auth-quiet-switch button.active {
+  color: var(--brand-600);
+}
+
+.auth-quiet-switch .sep {
+  color: var(--border);
+}
+
+.auth-quiet-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+  animation: authRiseIn 0.6s ease-out 0.6s both;
+}
+
+.auth-quiet-form label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-quiet-form input {
+  border: none;
+  border-bottom: 1.5px solid var(--border);
+  border-radius: 0;
+  padding: 6px 2px;
+  background: transparent;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-quiet-form input:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 1.5px 0 0 var(--brand-500);
+}
+
+/* Override the browser's forced autofill background so saved-credential fields keep
+   the underline look instead of a jarring blue/yellow box. */
+.auth-quiet-form input:-webkit-autofill,
+.auth-quiet-form input:-webkit-autofill:hover,
+.auth-quiet-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
+  box-shadow: 0 0 0 1000px var(--bg) inset;
+  transition: background-color 9999s ease-in-out 0s;
+  caret-color: var(--text);
+}
+
+.auth-quiet-form .password-field input {
+  padding-right: 42px;
+}
+
+.auth-quiet-terms {
+  justify-content: center;
+  text-align: center;
+}
+
+.auth-quiet-submit {
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+  background: var(--brand-600);
+  border: none;
+  padding: 13px;
+  border-radius: 0;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.auth-quiet-submit:hover:not(:disabled) {
+  background: var(--brand-700);
+}
+
+.auth-quiet-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.auth-quiet-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes authRiseIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes authRuleIn {
+  from { opacity: 0; width: 0; }
+  to { opacity: 1; width: 46px; }
+}
+
+@keyframes authMarkPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-quiet-blob { animation: none; }
+  .auth-quiet .brand-icon,
+  .auth-quiet-title,
+  .auth-quiet-sub,
+  .auth-quiet-rule,
+  .auth-quiet-switch,
+  .auth-quiet-form {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    width: auto;
+  }
 }
 
 .settings-page {
@@ -1876,17 +2087,6 @@ h2 {
   font-weight: 500;
   line-height: 1.4;
   color: var(--text);
-}
-
-.empty-landing-disclaimer {
-  margin-top: 10px;
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--text-subtle);
-  font-size: 0.85rem;
-  max-width: 380px;
 }
 
 .grade-table-section {
@@ -3257,10 +3457,6 @@ textarea:focus {
   font-weight: 700;
 }
 
-.file-icon {
-  font-size: 1.5rem;
-}
-
 /* Final exam review-before-commit (FinalExamReview.jsx) */
 
 .review-card {
@@ -3399,55 +3595,6 @@ textarea:focus {
 
 .dashboard-header .brand-name {
   letter-spacing: 0.02em;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.icon-btn {
-  padding: 10px 16px;
-  border-radius: 12px 3px 12px 3px;
-  border: 2px solid var(--border);
-  background: var(--brand-50);
-  color: var(--text-subtle);
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.85rem;
-  transition: border-color 0.15s, color 0.15s, transform 0.1s;
-}
-
-.icon-btn:hover {
-  border-color: var(--brand-500);
-  color: var(--brand-text-hover);
-  transform: translateY(-1px);
-}
-
-.icon-btn:active {
-  transform: scale(0.96);
-}
-
-.logout-btn {
-  padding: 10px 18px;
-  border-radius: 12px 3px 12px 3px;
-  border: 2px solid var(--border);
-  background: var(--brand-50);
-  color: var(--text-subtle);
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.85rem;
-  transition: border-color 0.15s, color 0.15s, transform 0.1s;
-}
-
-.logout-btn:active {
-  transform: scale(0.96);
-}
-
-.logout-btn:hover {
-  border-color: var(--danger);
-  color: var(--danger-dark);
 }
 
 /* Classic Schedule page section headers ("Periodic Exams", "Final Exams", etc.) — a solid brand
@@ -4007,11 +4154,6 @@ textarea:focus {
   margin: 0 0 6px;
 }
 
-.tutorial-card-title {
-  margin: 0 0 8px;
-  font-family: var(--font-display);
-}
-
 .tutorial-card-body {
   margin: 0;
   color: var(--text);
@@ -4289,16 +4431,6 @@ textarea:focus {
   color: var(--brand-text);
 }
 
-.orbit-summary-row {
-  background: var(--glass-bg-strong);
-  border: 1.5px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 18px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .orbit-map-wrap {
   position: relative;
 }
@@ -4368,13 +4500,6 @@ textarea:focus {
 
 .orbit-suggestions li {
   margin-bottom: 6px;
-}
-
-.orbit-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
 }
 
 .orbit-row {

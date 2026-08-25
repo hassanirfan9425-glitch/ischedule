@@ -4,21 +4,6 @@ import BrandIcon from '../components/BrandIcon.jsx';
 import PrivacyTerms from './PrivacyTerms.jsx';
 import { EyeIcon } from '../components/NavIcons.jsx';
 
-const FEATURES = [
-  'Gives an organized schedule personalized for you',
-  'Get a rough calculation of your average at any time',
-  'Receive real advice based off your performance',
-];
-
-function FeatureCheck() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="7" cy="7" r="7" fill="var(--brand-500)" />
-      <path d="M4 7.2L6 9.2L10 4.8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export default function AuthPage({ onAuth }) {
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [username, setUsername] = useState('');
@@ -52,42 +37,26 @@ export default function AuthPage({ onAuth }) {
   }
 
   return (
-    <div className="centered-screen">
-      <div className="auth-card">
-        <div className="brand">
-          <BrandIcon />
-          <span className="brand-name">Cram</span>
-        </div>
-        <h1>{mode === 'login' ? 'Welcome back!' : 'Create your account'}</h1>
-        <p className="subtle">Your academic life, organized around you.</p>
+    <div className="auth-quiet-page">
+      <div className="auth-quiet-blob auth-quiet-blob-a" aria-hidden="true" />
+      <div className="auth-quiet-blob auth-quiet-blob-b" aria-hidden="true" />
+      <div className="auth-quiet">
+        <BrandIcon size={40} />
+        <h1 className="auth-quiet-title">Cram</h1>
+        <p className="auth-quiet-sub">Your academic life, organized around you.</p>
+        <div className="auth-quiet-rule" />
 
-        <ul className="auth-features">
-          {FEATURES.map((feature) => (
-            <li key={feature}>
-              <FeatureCheck />
-              {feature}
-            </li>
-          ))}
-        </ul>
-
-        <div className="tab-switch">
-          <button
-            type="button"
-            className={mode === 'login' ? 'tab active' : 'tab'}
-            onClick={() => setMode('login')}
-          >
+        <div className="auth-quiet-switch">
+          <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>
             Log In
           </button>
-          <button
-            type="button"
-            className={mode === 'signup' ? 'tab active' : 'tab'}
-            onClick={() => setMode('signup')}
-          >
+          <span className="sep">·</span>
+          <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>
             Sign Up
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-quiet-form">
           <label>
             Username
             <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
@@ -122,7 +91,7 @@ export default function AuthPage({ onAuth }) {
           </label>
 
           {mode === 'signup' && (
-            <label className="checkbox-label">
+            <label className="checkbox-label auth-quiet-terms">
               <input
                 type="checkbox"
                 checked={acceptedTerms}
@@ -139,7 +108,7 @@ export default function AuthPage({ onAuth }) {
 
           <button
             type="submit"
-            className="primary-btn"
+            className="auth-quiet-submit"
             disabled={submitting || (mode === 'signup' && !acceptedTerms)}
           >
             {submitting ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
