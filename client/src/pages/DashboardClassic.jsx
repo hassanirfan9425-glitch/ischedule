@@ -316,7 +316,7 @@ export default function Dashboard({
         </div>
       </header>
 
-      <TabBar activeTab={activeTab} onSwitchTab={onSwitchTab} />
+      <TabBar activeTab={activeTab} onSwitchTab={onSwitchTab} onOpenMenu={() => setDrawerOpen(true)} />
 
       {loading && (
         <div className="centered-screen">

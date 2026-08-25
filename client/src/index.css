@@ -1476,14 +1476,16 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  /* Bottom safe-area reserve so content isn't flush against the home-indicator/dynamic toolbar
+     on iOS — resolves to 0px everywhere else, so this is a no-op on desktop. */
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom)) 24px;
 }
 
 .page-screen {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 40px 16px;
+  padding: 40px 16px calc(40px + env(safe-area-inset-bottom)) 16px;
 }
 
 .spinner {
@@ -1530,7 +1532,7 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom)) 24px;
   position: relative;
   overflow: hidden;
 }
@@ -1957,6 +1959,12 @@ h2 {
 
 .page-tab.active:hover {
   transform: scale(1.05);
+}
+
+/* Only ever shown at phone width (see the phone-optimization section) — desktop keeps the
+   hamburger drawer trigger and never renders this 4th tab at all. */
+.page-tab-menu-only {
+  display: none;
 }
 
 .empty-landing {
@@ -2850,7 +2858,9 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  /* env() resolves to 0px on any device without a physical notch/home-indicator, so this is a
+     no-op everywhere except phones in landscape with cutouts — never visible on desktop. */
+  padding: 20px calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left));
   z-index: 60;
   animation: fadeInUp 0.15s ease-out both;
 }
@@ -2944,6 +2954,18 @@ textarea:focus {
   overflow-y: auto;
   box-shadow: var(--glass-shadow);
   animation: bubbleIn 0.2s ease-out both;
+}
+
+/* A zero-height sticky wrapper keeps the close button anchored to the top of the viewport as
+   .material-popup's own content scrolls, without it being a plain absolute child of the scrolling
+   element (which would scroll away with everything else — the button used to become unreachable
+   once you scrolled down inside a tall popup). The button itself stays absolutely positioned
+   inside this wrapper so its visual position is unchanged from before. */
+.popup-close-sticky {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 5;
 }
 
 .material-popup .drawer-close {
@@ -4084,6 +4106,12 @@ textarea:focus {
 .nav-drawer-items {
   display: flex;
   flex-direction: column;
+  /* Defensive: without this, items beyond the viewport height would be unreachable with no way to
+     scroll to them (doesn't happen at today's item count, but nothing currently guards against it
+     on a short/landscape phone or if more items are added later). */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .nav-drawer-group {
@@ -4161,7 +4189,7 @@ textarea:focus {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 20px;
+  padding: 20px calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left));
   z-index: 90;
   animation: fadeInUp 0.15s ease-out both;
 }
@@ -4749,6 +4777,20 @@ textarea:focus {
   animation: orbitFadeIn 0.4s ease both;
 }
 
+/* Invisible larger hit area — the visible dot stays 14-20px (the animation/density this relies on
+   is untouched), but a transparent oversized ::before still counts as part of the button's own
+   clickable box, so tapping near the dot (not just exactly on its few visible pixels) registers.
+   Genuinely a no-op visually on any device, so this isn't gated to phone width only. */
+.orbit-star::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+}
+
 .orbit-star.color-red { background: var(--red-bg); color: var(--red-bg); box-shadow: 0 0 8px 2px var(--red-bg); }
 .orbit-star.color-orange { background: var(--orange-bg); color: var(--orange-bg); box-shadow: 0 0 8px 2px var(--orange-bg); }
 .orbit-star.color-green { background: var(--green-bg); color: var(--green-bg); box-shadow: 0 0 8px 2px var(--green-bg); }
@@ -5296,4 +5338,253 @@ textarea:focus {
   font-family: var(--font-mono);
   color: var(--text-subtle);
   opacity: 0.55;
+}
+
+/* ============================================================================
+   PHONE OPTIMIZATION — everything below is either (a) an unconditional fix with
+   zero visual effect on desktop at rest, or (b) gated behind max-width: 430px
+   (covers iPhone SE through Pro Max and mainstream Android in portrait, sits
+   below the existing 480px/640px breakpoints above without touching the same
+   selectors they do). Desktop must render pixel-identical to before this
+   section existed for anything gated. Split into one block per concern for
+   reviewability, not merged into one giant query.
+   ============================================================================ */
+
+/* ---- Step 2: touch-target sizing for shared controls ---- */
+@media (max-width: 430px) {
+  .primary-btn,
+  .secondary-btn {
+    padding: 15px 16px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 2px;
+    margin-bottom: 4px;
+    min-height: 44px;
+  }
+
+  .difficulty-btn {
+    padding: 11px 15px;
+    font-size: 0.85rem;
+  }
+
+  .weekday-btn {
+    padding: 11px 16px;
+  }
+
+  .drawer-close,
+  .password-toggle-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .review-row-remove {
+    width: 40px;
+    height: 40px;
+  }
+
+  .grade-goal-badge {
+    padding: 6px 6px;
+  }
+
+  .nav-drawer-item {
+    padding: 14px 8px;
+  }
+
+  /* The hover/focus-within reveal these normally rely on doesn't exist on a touchscreen — force
+     them visible at phone width instead of changing the desktop default (see Step 6 for the
+     per-grid sizing/scroll-affordance follow-up on these same two grids). */
+  .hgrid-cell-remove {
+    opacity: 1;
+    width: 20px;
+    height: 20px;
+  }
+
+  .mlog-entry-remove {
+    opacity: 1;
+    padding: 8px 10px;
+  }
+}
+
+/* ---- Step 3: padding/spacing reclaim — the main "feels cramped" fix. Containers are already
+   width:100%/fluid, not fixed-width, so the actual problem is nested padding stacking up (e.g.
+   confirm-backdrop + material-popup together ate ~90px of a 375px screen before content started).
+   Trimming the flat base values here, not the safe-area additions from Step 1. ---- */
+@media (max-width: 430px) {
+  .material-popup {
+    padding: 18px;
+  }
+
+  .confirm-backdrop {
+    padding: 12px calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left));
+  }
+
+  .quiz-card,
+  .upload-card,
+  .review-card {
+    padding: 20px;
+  }
+
+  .centered-screen {
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom)) 16px;
+  }
+
+  .page-screen {
+    padding: 20px 12px calc(20px + env(safe-area-inset-bottom)) 12px;
+  }
+
+  .settings-page {
+    padding: 20px 12px 40px;
+  }
+
+  .settings-panel {
+    padding: 20px;
+  }
+
+  .material-choice-dialog,
+  .reflection-dialog {
+    padding: 22px 18px;
+  }
+}
+
+/* ---- Step 4: stack side-by-side action rows — reusing the column-stack pattern the codebase
+   already gets right in .material-choice-actions/.reflection-dialog-actions, applied to the three
+   rows that don't have it yet. Long uppercase labels ("Delete Material", "Discard Upload") get
+   tight side-by-side well before 430px. ---- */
+@media (max-width: 430px) {
+  .confirm-actions,
+  .review-actions,
+  .grade-add-actions {
+    flex-direction: column;
+  }
+
+  .review-actions .secondary-btn,
+  .review-actions .primary-btn,
+  .grade-add-actions .primary-btn,
+  .grade-add-actions .secondary-btn {
+    flex: none;
+    width: 100%;
+  }
+}
+
+/* ---- Step 5: dense single-line dashboard rows — these already wrap (flex-wrap: wrap), but
+   wrapping can leave one item stranded alone on its own row in a way that still looks unbalanced.
+   A clean, deliberate stacked column reads better than "however it happened to wrap." ---- */
+@media (max-width: 430px) {
+  .stats-strip,
+  .ledger-summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .orbit-map-info {
+    max-width: 80%;
+  }
+}
+
+/* ---- Step 6: the 3 grade-grid implementations (GradeTable/Classic, HeatGrid/Technical,
+   MissionLog/Orbit) are separate components with separate CSS — no shared fix propagates, each
+   needs its own pass. ---- */
+@media (max-width: 430px) {
+  /* Classic — GradeTable.jsx */
+  .grade-table-wrap {
+    position: relative;
+    /* Color-agnostic scroll-more affordance (an inset shadow reads correctly regardless of the
+       active color theme, unlike a gradient tuned to one specific background color). */
+    box-shadow: inset -12px 0 8px -8px rgba(0, 0, 0, 0.15);
+  }
+
+  .grade-cell-remove {
+    padding: 8px;
+  }
+
+  /* Technical — HeatGrid.jsx */
+  .hgrid-wrap {
+    position: relative;
+    box-shadow: inset -12px 0 8px -8px rgba(0, 0, 0, 0.35);
+  }
+
+  .hgrid-cells {
+    gap: 5px;
+  }
+
+  .hgrid-cell-wrap {
+    flex: 0 0 38px;
+  }
+
+  .hgrid-row-label {
+    flex: 0 0 110px;
+  }
+
+  /* Orbit — MissionLog.jsx */
+  .mlog-entry-add {
+    padding: 8px 10px;
+  }
+}
+
+/* ---- Step 7: Orbit's dial destinations. OrbitDial.jsx's ARC_RADIUS/ARC_SPAN_DEG constants are
+   tuned specifically around this pill's exact 84x32 box (confirmed by reading the component) to
+   keep the two inner destinations from overlapping — resizing width/height here without also
+   touching those JS constants would reintroduce that already-fixed bug. Same hit-slop trick as
+   .orbit-star instead: the visible pill stays exactly 84x32, an invisible oversized ::before
+   extends what actually registers as a tap. Genuinely a no-op visually on any device/width, so
+   this isn't gated to phone only. */
+.orbit-dial-planet::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+/* ---- Step 8: bottom tab bar for Classic on phone. Reuses TabBar.jsx's existing 3 tabs (same
+   component, same props, same active-state logic — nothing duplicated) rather than a separate
+   nav pattern; only its CSS position changes, plus a 4th "Menu" button (already gated to
+   display:none above) that replaces the hamburger's job at this width. Technical/Orbit have their
+   own distinct nav idioms (CommandBar, OrbitDial) and are untouched — only Classic's markup uses
+   .page-tab-bar/.hamburger-btn/.dashboard. ---- */
+@media (max-width: 430px) {
+  .page-tab-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    margin: 0;
+    gap: 4px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)) 8px;
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-top: 1.5px solid var(--glass-border);
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  .page-tab {
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 4px;
+    font-size: 0.68rem;
+  }
+
+  .page-tab.active {
+    transform: none;
+  }
+
+  .page-tab.active:hover {
+    transform: none;
+  }
+
+  .page-tab-menu-only {
+    display: flex;
+  }
+
+  .hamburger-btn {
+    display: none;
+  }
+
+  /* Reserve room so the fixed bar never covers the last bit of scrollable page content. */
+  .dashboard {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
 }

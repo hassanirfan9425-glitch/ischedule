@@ -50,7 +50,19 @@ function BookGlyph() {
   );
 }
 
-export default function TabBar({ activeTab, onSwitchTab }) {
+function MenuGlyph() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// onOpenMenu is optional (only Classic's 3 tab-bar-hosting pages wire it up) — the button it drives
+// is only ever visible at phone width (see .page-tab-menu-only in index.css), replacing the
+// hamburger trigger there since a bottom tab bar is the more phone-native place for it. Desktop
+// keeps the hamburger and never shows this 4th button at all.
+export default function TabBar({ activeTab, onSwitchTab, onOpenMenu }) {
   return (
     <div className="page-tab-bar">
       <button
@@ -77,6 +89,12 @@ export default function TabBar({ activeTab, onSwitchTab }) {
         <BookGlyph />
         Academics
       </button>
+      {onOpenMenu && (
+        <button type="button" className="page-tab page-tab-menu-only" onClick={onOpenMenu}>
+          <MenuGlyph />
+          Menu
+        </button>
+      )}
     </div>
   );
 }

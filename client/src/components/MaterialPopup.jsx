@@ -28,9 +28,11 @@ export default function MaterialPopup({ exam, onClose, onUpdate, onDelete }) {
     <>
       <div className="confirm-backdrop" onClick={onClose}>
         <div className="material-popup" onClick={(e) => e.stopPropagation()}>
-          <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          <div className="popup-close-sticky">
+            <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
+          </div>
           <div className="material-popup-header">
             <div className="material-popup-subject">{exam.subjectLabel}</div>
             {dateLabel && <div className="material-popup-date">{dateLabel}</div>}

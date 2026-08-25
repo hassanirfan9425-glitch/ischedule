@@ -41,9 +41,11 @@ export default function DifficultyNudgePopup({ nudge, difficulties, onClose, onR
   return (
     <div className="confirm-backdrop" onClick={dismissAndClose}>
       <div className="material-popup" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="drawer-close" onClick={dismissAndClose} aria-label="Close" disabled={submitting}>
-          ✕
-        </button>
+        <div className="popup-close-sticky">
+          <button type="button" className="drawer-close" onClick={dismissAndClose} aria-label="Close" disabled={submitting}>
+            ✕
+          </button>
+        </div>
         <div className="material-popup-header">
           <div className="material-popup-subject">{nudge.subjectLabel}</div>
         </div>

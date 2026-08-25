@@ -63,9 +63,11 @@ export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated, i
   return (
     <div className="confirm-backdrop" onClick={onClose}>
       <div className="material-popup study-plan-popup" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
+        <div className="popup-close-sticky">
+          <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
         <div className="material-popup-header">
           <div className="material-popup-subject">Study Plan</div>
         </div>
