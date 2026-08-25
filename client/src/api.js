@@ -11,7 +11,12 @@ async function request(path, options = {}) {
   const isJson = res.headers.get('content-type')?.includes('application/json');
   const data = isJson ? await res.json() : null;
   if (!res.ok) {
-    throw new Error(data?.error || `Request failed (${res.status})`);
+    const err = new Error(data?.error || `Request failed (${res.status})`);
+    // Lets callers tell "genuinely not logged in" (401) apart from a transient/gateway failure
+    // (503 while the free-tier host is cold-starting, a dropped connection, etc) without having
+    // to parse the message string — see App.jsx's session-check retry loop.
+    err.status = res.status;
+    throw err;
   }
   return data;
 }

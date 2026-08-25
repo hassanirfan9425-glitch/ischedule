@@ -20,6 +20,7 @@ import TutorialOverlay from './components/TutorialOverlay.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const [wakingUp, setWakingUp] = useState(false);
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'schedule' | 'academics'
   const [reuploading, setReuploading] = useState(false);
@@ -56,14 +57,35 @@ export default function App() {
   }
 
   useEffect(() => {
-    // A transient DB blip on the server can make this one request fail even though the session
-    // itself is fine — one retry after a beat means that doesn't look like an unexpected logout.
-    api
-      .me()
-      .catch(() => new Promise((resolve) => setTimeout(resolve, 1500)).then(() => api.me()))
-      .then((data) => setUser(data.user))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    // Render's free tier can take 50+ seconds to cold-start after spinning down from inactivity
+    // (confirmed via its own dashboard warning), and the keep-alive ping doesn't reliably prevent
+    // that. A single quick retry only covers a transient blip, not a real cold start, so this
+    // backs off across several attempts before giving up. A 401 means the session genuinely
+    // doesn't exist — retrying that would just delay showing the login page for no reason, so
+    // only network/gateway-type failures (no status, or 5xx) get retried.
+    const RETRY_DELAYS_MS = [1500, 3000, 6000, 10000, 15000, 15000];
+    let cancelled = false;
+
+    async function checkSession() {
+      for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        try {
+          const data = await api.me();
+          if (!cancelled) setUser(data.user);
+          return;
+        } catch (err) {
+          if (err.status === 401 || attempt === RETRY_DELAYS_MS.length || cancelled) return;
+          if (attempt >= 1) setWakingUp(true);
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+        }
+      }
+    }
+
+    checkSession().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -125,6 +147,7 @@ export default function App() {
     return (
       <div className="centered-screen">
         <div className="spinner" />
+        {wakingUp && <p className="loading-wake-message">Waking up the server, this can take a moment…</p>}
       </div>
     );
   }
