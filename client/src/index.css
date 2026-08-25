@@ -1,4 +1,10 @@
 :root {
+  /* Same reasoning as the color-scheme meta tag in index.html — this page always renders its own
+     explicit light or dark palette (see @media (prefers-color-scheme: dark) below), so telling
+     the browser that up front stops it from layering its own automatic dark-mode darkening on
+     top, which is what caused the "too dark" look reported on Samsung Internet. */
+  color-scheme: light dark;
+
   /* Classic — the default UI style. Body/data text: Karla; headings use --font-display
      (Fraunces). See the [data-ui-style='technical'] block further down for the other option. */
   --font-family: 'Karla', 'Segoe UI', sans-serif;
