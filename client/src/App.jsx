@@ -65,13 +65,11 @@ export default function App() {
     // only network/gateway-type failures (no status, or 5xx) get retried.
     const RETRY_DELAYS_MS = [1500, 3000, 6000, 10000, 15000, 15000];
     // Measured live against the production endpoint (studycram.vercel.app/api/auth/me) while
-    // warm: consistently ~370-400ms, occasionally ~800ms. ~600ms is a fair "normal" baseline —
-    // real phones on cellular will run a bit slower than this dev machine's connection, so this
-    // stays on the generous side rather than firing the message for ordinary network variance.
-    // Tied to elapsed time, not retry count, so a single slow-but-eventually-successful request
-    // also gets the message, not just the multi-retry cold-start case.
-    const NORMAL_LOAD_MS = 600;
-    const WAKING_UP_THRESHOLD_MS = NORMAL_LOAD_MS * 2;
+    // warm: consistently ~370-400ms, occasionally ~800ms — the 2x-normal-load-time threshold that
+    // math implied (~1.2s) turned out to fire too early in practice, so this is a fixed 3s floor
+    // instead. Tied to elapsed time, not retry count, so a single slow-but-eventually-successful
+    // request also gets the message, not just the multi-retry cold-start case.
+    const WAKING_UP_THRESHOLD_MS = 3000;
     let cancelled = false;
     let resolved = false;
 
