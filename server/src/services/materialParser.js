@@ -78,16 +78,20 @@ paper references at all.`;
 // A hint, not a source of truth — the model is told to use these only when they match what's
 // actually printed in the document, never to override real document text. Keyed by whatever
 // subjectLabel the exam record already carries (see server/src/constants/subjects.js).
+// Updated for the new academic year (2026-08): codes below are real, stable Cambridge
+// International syllabus numbers, so a label rename (e.g. "AS Chemistry" -> "A Level Chemistry")
+// doesn't make the underlying code wrong — kept every code, just repointed at the new labels.
+// Economics dropped (no Cambridge Economics elective this year, only AP Micro/Macro, which is a
+// College Board exam with no Cambridge code at all). "A Level Math" shares Math's own 9709
+// syllabus code (confirmed).
 const CAMBRIDGE_CODE_HINTS = {
   Math: '9709',
-  Mechanics: '9709',
+  'A Level Math': '9709',
   Physics: '9702',
-  'AS Physics': '9702',
-  'AS Chemistry': '9701',
-  'AS Biology': '9700',
-  'AS Business': '9609',
-  'AS Economics': '9708',
-  'AS Further Maths': '9231',
+  'A Level Chemistry': '9701',
+  'A Level Biology': '9700',
+  'A Level Business': '9609',
+  'A Level Further Math': '9231',
 };
 
 function extractJson(text) {

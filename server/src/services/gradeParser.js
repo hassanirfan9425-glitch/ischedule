@@ -7,14 +7,18 @@ const API_URL = (model) => `https://generativelanguage.googleapis.com/v1beta/mod
 // Course names as they appear on the school's grade report don't match the schedule's own
 // scheduleCode glossary (that's timetable shorthand; this is a different naming system for the
 // same subjects) — confirmed with the student 2026-08 against a real sample report.
+// Mechanics/Chemistry/Economics were dropped as core subjects for the new academic year (see
+// constants/subjects.js) — their old aliases ('Applied Mathematics', 'Chemistry N', 'Economics')
+// are removed rather than guessed onto a new key, since it's not confirmed whether this year's
+// grade reports still use that exact wording for the new AP/A-Level elective versions of those
+// courses. Add them back once a real new-year grade report sample confirms the actual wording.
 const COURSE_NAME_ALIASES = [
   { course: 'English Language M', key: 'core_english' },
   { course: 'Mathematics M1', key: 'core_math' },
-  { course: 'Applied Mathematics', key: 'core_mechanics' },
   { course: 'Physics N', key: 'core_physics' },
-  { course: 'Chemistry N', key: 'core_chemistry' },
-  { course: 'Chemistry N1', key: 'as_chemistry' },
-  { course: 'Economics', key: 'core_economics' },
+  // Same real course/wording as before ('Chemistry N1'), just pointed at the renamed key —
+  // "A Level Chemistry" is the same underlying course "AS Chemistry" used to refer to.
+  { course: 'Chemistry N1', key: 'a_chemistry' },
 ];
 
 const SYSTEM_PROMPT = `You are an expert academic-transcript analyst. You will be shown a school grade

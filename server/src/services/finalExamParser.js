@@ -95,10 +95,9 @@ based cell (a single time slot that lists different exams depending on which one
 "Religion" / "Religion for Arabs" means Islamic 1 (key "core_islamic_1") — Muslim Arab students only.
 "Religion 2" / "Religion 2 for Non-Arab" means Islamic 2 (key "core_islamic_2") — Muslim non-Arab students
 only. "Extra Arabic" / "Arabic" (the Arab-only variant)
-means Arabic (key "core_arabic") — Arab students only. "Arabic 2" in this cell means Arabic IGCSE Foreign
-Language (key "arabic_igcse_foreign") — it is explicitly the non-Arab-student's Arabic course, so it is
-never the Arabic IGCSE First Language course (that one is for native speakers). Apply these four mappings
-only within this document; match against the student's own subjects exactly as usual.
+means Arabic (key "core_arabic") — Arab students only. "Arabic 2" in this cell means the elective Arabic 2
+course (key "arabic_2") — it is explicitly the non-Arab-student's Arabic elective. Apply these four
+mappings only within this document; match against the student's own subjects exactly as usual.
 
 Match against the FULL code text on each glossary line, not just a keyword that happens to overlap with
 part of it — e.g. "Applied Math" is explicitly listed as an alternate name for "Mech(M1)" (key
@@ -108,18 +107,18 @@ exactly as such — never match it against any subject whose name merely contain
 between two glossary lines, re-read both lines' full code text carefully before deciding, and prefer null
 over a guess you're not confident in.
 
-CRITICAL "AS"/"AP" prefix warning — a documented, repeated failure mode: a cell prefixed with "AS" or "AP"
-names a COMPLETELY DIFFERENT course from its plain, unprefixed name, even when the student is rated in the
-plain version. "AS Chemistry" is NOT "Chemistry". "AP Physics 1" (or "AP Physics 2", "AP Physics C") is NOT
-"Physics". "AP English" (in any form — "AP English (M.C)", "AP English Comp", "AP English Lang") is NOT
-"English". "AP Calculus AB/BC" is NOT "Math"/"Mathematics". Never match an "AS "/"AP "-prefixed cell against
-the plain-named subject just because the student takes the plain version and the words overlap — only match
-it if the student is separately rated in that EXACT AS/AP subject (a distinct glossary key of its own, e.g.
-"as_chemistry", "ap_physics_c_mechanics"). If the student has no matching AS/AP subject rated, set
-matchedSubjectKey to null for that cell and still report it as its own separate entry with its real AS/AP
-subjectLabel — never fold it into a different, plain-named entry, and never let it replace or overwrite a
-real plain-named cell that also exists elsewhere at a different time. These are two independent exams even
-when they share a root word.
+CRITICAL "A Level"/"AS"/"AP" prefix warning — a documented, repeated failure mode: a cell prefixed with "A
+Level", "AS", or "AP" names a COMPLETELY DIFFERENT course from its plain, unprefixed name, even when the
+student is rated in the plain version. "A Level Chemistry" (this document may still print it as "AS
+Chemistry" — treat both spellings as the same course) is NOT "Chemistry". "AP Physics 2" (or "AP Physics C")
+is NOT "Physics". "AP Calculus BC" is NOT "Math"/"Mathematics". Never match an "A Level "/"AS "/"AP
+"-prefixed cell against the plain-named subject just because the student takes the plain version and the
+words overlap — only match it if the student is separately rated in that EXACT A Level/AP subject (a
+distinct glossary key of its own, e.g. "a_chemistry", "ap_physics_c_mechanics"). If the student has no
+matching A Level/AP subject rated, set matchedSubjectKey to null for that cell and still report it as its
+own separate entry with its real subjectLabel — never fold it into a different, plain-named entry, and
+never let it replace or overwrite a real plain-named cell that also exists elsewhere at a different time.
+These are two independent exams even when they share a root word.
 
 Only ever set matchedSubjectKey to one of the keys above, or null if genuinely nothing matches. Work
 carefully and take your time. Think step by step at each turn. Do not skip ahead to JSON until explicitly
