@@ -64,7 +64,20 @@ export default function App() {
     // doesn't exist — retrying that would just delay showing the login page for no reason, so
     // only network/gateway-type failures (no status, or 5xx) get retried.
     const RETRY_DELAYS_MS = [1500, 3000, 6000, 10000, 15000, 15000];
+    // Measured live against the production endpoint (studycram.vercel.app/api/auth/me) while
+    // warm: consistently ~370-400ms, occasionally ~800ms. ~600ms is a fair "normal" baseline —
+    // real phones on cellular will run a bit slower than this dev machine's connection, so this
+    // stays on the generous side rather than firing the message for ordinary network variance.
+    // Tied to elapsed time, not retry count, so a single slow-but-eventually-successful request
+    // also gets the message, not just the multi-retry cold-start case.
+    const NORMAL_LOAD_MS = 600;
+    const WAKING_UP_THRESHOLD_MS = NORMAL_LOAD_MS * 2;
     let cancelled = false;
+    let resolved = false;
+
+    const wakingUpTimer = setTimeout(() => {
+      if (!resolved) setWakingUp(true);
+    }, WAKING_UP_THRESHOLD_MS);
 
     async function checkSession() {
       for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
@@ -74,17 +87,20 @@ export default function App() {
           return;
         } catch (err) {
           if (err.status === 401 || attempt === RETRY_DELAYS_MS.length || cancelled) return;
-          if (attempt >= 1) setWakingUp(true);
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
         }
       }
     }
 
     checkSession().finally(() => {
+      resolved = true;
+      clearTimeout(wakingUpTimer);
       if (!cancelled) setLoading(false);
     });
     return () => {
       cancelled = true;
+      resolved = true;
+      clearTimeout(wakingUpTimer);
     };
   }, []);
 
