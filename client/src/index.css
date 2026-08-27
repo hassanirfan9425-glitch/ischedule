@@ -5103,6 +5103,29 @@ textarea:focus {
   color: var(--brand-text);
 }
 
+/* Reveals the weeks collapsed past the default logged-plus-2 runway (see visibleWeeksFor in
+   MissionLog.jsx) — styled as its own log line, not an inline entry, so it reads as "more of the
+   log exists here" rather than another stardate row. */
+.mlog-entry-expand {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  margin-top: 4px;
+  padding: 5px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+  color: var(--text-subtle);
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mlog-entry-expand:hover {
+  color: var(--brand-text);
+  border-color: var(--brand-fill);
+}
+
 .mlog-entry-input {
   width: 44px;
   padding: 2px 4px;

@@ -67,10 +67,25 @@ function gradeBand(grade) {
   return 'low';
 }
 
-function MissionLogEntries({ row, subcourseLabel, editingCell, editValue, setEditValue, cellError, saving, startEdit, commitEdit, setEditingCell, setCellError, onDeleteEntry }) {
+// Shows logged weeks plus a short runway of upcoming ones — not the full 14, which is what made
+// this log so tall (up to 9 subjects x 2 subcourses x 14 weeks rendered inline, always, even for
+// weeks nobody's touched yet). Collapsed, a row shows everything through 2 weeks past the last
+// logged grade; expanding reveals the rest. Nothing about editing/adding an entry changes — only
+// what's visible before you ask for more.
+function visibleWeeksFor(row, isExpanded) {
+  if (isExpanded) return WEEKS;
+  const loggedWeeks = WEEKS.filter((w) => row.cells.has(w));
+  const highestLogged = loggedWeeks.length > 0 ? Math.max(...loggedWeeks) : 0;
+  const visibleThrough = Math.min(highestLogged + 2, WEEKS.length);
+  return WEEKS.filter((w) => w <= visibleThrough);
+}
+
+function MissionLogEntries({ row, subcourseLabel, editingCell, editValue, setEditValue, cellError, saving, startEdit, commitEdit, setEditingCell, setCellError, onDeleteEntry, isExpanded, onExpand }) {
+  const visibleWeeks = visibleWeeksFor(row, isExpanded);
+  const hiddenCount = WEEKS.length - visibleWeeks.length;
   return (
     <div className="mlog-entries">
-      {WEEKS.map((w) => {
+      {visibleWeeks.map((w) => {
         const cellEntry = row.cells.get(w);
         const isEditing = editingCell?.rowKey === row.key && editingCell?.week === w;
 
@@ -144,6 +159,11 @@ function MissionLogEntries({ row, subcourseLabel, editingCell, editValue, setEdi
           </div>
         );
       })}
+      {hiddenCount > 0 && (
+        <button type="button" className="mlog-entry-expand" onClick={onExpand}>
+          + {hiddenCount} more week{hiddenCount === 1 ? '' : 's'}
+        </button>
+      )}
     </div>
   );
 }
@@ -200,6 +220,13 @@ export default function MissionLog({
   const [editValue, setEditValue] = useState('');
   const [cellError, setCellError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Which per-row (subject + subcourse) logs have been expanded past their default runway of
+  // logged-weeks-plus-2. Keyed by row.key, reset naturally on term change since rows remount then.
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  function expandRow(rowKey) {
+    setExpandedRows((prev) => new Set(prev).add(rowKey));
+  }
 
   const [addingRow, setAddingRow] = useState(false);
   const [newRowSubjectKey, setNewRowSubjectKey] = useState('');
@@ -404,6 +431,8 @@ export default function MissionLog({
                     setEditingCell={setEditingCell}
                     setCellError={setCellError}
                     onDeleteEntry={onDeleteEntry}
+                    isExpanded={expandedRows.has(row.key)}
+                    onExpand={() => expandRow(row.key)}
                   />
                 </div>
                 );
