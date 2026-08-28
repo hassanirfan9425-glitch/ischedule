@@ -315,7 +315,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/manual', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  const { subjectKey, subjectLabel, subcourseLabel, weekNumber, grade, term } = req.body || {};
+  const { subjectKey, subjectLabel, subcourseLabel, weekNumber, grade, term, clientMutationId } = req.body || {};
 
   const resolvedLabel = subjectKey && SUBJECT_BY_KEY[subjectKey] ? SUBJECT_BY_KEY[subjectKey].label : subjectLabel;
   if (!resolvedLabel || typeof resolvedLabel !== 'string' || !resolvedLabel.trim()) {
@@ -331,11 +331,18 @@ router.post('/manual', requireAuth, async (req, res) => {
 
   const todayIso = getTodayIso();
   const resolvedTerm = Number.isInteger(term) ? term : await determineCurrentTerm(userId, todayIso);
+  const resolvedClientMutationId = typeof clientMutationId === 'string' && clientMutationId ? clientMutationId : null;
 
+  // Only the offline mutation queue ever sends clientMutationId — a replay of the same queued
+  // write (e.g. the client retried after the response was lost, not just the request) hits the
+  // partial unique index below and inserts nothing instead of creating a duplicate grade. The
+  // normal online path (no clientMutationId) is a plain insert exactly as before.
   const info = await db
     .prepare(
-      `INSERT INTO grade_entries (user_id, term, subject_key, subject_label, subcourse_label, week_number, grade, source)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'manual')`
+      `INSERT INTO grade_entries (user_id, term, subject_key, subject_label, subcourse_label, week_number, grade, source, client_mutation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)
+       ON CONFLICT (user_id, client_mutation_id) WHERE client_mutation_id IS NOT NULL DO NOTHING
+       RETURNING id`
     )
     .run(
       userId,
@@ -344,12 +351,24 @@ router.post('/manual', requireAuth, async (req, res) => {
       resolvedLabel.trim(),
       subcourseLabel.trim(),
       Number.isInteger(weekNumber) ? weekNumber : null,
-      gradeNum
+      gradeNum,
+      resolvedClientMutationId
     );
+
+  let id = info.lastInsertRowid;
+  if (!id && resolvedClientMutationId) {
+    // Conflict hit: this exact mutation already landed from an earlier attempt — look up the row
+    // it created instead of treating "nothing inserted" as an error, so a replay still gets back a
+    // normal { ok, id, term } response the client can't tell apart from a fresh success.
+    const existing = await db
+      .prepare('SELECT id FROM grade_entries WHERE user_id = ? AND client_mutation_id = ?')
+      .get(userId, resolvedClientMutationId);
+    id = existing?.id ?? null;
+  }
 
   await maybeRegenerateSuggestions(userId, resolvedTerm);
 
-  res.json({ ok: true, id: info.lastInsertRowid, term: resolvedTerm });
+  res.json({ ok: true, id, term: resolvedTerm });
 });
 
 router.post('/upload', requireAuth, aiCostLimiter(GRADE_UPLOAD_COST), aiCallLimiter, (req, res) => {

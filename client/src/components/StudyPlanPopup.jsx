@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { countdownText, formatDate } from '../utils.js';
+import { useOnlineStatus } from '../offline/connectivity.js';
 
 // Mirrors server/src/routes/materials.js's STUDY_PLAN_COOLDOWN_MS — the server is the actual
 // enforcement (this is just so the button can show a live countdown instead of only reacting
@@ -27,6 +28,7 @@ export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated, i
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [now, setNow] = useState(Date.now());
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -130,12 +132,14 @@ export default function StudyPlanPopup({ exams, plans, onClose, onPlanUpdated, i
           </>
         )}
 
+        {hasMaterial && !isOnline && <p className="subtle">You're offline. Generating a study plan needs a connection.</p>}
+
         {hasMaterial && (
           <button
             type="button"
             className="primary-btn"
             onClick={handleGenerate}
-            disabled={generating || cooldownRemainingSec > 0}
+            disabled={generating || cooldownRemainingSec > 0 || !isOnline}
           >
             {generating
               ? 'Generating…'

@@ -8,7 +8,7 @@ export default function PrivacyTerms({ onBack }) {
           </button>
         )}
         <h1>Privacy Policy &amp; Terms</h1>
-        <p className="subtle">Last updated for the beta launch. Written in plain language, not legal boilerplate.</p>
+        <p className="subtle">Last updated for the public release. Written in plain language, not legal boilerplate.</p>
 
         <h2>What we collect</h2>
         <p>
@@ -16,6 +16,13 @@ export default function PrivacyTerms({ onBack }) {
           password, only a one way hash used to check it). The difficulty ratings you give each subject.
           Any calendar, grade report, or study material you upload. The grades you enter yourself. Any
           study plans, goals, or suggestions the app generates for you. Your theme and UI style choices.
+        </p>
+        <p>
+          To make the app usable without a connection, some of this data is also cached on your own
+          device (in your browser's or app's local storage) so recently-viewed exams and grades are still
+          visible while offline. This local copy never leaves your device on its own, it's only ever
+          used to display your own data back to you, and any changes you make offline are sent to the
+          server automatically once you're back online.
         </p>
 
         <h2>How the AI features work</h2>
@@ -30,8 +37,7 @@ export default function PrivacyTerms({ onBack }) {
         <h2>Who can see your data</h2>
         <p>
           Only the developer of this app, for the purpose of running it, fixing bugs, and improving it.
-          Your data is not sold or shared with anyone else. This app is currently a small beta test for a
-          limited group of students, not a public product yet.
+          Your data is not sold or shared with anyone else.
         </p>
 
         <h2>Deleting your account</h2>
@@ -41,11 +47,20 @@ export default function PrivacyTerms({ onBack }) {
           cannot be undone once you confirm it.
         </p>
 
+        <h2>Questions or concerns?</h2>
+        <p>
+          Reach out on Instagram at{' '}
+          <a href="https://instagram.com/gnrlcd" target="_blank" rel="noreferrer">
+            @gnrlcd
+          </a>
+          .
+        </p>
+
         <h2>Terms of use</h2>
         <p>
-          This app is provided as is, during an active beta test, and may have bugs or occasional
-          downtime. Grade averages, calculators, and suggestions are estimates meant to help you plan.
-          Your school's own official records are always the real, final numbers, not anything shown here.
+          This app is provided as is and may have bugs or occasional downtime. Grade averages,
+          calculators, and suggestions are estimates meant to help you plan. Your school's own official
+          records are always the real, final numbers, not anything shown here.
         </p>
         <p>
           Please use your own real account with your own real information, do not share your account with

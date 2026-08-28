@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import BrandIcon from '../components/BrandIcon.jsx';
 import FinalExamReview from '../components/FinalExamReview.jsx';
+import { useOnlineStatus } from '../offline/connectivity.js';
 
 const ACCEPTED = '.pdf,.png,.jpg,.jpeg,.webp,.gif';
 
@@ -12,6 +13,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
   const [error, setError] = useState('');
   const [review, setReview] = useState(null); // { uploadId, term, exams } once a final-exam upload needs a look
   const inputRef = useRef(null);
+  const isOnline = useOnlineStatus();
 
   function pickFile(f) {
     if (!f) return;
@@ -135,6 +137,17 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
           />
         </div>
 
+        {!isOnline && (
+          <>
+            <p className="subtle">You're offline. Calendar analysis needs a connection.</p>
+            {onManualEntry && (
+              <button type="button" className="back-link" onClick={onManualEntry}>
+                Enter calendar manually instead.
+              </button>
+            )}
+          </>
+        )}
+
         {error && (
           <>
             <p className="error-text">{error}</p>
@@ -146,7 +159,7 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
           </>
         )}
 
-        <button type="button" className="primary-btn" disabled={!file} onClick={handleSubmit}>
+        <button type="button" className="primary-btn" disabled={!file || !isOnline} onClick={handleSubmit}>
           Analyze Calendar
         </button>
       </div>

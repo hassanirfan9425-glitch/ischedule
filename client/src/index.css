@@ -1517,6 +1517,37 @@ h2 {
   max-width: 280px;
 }
 
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent-gold) 30%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-gold) 55%, transparent);
+}
+
+.offline-banner-reconnected {
+  background: color-mix(in srgb, var(--accent-green) 28%, var(--surface));
+  border-bottom-color: color-mix(in srgb, var(--accent-green) 50%, transparent);
+}
+
+.pending-sync-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent-gold) 35%, var(--surface));
+}
+
 .quiz-card,
 .upload-card {
   background: var(--glass-bg);

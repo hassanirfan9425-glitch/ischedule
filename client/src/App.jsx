@@ -17,11 +17,16 @@ import Electives from './pages/Electives.jsx';
 import More from './pages/More.jsx';
 import MoreOrbit from './pages/MoreOrbit.jsx';
 import TutorialOverlay from './components/TutorialOverlay.jsx';
+import OfflineBanner from './components/OfflineBanner.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [wakingUp, setWakingUp] = useState(false);
   const [user, setUser] = useState(null);
+  // Set only when the initial session came from the offline cache (api.js's request() falls back
+  // to a cached /auth/me response when the network is genuinely unreachable). OfflineBanner reacts
+  // live to connectivity changes on its own; this just supplies the "since when" timestamp.
+  const [cachedSessionAt, setCachedSessionAt] = useState(null);
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'schedule' | 'academics'
   const [reuploading, setReuploading] = useState(false);
   const [retakingQuiz, setRetakingQuiz] = useState(false);
@@ -81,7 +86,10 @@ export default function App() {
       for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
         try {
           const data = await api.me();
-          if (!cancelled) setUser(data.user);
+          if (!cancelled) {
+            setUser(data.user);
+            setCachedSessionAt(data._offline ? data._offline.cachedAt : null);
+          }
           return;
         } catch (err) {
           if (err.status === 401 || attempt === RETRY_DELAYS_MS.length || cancelled) return;
@@ -170,8 +178,10 @@ export default function App() {
     return <AuthPage onAuth={setUser} />;
   }
 
+  let content;
+
   if (viewingManualEntry) {
-    return (
+    content = (
       <ManualEntry
         onDone={async () => {
           const data = await api.me();
@@ -182,12 +192,10 @@ export default function App() {
         onCancel={() => setViewingManualEntry(false)}
       />
     );
-  }
-
-  // The quiz is the only mandatory onboarding step — schedule and academics are both optional,
-  // reachable via their own "+" prompts once the student's in the main app.
-  if (!user.onboarded) {
-    return (
+  } else if (!user.onboarded) {
+    // The quiz is the only mandatory onboarding step — schedule and academics are both optional,
+    // reachable via their own "+" prompts once the student's in the main app.
+    content = (
       <Quiz
         tutorialActive={!user.tutorialSeen}
         onSkipTutorial={handleFinishTutorial}
@@ -197,10 +205,8 @@ export default function App() {
         }}
       />
     );
-  }
-
-  if (reuploading) {
-    return (
+  } else if (reuploading) {
+    content = (
       <Upload
         onComplete={async () => {
           const data = await api.me();
@@ -211,100 +217,100 @@ export default function App() {
         onManualEntry={() => setViewingManualEntry(true)}
       />
     );
-  }
-
-  if (retakingQuiz) {
-    return <Quiz retake onComplete={() => setRetakingQuiz(false)} />;
-  }
-
-  if (viewingElectives) {
-    return <Electives onDone={() => setViewingElectives(false)} onCancel={() => setViewingElectives(false)} />;
-  }
-
-  const tutorialOverlay = tutorialDriven && (
-    <TutorialOverlay
-      step={tutorial.currentStep}
-      stepIndex={tutorial.stepIndex}
-      totalSteps={tutorial.totalSteps}
-      isFirst={tutorial.isFirst}
-      onNext={tutorial.next}
-      onBack={tutorial.back}
-      onFinish={handleFinishTutorial}
-      onSkip={handleFinishTutorial}
-    />
-  );
-
-  if (viewingSettings) {
-    return (
-      <>
-        <Settings
-          user={user}
-          onBack={() => setViewingSettings(false)}
-          onUserUpdated={setUser}
-        />
-        {tutorialOverlay}
-      </>
-    );
-  }
-
-  const sharedProps = {
-    user,
-    greeting: greetingTemplate ? greetingTemplate(user.name) : '',
-    activeTab,
-    onSwitchTab: setActiveTab,
-    onLogout: async () => {
-      await api.logout();
-      setUser(null);
-      setGreetingTemplate(null);
-      setActiveTab('home');
-      // The tutorial's stepIndex lives in a hook here in App.jsx, which never unmounts across a
-      // logout/login cycle in this SPA — without resetting it, a tab that ran the tour to (or near)
-      // completion on one account would show the tail end of it immediately for the next account
-      // signed into in the same tab, instead of starting over from step 1.
-      tutorial.restart();
-      setManualTutorialRestart(false);
-    },
-    onReupload: () => setReuploading(true),
-    onRetakeQuiz: () => setRetakingQuiz(true),
-    onEditElectives: () => setViewingElectives(true),
-    onSettings: () => setViewingSettings(true),
-    onRestartTutorial: () => {
-      tutorial.restart();
-      setManualTutorialRestart(true);
-    },
-    onManualEntry: () => setViewingManualEntry(true),
-    onDeleteAccount: async () => {
-      await api.deleteAccount();
-      setUser(null);
-      setGreetingTemplate(null);
-      setActiveTab('home');
-      tutorial.restart();
-      setManualTutorialRestart(false);
-    },
-  };
-
-  let page;
-  if (activeTab === 'academics') page = <Academics {...sharedProps} />;
-  else if (activeTab === 'schedule') page = <Dashboard {...sharedProps} />;
-  // 'more' only exists for the two nav paradigms that don't have their own drawer/dial slot for
-  // account actions — Classic uses its hamburger drawer instead, so a mid-session switch to Classic
-  // while parked on 'more' falls back to Home rather than rendering this page under Classic tokens.
-  else if (activeTab === 'more' && user.uiStyle === 'technical') page = <More {...sharedProps} />;
-  else if (activeTab === 'more' && user.uiStyle === 'orbit') page = <MoreOrbit {...sharedProps} />;
-  else {
-    page = (
-      <Home
-        {...sharedProps}
-        forceDrawerOpen={tutorialDriven && tutorial.forceDrawerOpen}
-        drawerHighlightLabel={tutorialDriven ? tutorial.drawerHighlightLabel : null}
+  } else if (retakingQuiz) {
+    content = <Quiz retake onComplete={() => setRetakingQuiz(false)} />;
+  } else if (viewingElectives) {
+    content = <Electives onDone={() => setViewingElectives(false)} onCancel={() => setViewingElectives(false)} />;
+  } else {
+    const tutorialOverlay = tutorialDriven && (
+      <TutorialOverlay
+        step={tutorial.currentStep}
+        stepIndex={tutorial.stepIndex}
+        totalSteps={tutorial.totalSteps}
+        isFirst={tutorial.isFirst}
+        onNext={tutorial.next}
+        onBack={tutorial.back}
+        onFinish={handleFinishTutorial}
+        onSkip={handleFinishTutorial}
       />
     );
+
+    if (viewingSettings) {
+      content = (
+        <>
+          <Settings user={user} onBack={() => setViewingSettings(false)} onUserUpdated={setUser} />
+          {tutorialOverlay}
+        </>
+      );
+    } else {
+      const sharedProps = {
+        user,
+        greeting: greetingTemplate ? greetingTemplate(user.name) : '',
+        activeTab,
+        onSwitchTab: setActiveTab,
+        onLogout: async () => {
+          await api.logout();
+          setUser(null);
+          setGreetingTemplate(null);
+          setActiveTab('home');
+          // The tutorial's stepIndex lives in a hook here in App.jsx, which never unmounts across a
+          // logout/login cycle in this SPA — without resetting it, a tab that ran the tour to (or
+          // near) completion on one account would show the tail end of it immediately for the next
+          // account signed into in the same tab, instead of starting over from step 1.
+          tutorial.restart();
+          setManualTutorialRestart(false);
+        },
+        onReupload: () => setReuploading(true),
+        onRetakeQuiz: () => setRetakingQuiz(true),
+        onEditElectives: () => setViewingElectives(true),
+        onSettings: () => setViewingSettings(true),
+        onRestartTutorial: () => {
+          tutorial.restart();
+          setManualTutorialRestart(true);
+        },
+        onManualEntry: () => setViewingManualEntry(true),
+        onDeleteAccount: async () => {
+          await api.deleteAccount();
+          setUser(null);
+          setGreetingTemplate(null);
+          setActiveTab('home');
+          tutorial.restart();
+          setManualTutorialRestart(false);
+        },
+      };
+
+      let page;
+      if (activeTab === 'academics') page = <Academics {...sharedProps} />;
+      else if (activeTab === 'schedule') page = <Dashboard {...sharedProps} />;
+      // 'more' only exists for the two nav paradigms that don't have their own drawer/dial slot for
+      // account actions — Classic uses its hamburger drawer instead, so a mid-session switch to
+      // Classic while parked on 'more' falls back to Home rather than rendering this page under
+      // Classic tokens.
+      else if (activeTab === 'more' && user.uiStyle === 'technical') page = <More {...sharedProps} />;
+      else if (activeTab === 'more' && user.uiStyle === 'orbit') page = <MoreOrbit {...sharedProps} />;
+      else {
+        page = (
+          <Home
+            {...sharedProps}
+            forceDrawerOpen={tutorialDriven && tutorial.forceDrawerOpen}
+            drawerHighlightLabel={tutorialDriven ? tutorial.drawerHighlightLabel : null}
+          />
+        );
+      }
+
+      content = (
+        <>
+          {page}
+          {tutorialOverlay}
+        </>
+      );
+    }
   }
 
   return (
     <>
-      {page}
-      {tutorialOverlay}
+      <OfflineBanner cachedAt={cachedSessionAt} />
+      {content}
     </>
   );
 }

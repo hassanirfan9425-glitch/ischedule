@@ -231,6 +231,14 @@ export async function initDb() {
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
+    -- Set only by the offline mutation queue (a client-generated id tagging one queued write) so a
+    -- replayed submission after a dropped connection can't double-insert the same grade. Nullable
+    -- and only unique when present (a partial index) since every other insert path (AI upload, and
+    -- manual entries made while online) never sets it and shouldn't be constrained by it.
+    ALTER TABLE grade_entries ADD COLUMN IF NOT EXISTS client_mutation_id TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS grade_entries_user_client_mutation_id
+      ON grade_entries (user_id, client_mutation_id) WHERE client_mutation_id IS NOT NULL;
+
     CREATE TABLE IF NOT EXISTS grade_suggestions (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

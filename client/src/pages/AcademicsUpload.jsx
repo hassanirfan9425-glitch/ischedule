@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import BrandIcon from '../components/BrandIcon.jsx';
+import { useOnlineStatus } from '../offline/connectivity.js';
 
 const ACCEPTED = '.pdf,.png,.jpg,.jpeg,.webp,.gif';
 
@@ -10,6 +11,7 @@ export default function AcademicsUpload({ onComplete, onCancel }) {
   const [status, setStatus] = useState('idle'); // idle | analyzing | error
   const [error, setError] = useState('');
   const inputRef = useRef(null);
+  const isOnline = useOnlineStatus();
 
   function pickFile(f) {
     if (!f) return;
@@ -90,9 +92,11 @@ export default function AcademicsUpload({ onComplete, onCancel }) {
           />
         </div>
 
+        {!isOnline && <p className="subtle">You're offline. Grade report analysis needs a connection.</p>}
+
         {error && <p className="error-text">{error}</p>}
 
-        <button type="button" className="primary-btn" disabled={!file} onClick={handleSubmit}>
+        <button type="button" className="primary-btn" disabled={!file || !isOnline} onClick={handleSubmit}>
           Analyze Grades
         </button>
       </div>

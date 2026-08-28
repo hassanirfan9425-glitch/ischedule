@@ -64,7 +64,7 @@ export default function ManualEntry({ onDone, onCancel }) {
     setError('');
     setAdding(true);
     try {
-      const { id } = await api.addManualExam({
+      const { id, pending } = await api.addManualExam({
         subjectKey: selectedSubjectKey,
         examType,
         date,
@@ -74,7 +74,7 @@ export default function ManualEntry({ onDone, onCancel }) {
       const subject = effectiveSubjects.find((s) => s.key === selectedSubjectKey);
       setManualExams((prev) => [
         ...prev,
-        { id, subjectKey: selectedSubjectKey, subjectLabel: subject?.label, examType, date, time, notes },
+        { id, subjectKey: selectedSubjectKey, subjectLabel: subject?.label, examType, date, time, notes, pending },
       ]);
       setDate('');
       setTime('');
@@ -190,6 +190,7 @@ export default function ManualEntry({ onDone, onCancel }) {
                   <div>
                     <strong>{e.subjectLabel}</strong>
                     <span className="subtle"> · {e.examType} · {e.date}{e.time ? ` · ${e.time}` : ''}</span>
+                    {e.pending && <span className="pending-sync-badge">Pending sync</span>}
                   </div>
                   <button type="button" className="back-link" onClick={() => handleDelete(e.id)}>
                     Remove
