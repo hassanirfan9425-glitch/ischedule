@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import BrandIcon from '../components/BrandIcon.jsx';
+import { APP_VERSION } from '../version.js';
 import { PaletteIcon, AutomationIcon, ProfileIcon, LockIcon, EyeIcon } from '../components/NavIcons.jsx';
 
 const CATEGORIES = [
@@ -289,6 +290,7 @@ export default function Settings({ user, onBack, onUserUpdated }) {
               </span>
             </button>
           ))}
+          <div className="settings-sidebar-version">v{APP_VERSION}</div>
         </div>
 
         <div className="settings-panel">

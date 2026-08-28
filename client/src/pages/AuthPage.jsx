@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import BrandIcon from '../components/BrandIcon.jsx';
 import PrivacyTerms from './PrivacyTerms.jsx';
 import { EyeIcon } from '../components/NavIcons.jsx';
+import { APP_VERSION } from '../version.js';
 
 export default function AuthPage({ onAuth }) {
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
@@ -114,6 +115,8 @@ export default function AuthPage({ onAuth }) {
             {submitting ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
           </button>
         </form>
+
+        <p className="auth-quiet-version">v{APP_VERSION}</p>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import BrandIcon from './BrandIcon.jsx';
+import { APP_VERSION } from '../version.js';
 
 export default function NavDrawer({ open, onClose, groups, highlightLabel = null }) {
   return (
@@ -42,6 +43,7 @@ export default function NavDrawer({ open, onClose, groups, highlightLabel = null
             </div>
           ))}
         </div>
+        <div className="nav-drawer-version">v{APP_VERSION}</div>
       </nav>
     </>
   );

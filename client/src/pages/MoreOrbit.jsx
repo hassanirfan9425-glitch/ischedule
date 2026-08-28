@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { APK_DOWNLOAD_URL } from '../utils.js';
+import { APP_VERSION } from '../version.js';
 import OrbitDial from '../components/OrbitDial.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
@@ -72,6 +73,8 @@ export default function More({
             </button>
           ))}
         </div>
+
+        <div className="orbit-version">v{APP_VERSION}</div>
 
         {confirmingDelete && (
           <ConfirmDialog

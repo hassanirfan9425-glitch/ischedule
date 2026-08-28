@@ -1458,6 +1458,13 @@ h2 {
   font-weight: 500;
 }
 
+.ledger-version {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
 .ledger-empty {
   padding: 16px 18px;
   border: 1.5px dashed var(--border);
@@ -1699,6 +1706,12 @@ h2 {
   animation: authRiseIn 0.6s ease-out 0.6s both;
 }
 
+.auth-quiet-version {
+  margin: 20px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
 .auth-quiet-form label {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -1852,6 +1865,14 @@ h2 {
 
 .settings-sidebar-item.active {
   background: var(--brand-fill);
+}
+
+.settings-sidebar-version {
+  margin-top: 8px;
+  padding: 8px 4px 2px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
 }
 
 .settings-sidebar-item.active .settings-category-label,
@@ -4170,6 +4191,14 @@ textarea:focus {
   height: 18px;
 }
 
+.nav-drawer-version {
+  margin-top: auto;
+  padding: 16px 4px 4px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
 .nav-drawer-item {
   display: flex;
   align-items: center;
@@ -4980,6 +5009,13 @@ textarea:focus {
   font-size: 0.8rem;
 }
 
+.orbit-version {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
 /* Orbit Academics — "Mission Log" grade journal (MissionLog.jsx). Trades a chart for a scrolling
    flight log: each week is a dated entry ("SD-04") in a per-subject/subcourse log, colored by how
    the grade landed, with unlogged weeks sitting quiet until filled in. Reuses the shared
@@ -5646,5 +5682,15 @@ textarea:focus {
   /* Reserve room so the fixed bar never covers the last bit of scrollable page content. */
   .dashboard {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---- Version footer (Settings sidebar): the sidebar switches to a horizontal scrolling row of
+   category buttons at this width (see the existing rule above), where a centered text line doesn't
+   fit the same layout — hidden here rather than reflowed, since the version is still visible via
+   the nav drawer / More page on this width. ---- */
+@media (max-width: 430px) {
+  .settings-sidebar-version {
+    display: none;
   }
 }
