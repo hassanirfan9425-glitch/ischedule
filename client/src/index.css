@@ -740,8 +740,19 @@
    instead of a phosphor color. Placed after Technical so ordering never matters between the two. */
 [data-ui-style='orbit'] {
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Was identical to --font-family (no distinct display face at all) — unlike Classic's Fraunces
+     and Technical's Space Mono. Space Grotesk: geometric/modern, reads as console/HUD without the
+     costume-y "sci-fi font" cliche (Orbitron etc), and echoes Technical's "Space Mono" for a
+     mono/grotesk pairing across the two non-Classic styles. */
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  /* Orbit's own shape/motion tokens — the glass-panel-plus-glow radius already used everywhere
+     (.orbit-panel, .orbit-dial, etc), and the easing curve that already appeared three separate
+     times in the map's bespoke motion (ring transitions, mount-in keyframe) without ever being
+     named. Naming both here so new rules (popups, FAB ping) reuse them instead of drifting. */
+  --orbit-glass-radius: 16px;
+  --orbit-glide: cubic-bezier(0.22, 1, 0.36, 1);
 
   --bg: #0b0b2a;
   --surface: #12123f;
@@ -1057,7 +1068,8 @@ h2 {
 }
 
 /* ============================================================
-   Command bar — top nav bar shared across the Classic layout.
+   Command bar — Technical/High-Tech's own top nav bar (Home/Calendar/Academics/More pages when
+   uiStyle === 'technical'). Classic uses TabBar.jsx + NavDrawer.jsx instead.
    ============================================================ */
 
 .command-bar-wrap {
@@ -1514,6 +1526,17 @@ h2 {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Recolor only, both styles — a spinning ring is a near-universal loading affordance; reshaping it
+   into a terminal/orbit-specific glyph risks it not reading as "loading" at all for something only
+   on screen a second or two. */
+[data-ui-style='technical'] .spinner {
+  box-shadow: 0 0 6px var(--brand-500);
+}
+
+[data-ui-style='orbit'] .spinner {
+  box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.5);
 }
 
 .loading-wake-message {
@@ -2428,6 +2451,21 @@ h2 {
   white-space: nowrap;
 }
 
+/* Technical/Orbit both drop the 🔥 emoji from the JSX itself (see HomeTechnical.jsx/HeatGrid.jsx,
+   HomeOrbit.jsx/MissionLog.jsx) — a pictorial glyph doesn't fit either theme's own idiom. Technical
+   needs no override at all: --font-family/--orange-bg already make the bracketed text render in
+   monospace phosphor-amber with the glow below, matching .grade-pass-badge's readout look for
+   free. Orbit gets its own comet-tail mark instead, matching .grade-goal-badge's identical
+   treatment above. */
+[data-ui-style='orbit'] .streak-badge::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 1.5px;
+  background: linear-gradient(to right, transparent, currentColor);
+  flex-shrink: 0;
+}
+
 /* A living flame flickers — subtle, continuous, off during the one-shot pop/death animations
    below (which set their own `animation` and so naturally override this while they run). */
 @media (prefers-reduced-motion: no-preference) {
@@ -3030,6 +3068,31 @@ textarea:focus {
   position: absolute;
   top: 16px;
   right: 16px;
+}
+
+/* Technical: every popup/dialog in the app (confirm/delete, add-choice, reflection, material,
+   study-plan, grade-calculator) was falling straight through to this generic 12-14px rounded glass
+   card with no terminal treatment at all — the one contradiction in an otherwise sharp, no-blur,
+   no-rounding theme. Sharp 4px corner (matching .ledger-panel/.hgrid-section) and a colored top
+   rule instead, echoing .ledger-header-title's "// " comment-syntax marker. */
+[data-ui-style='technical'] .confirm-dialog,
+[data-ui-style='technical'] .material-popup {
+  border-radius: 4px;
+  border-top: 2px solid var(--brand-fill);
+}
+
+/* Orbit: formalizes the glass-panel-plus-glow idiom already used by .orbit-panel/.orbit-dial as
+   this theme's own popup treatment (16px radius, not the generic 12-14px) plus a thin inset ring —
+   the same concentric-ring mechanic already load-bearing on the dial and the map, extended here
+   instead of leaving these as the one surface with no Orbit identity at all. An inset box-shadow
+   rather than a positioned pseudo-element, deliberately — .material-popup scrolls its own content
+   (max-height + overflow-y), and a pseudo-element positioned inside it would scroll away with that
+   content instead of staying anchored to the visible edge; a shadow painted on the border itself
+   doesn't have that problem. */
+[data-ui-style='orbit'] .confirm-dialog,
+[data-ui-style='orbit'] .material-popup {
+  border-radius: var(--orbit-glass-radius);
+  box-shadow: var(--glass-shadow), inset 0 0 0 5px rgba(var(--brand-rgb), 0.12);
 }
 
 .material-popup-header {
@@ -4036,6 +4099,14 @@ textarea:focus {
   transform: scale(0.97);
 }
 
+[data-ui-style='technical'] .see-all-btn {
+  border-radius: 4px;
+}
+
+[data-ui-style='orbit'] .see-all-btn {
+  border-radius: var(--orbit-glass-radius);
+}
+
 .empty-state {
   display: flex;
   align-items: center;
@@ -4298,6 +4369,55 @@ textarea:focus {
   transform: scale(0.96);
 }
 
+/* Technical: the one other place a filled circle+pulse survived untouched, contradicting the
+   sharp/no-rounding rule everywhere else. Reuses .command-bar-cursor's own blink keyframe (already
+   defined above) instead of inventing new motion — a blinking cursor block reads as "insert here,"
+   which is exactly what these buttons do. */
+[data-ui-style='technical'] .fab-btn,
+[data-ui-style='technical'] .plus-button {
+  border-radius: 4px;
+  background: #05070a;
+  border: 1.5px solid var(--brand-fill);
+  box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.25);
+  animation: blink 1s step-start infinite;
+}
+
+[data-ui-style='technical'] .fab-btn:hover,
+[data-ui-style='technical'] .plus-button:hover {
+  transform: none;
+  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.45);
+}
+
+/* Orbit: same idea as the dial's radar-ping — an expanding, fading ring instead of a plain scale
+   pulse, tying this back to the dial/sonar metaphor instead of the generic pulse every other style
+   used to share. */
+[data-ui-style='orbit'] .fab-btn,
+[data-ui-style='orbit'] .plus-button {
+  animation: none;
+}
+
+/* .fab-btn is already `position: fixed` (its own containing-block); .plus-button is static by
+   default and needs this to anchor the ping ring — set only here, not on .fab-btn, so this doesn't
+   clobber its fixed positioning. */
+[data-ui-style='orbit'] .plus-button {
+  position: relative;
+}
+
+[data-ui-style='orbit'] .fab-btn::after,
+[data-ui-style='orbit'] .plus-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--brand-fill);
+  animation: orbitPing 2.2s var(--orbit-glide) infinite;
+}
+
+@keyframes orbitPing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
 .hamburger-btn {
   position: fixed;
   left: calc(20px + env(safe-area-inset-left));
@@ -4383,6 +4503,28 @@ textarea:focus {
 
 .drawer-close:hover {
   color: var(--danger-dark);
+}
+
+/* Technical never renders NavDrawer (CommandBar is its nav), so this only ever applies inside
+   popups — a sharp bracket close mark instead of a circle, matching the terminal's no-rounding
+   rule. */
+[data-ui-style='technical'] .drawer-close {
+  border-radius: 2px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  font-family: var(--font-mono);
+}
+
+[data-ui-style='technical'] .drawer-close:hover {
+  border-color: currentColor;
+  text-shadow: 0 0 4px currentColor;
+}
+
+/* Orbit is round-friendly already (dial, panels, stars are all circular/curved) — the close
+   button just needed the same glow-on-hover .orbit-dial itself already gets. */
+[data-ui-style='orbit'] .drawer-close:hover {
+  color: var(--brand-fill);
+  box-shadow: 0 0 10px rgba(var(--brand-rgb), 0.4);
 }
 
 .nav-drawer-items {
@@ -4852,120 +4994,6 @@ textarea:focus {
 
 .orbit-suggestions li {
   margin-bottom: 6px;
-}
-
-.orbit-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.orbit-row.color-red { border-color: var(--red-border); }
-.orbit-row.color-orange { border-color: var(--orange-border); }
-.orbit-row.color-green { border-color: var(--green-border); }
-.orbit-row.color-gray { border-color: var(--gray-border); }
-.orbit-row.color-blue { border-color: var(--blue-border); }
-
-.orbit-row.priority-glow {
-  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.3);
-}
-
-.orbit-row:hover {
-  box-shadow: 0 0 14px rgba(var(--brand-rgb), 0.25);
-}
-
-.orbit-row-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--gray-bg);
-  box-shadow: 0 0 6px var(--gray-bg);
-}
-
-.orbit-row.color-red .orbit-row-dot { background: var(--red-bg); box-shadow: 0 0 6px var(--red-bg); }
-.orbit-row.color-orange .orbit-row-dot { background: var(--orange-bg); box-shadow: 0 0 6px var(--orange-bg); }
-.orbit-row.color-green .orbit-row-dot { background: var(--green-bg); box-shadow: 0 0 6px var(--green-bg); }
-.orbit-row.color-blue .orbit-row-dot { background: var(--blue-bg); box-shadow: 0 0 6px var(--blue-bg); }
-
-.orbit-row-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.orbit-row-subject {
-  font-weight: 700;
-  color: var(--text);
-  font-size: 0.95rem;
-}
-
-.orbit-row-meta {
-  color: var(--text-subtle);
-  font-size: 0.8rem;
-  margin-top: 2px;
-}
-
-.orbit-row-hint {
-  color: var(--brand-text);
-  font-size: 0.76rem;
-  margin-top: 4px;
-  font-weight: 600;
-}
-
-.orbit-row-side {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.orbit-row-days {
-  font-weight: 700;
-  color: var(--text);
-  font-size: 0.85rem;
-}
-
-.orbit-row-difficulty {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--text-subtle);
-  margin-top: 2px;
-}
-
-.orbit-comet {
-  cursor: default;
-  border-style: dashed;
-}
-
-.orbit-empty {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  background: var(--glass-bg-strong);
-  border: 1.5px dashed var(--border);
-  border-radius: 14px;
-  margin-bottom: 20px;
-}
-
-.orbit-empty-title {
-  color: var(--text);
-  font-weight: 600;
-  font-size: 0.92rem;
-}
-
-.orbit-empty-hint {
-  color: var(--text-subtle);
-  font-size: 0.82rem;
-  margin-top: 2px;
 }
 
 /* The radial map — a self-contained, bounded square so it stays legible no matter how many exams

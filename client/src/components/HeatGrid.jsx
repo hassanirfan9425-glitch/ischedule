@@ -82,7 +82,7 @@ function HeatGridRow({ row, subcourseLabel, displayStreak, streakAtRisk, streakA
                     : `${displayStreak}-week streak of AMS grades at 90 or above`
                 }
               >
-                🔥{displayStreak}
+                [{displayStreak}]
               </span>
             )
           )}

@@ -196,7 +196,7 @@ export default function Home({ greeting, activeTab, onSwitchTab }) {
                             topStreakSubject.amsStreakStatus === 'atRisk' ? 'streak-badge-atrisk' : ''
                           } ${topStreakAnim ? `streak-anim-${topStreakAnim.type}` : ''}`.trim()}
                         >
-                          🔥 {topStreakSubject.amsStreak}-week streak in {topStreakSubject.subjectLabel}
+                          {topStreakSubject.amsStreak}-week streak in {topStreakSubject.subjectLabel}
                         </span>
                       )}
                     </span>

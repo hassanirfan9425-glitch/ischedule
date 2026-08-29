@@ -413,7 +413,7 @@ export default function MissionLog({
                             : `${displayStreak}-week streak of AMS grades at 90 or above`
                         }
                       >
-                        🔥{displayStreak}
+                        {displayStreak}
                       </span>
                     )}
                     {row.subcourseLabel} log
