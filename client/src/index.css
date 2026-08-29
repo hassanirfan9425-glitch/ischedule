@@ -3565,6 +3565,230 @@ textarea:focus {
   50% { transform: scale(1.06); }
 }
 
+/* ---- Upload guide: a persistent (never hidden behind a click) reference showing which document
+   to upload, since students can get up to three different sheets from school and only two of them
+   are things this app can actually use. ---- */
+.upload-guide {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 620px;
+  margin: 4px 0 22px;
+}
+
+.upload-guide-card {
+  flex: 1 1 150px;
+  max-width: 190px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+/* The year-calendar reference needs real width to read as an actual table (11 columns: 7 days +
+   Milestones/Periodic 1/Periodic 2) rather than a smudge, so it takes its own full-width row
+   instead of squeezing into the same three-across strip as the other two. */
+.upload-guide-card-wide {
+  flex-basis: 100%;
+  max-width: 100%;
+}
+
+.upload-guide-bad {
+  opacity: 0.72;
+}
+
+.upload-guide-mock {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.upload-guide-badge {
+  position: absolute;
+  top: -6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.upload-guide-badge.bad {
+  background: var(--brand-600);
+}
+
+.upload-guide-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.upload-guide-hint {
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+
+/* Mini year-calendar mock: a real (if tiny) recreation of the source document's own table — one
+   row per week, the Mon-Sun day numbers and the Academic Milestones / Periodic 1 / Periodic 2
+   cells all in that SAME row under one dark header bar — not a shape invented separately from it.
+   Only actual subject names, real dates, and school branding are stripped; the row/column
+   structure and the highlighted-weekend, colored-info-cell pattern are the genuine layout. */
+.mini-cal-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mini-cal-table th,
+.mini-cal-table td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  padding: 3px 1px;
+}
+
+.mini-cal-table th:last-child,
+.mini-cal-table td:last-child {
+  border-right: none;
+}
+
+.mini-cal-table thead th {
+  background: var(--text-subtle);
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 700;
+}
+
+.mini-cal-term {
+  width: 13%;
+}
+
+.mini-cal-info-head {
+  width: 15%;
+  font-size: 0.42rem !important;
+}
+
+.mini-cal-week {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+  background: var(--bg);
+}
+
+.mini-cal-table tbody td {
+  font-size: 0.55rem;
+  color: var(--text);
+}
+
+.mini-cal-table tbody td.hl {
+  background: var(--accent-gold);
+  color: #fff;
+  font-weight: 700;
+}
+
+.mini-cal-table tbody td i {
+  display: block;
+  width: 80%;
+  height: 4px;
+  margin: 0 auto;
+  border-radius: 2px;
+  font-style: normal;
+}
+
+.mini-cal-table tbody td i.clr-a {
+  background: var(--accent-sky);
+}
+
+.mini-cal-table tbody td i.clr-b {
+  background: var(--accent-lavender);
+}
+
+.mini-cal-table tbody td i.clr-warn {
+  background: var(--brand-500);
+}
+
+/* Mini exam-schedule mock: Subject / Date / Time columns, header row picked out, everything else a
+   plain placeholder bar. */
+.mini-table {
+  width: 108px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-table-row {
+  display: flex;
+  gap: 4px;
+}
+
+.mini-table-row i {
+  flex: 1;
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  font-style: normal;
+}
+
+.mini-table-row i.short {
+  flex: 0.6;
+}
+
+.mini-table-head i {
+  background: var(--brand-300);
+  height: 5px;
+}
+
+/* Mini class-timetable mock: deliberately dense/busy (every period, every day, all filled in) so
+   it visually reads as "a different, more granular kind of document" next to the sparser calendar
+   and exam-schedule sketches above. */
+.mini-timetable {
+  width: 108px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mini-timetable-row {
+  display: flex;
+  gap: 3px;
+}
+
+.mini-timetable-row span {
+  flex: 1;
+  display: block;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent-lavender);
+  opacity: 0.55;
+}
+
 .file-chosen {
   display: flex;
   align-items: center;

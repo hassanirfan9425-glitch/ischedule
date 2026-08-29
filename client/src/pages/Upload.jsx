@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import BrandIcon from '../components/BrandIcon.jsx';
 import FinalExamReview from '../components/FinalExamReview.jsx';
+import UploadGuide from '../components/UploadGuide.jsx';
 import { useOnlineStatus } from '../offline/connectivity.js';
 
 const ACCEPTED = '.pdf,.png,.jpg,.jpeg,.webp,.gif';
@@ -102,7 +103,12 @@ export default function Upload({ onComplete, onCancel, onManualEntry }) {
           <span className="brand-name">Cram</span>
         </div>
         <h1>Attach your school calendar</h1>
-        <p className="subtle">Upload a PDF or image of the school calendar to build your own personalized calendar.</p>
+        <p className="subtle">
+          Upload your year calendar or your final exam schedule, whichever you've got. Not your daily class
+          timetable, that one's not needed here.
+        </p>
+
+        <UploadGuide />
 
         <div
           className={dragOver ? 'drop-zone drag-over' : 'drop-zone'}
