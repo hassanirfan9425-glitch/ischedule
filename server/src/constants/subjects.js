@@ -27,6 +27,17 @@ export const CONDITIONAL_CORE_SUBJECTS = [
   { key: 'core_islamic_2', label: 'Islamic 2', scheduleCode: 'Islamic 2', appliesWhen: { arab: false, muslim: true } },
 ];
 
+// Also part 1, but opt-out instead of always-on: enough students take general Chemistry/Economics
+// that burying them in the Part 2 elective picker (alongside AP Chemistry/AP Macroeconomics below,
+// which are the distinct AP course variants) made them easy to miss. These show pre-checked next to
+// the true core subjects, with a toggle to uncheck for students who don't take them. Added 2026-08.
+// No scheduleCode yet, same reasoning as Statistics above — not matched against a real schedule
+// sample yet.
+export const OPTIONAL_CORE_SUBJECTS = [
+  { key: 'core_chemistry', label: 'Chemistry' },
+  { key: 'core_economics', label: 'Economics' },
+];
+
 // Automatically included for every student (administrative/school-wide blocks, not something
 // students "take" or rate) — never shown in the quiz, but still matched by the schedule parser
 // and shown on the dashboard (uncolored, since there's no difficulty rating for them). Moral
@@ -71,7 +82,13 @@ export const SUBJECTS = [
   { key: 'ap_french', label: 'AP French', category: 'Languages', weightCategory: 'AP' },
 ];
 
-export const ALL_SUBJECTS = [...CORE_SUBJECTS, ...CONDITIONAL_CORE_SUBJECTS, ...SUBJECTS, ...AUTO_SUBJECTS];
+export const ALL_SUBJECTS = [
+  ...CORE_SUBJECTS,
+  ...CONDITIONAL_CORE_SUBJECTS,
+  ...OPTIONAL_CORE_SUBJECTS,
+  ...SUBJECTS,
+  ...AUTO_SUBJECTS,
+];
 export const SUBJECT_BY_KEY = Object.fromEntries(ALL_SUBJECTS.map((s) => [s.key, s]));
 export const CORE_SUBJECT_KEYS = new Set(CORE_SUBJECTS.map((s) => s.key));
 export const AUTO_SUBJECT_KEYS = new Set(AUTO_SUBJECTS.map((s) => s.key));

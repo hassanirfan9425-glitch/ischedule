@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/requireAuth.js';
 import {
   CORE_SUBJECTS,
   CONDITIONAL_CORE_SUBJECTS,
+  OPTIONAL_CORE_SUBJECTS,
   SUBJECTS,
   AUTO_SUBJECTS,
   ALL_SUBJECTS,
@@ -20,6 +21,7 @@ router.get('/', (_req, res) => {
   res.json({
     coreSubjects: CORE_SUBJECTS,
     conditionalCoreSubjects: CONDITIONAL_CORE_SUBJECTS,
+    optionalCoreSubjects: OPTIONAL_CORE_SUBJECTS,
     subjects: SUBJECTS,
     autoSubjects: AUTO_SUBJECTS,
     difficulties: DIFFICULTIES,

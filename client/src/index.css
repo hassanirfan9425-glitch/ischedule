@@ -772,7 +772,11 @@
   --brand-rgb: 210, 85, 31;
 
   --brand-fill: var(--brand-600);
-  --shadow-brand: 0 6px 0 var(--brand-700), 0 0 22px rgba(var(--brand-rgb), 0.4);
+  /* Was inheriting Bloom's own signature "hard offset" shadow (0 6px 0 <color>) just recolored —
+     that chunky bevel-and-drop-shadow is what reads as a raised 3D/skeuomorphic button, exactly
+     the "AI-y" look flagged on the Home "+" button, and it's Classic's mechanic, not Orbit's. Pure
+     soft glow instead (no hard offset), matching how .orbit-star/.orbit-map-sun already glow. */
+  --shadow-brand: 0 0 20px 2px rgba(var(--brand-rgb), 0.45), 0 4px 14px rgba(0, 0, 0, 0.35);
 
   --brand-text: var(--brand-400);
   --brand-text-hover: var(--brand-300);

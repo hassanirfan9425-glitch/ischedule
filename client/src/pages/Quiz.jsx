@@ -51,12 +51,16 @@ const QUIZ_TUTORIAL_COPY = {
 export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutorial }) {
   const [coreSubjects, setCoreSubjects] = useState([]);
   const [conditionalCoreSubjects, setConditionalCoreSubjects] = useState([]);
+  const [optionalCoreSubjects, setOptionalCoreSubjects] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [difficulties, setDifficulties] = useState([]);
   const [weekdays, setWeekdays] = useState([]);
   const [identity, setIdentity] = useState({ arab: null, muslim: null });
   const [periodicDay, setPeriodicDay] = useState(null);
   const [coreDifficulty, setCoreDifficulty] = useState({}); // subjectKey -> difficultyKey
+  // Chemistry/Economics default to selected (most students take them) — unlike electives below,
+  // which default unselected — so this tracks opt-OUT state, not opt-in.
+  const [optionalCoreSelected, setOptionalCoreSelected] = useState({}); // subjectKey -> boolean
   const [selections, setSelections] = useState({}); // subjectKey -> difficultyKey | null
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -71,9 +75,14 @@ export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutoria
         const catalog = await api.getSubjectCatalog();
         setCoreSubjects(catalog.coreSubjects);
         setConditionalCoreSubjects(catalog.conditionalCoreSubjects);
+        setOptionalCoreSubjects(catalog.optionalCoreSubjects);
         setSubjects(catalog.subjects);
         setDifficulties(catalog.difficulties);
         setWeekdays(catalog.weekdays);
+        // Chemistry/Economics default to "taking it" — pre-checked — regardless of retake, since
+        // there's no persisted "I opted out" state to restore; a student unchecks them if they
+        // don't apply.
+        setOptionalCoreSelected(Object.fromEntries(catalog.optionalCoreSubjects.map((s) => [s.key, true])));
 
         if (retake) {
           const mine = await api.getMySubjects();
@@ -93,7 +102,7 @@ export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutoria
           setPeriodicDay(mine.periodicDay || null);
 
           const coreDiff = {};
-          for (const s of [...catalog.coreSubjects, ...catalog.conditionalCoreSubjects]) {
+          for (const s of [...catalog.coreSubjects, ...catalog.conditionalCoreSubjects, ...catalog.optionalCoreSubjects]) {
             if (byKey[s.key]) coreDiff[s.key] = byKey[s.key];
           }
           setCoreDifficulty(coreDiff);
@@ -129,16 +138,23 @@ export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutoria
     setSelections((prev) => ({ ...prev, [key]: difficulty }));
   }
 
+  function toggleOptionalCore(key) {
+    setOptionalCoreSelected((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
   const identityAnswered = identity.arab !== null && identity.muslim !== null;
   const readyForSubjects = identityAnswered && periodicDay !== null;
   const applicableConditional = identityAnswered
     ? conditionalCoreSubjects.filter((s) => appliesToIdentity(s, identity))
     : [];
   const allCoreSubjects = [...coreSubjects, ...applicableConditional];
+  const takenOptionalCoreSubjects = optionalCoreSubjects.filter((s) => optionalCoreSelected[s.key]);
 
   const selectedKeys = Object.keys(selections);
   const missingElectiveDifficulty = selectedKeys.some((k) => !selections[k]);
-  const missingCoreDifficulty = allCoreSubjects.some((s) => !coreDifficulty[s.key]);
+  const missingCoreDifficulty =
+    allCoreSubjects.some((s) => !coreDifficulty[s.key]) ||
+    takenOptionalCoreSubjects.some((s) => !coreDifficulty[s.key]);
 
   const showTutorialCard = tutorialActive && (step === 'electives' || (step === 'core' && readyForSubjects));
 
@@ -159,7 +175,7 @@ export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutoria
     setError('');
     setSubmitting(true);
     try {
-      const corePayload = allCoreSubjects.map((s) => ({
+      const corePayload = [...allCoreSubjects, ...takenOptionalCoreSubjects].map((s) => ({
         subjectKey: s.key,
         difficulty: coreDifficulty[s.key],
       }));
@@ -256,6 +272,50 @@ export default function Quiz({ onComplete, retake, tutorialActive, onSkipTutoria
                     ))}
                   </div>
                 </div>
+
+                {optionalCoreSubjects.length > 0 && (
+                  <div className="subject-group">
+                    <p className="subtle" style={{ marginBottom: 8 }}>
+                      Most students take these too. Uncheck any that don't apply to you.
+                    </p>
+                    <div className="subject-list">
+                      {optionalCoreSubjects.map((subject) => {
+                        const isSelected = !!optionalCoreSelected[subject.key];
+                        return (
+                          <div key={subject.key} className={isSelected ? 'subject-row selected' : 'subject-row'}>
+                            <button
+                              type="button"
+                              className="subject-chip"
+                              onClick={() => toggleOptionalCore(subject.key)}
+                            >
+                              <span className="checkbox">{isSelected ? '✓' : ''}</span>
+                              {subject.label}
+                            </button>
+
+                            {isSelected && (
+                              <div className="difficulty-picker">
+                                {difficulties.map((d) => (
+                                  <button
+                                    type="button"
+                                    key={d.key}
+                                    className={
+                                      coreDifficulty[subject.key] === d.key
+                                        ? `difficulty-btn ${d.key} active`
+                                        : `difficulty-btn ${d.key}`
+                                    }
+                                    onClick={() => setCoreDifficulty((prev) => ({ ...prev, [subject.key]: d.key }))}
+                                  >
+                                    {d.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {error && <p className="error-text">{error}</p>}
 

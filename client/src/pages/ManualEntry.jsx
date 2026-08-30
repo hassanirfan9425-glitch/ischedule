@@ -32,6 +32,7 @@ export default function ManualEntry({ onDone, onCancel }) {
         const list = [
           ...catalog.coreSubjects,
           ...catalog.conditionalCoreSubjects.filter((s) => ratedKeys.has(s.key)),
+          ...catalog.optionalCoreSubjects.filter((s) => ratedKeys.has(s.key)),
           ...catalog.subjects.filter((s) => ratedKeys.has(s.key)),
           ...catalog.autoSubjects,
         ];

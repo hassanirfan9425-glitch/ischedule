@@ -72,6 +72,7 @@ export default function Academics({
         setDefaultSubjects([
           ...catalog.coreSubjects,
           ...catalog.conditionalCoreSubjects.filter((s) => ratedKeys.has(s.key)),
+          ...catalog.optionalCoreSubjects.filter((s) => ratedKeys.has(s.key)),
           ...catalog.subjects.filter((s) => ratedKeys.has(s.key)),
           ...catalog.autoSubjects.filter((s) => s.key === 'moral_education'),
         ]);
