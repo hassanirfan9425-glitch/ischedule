@@ -148,7 +148,7 @@ export function difficultyRank(difficultyKey) {
 
 // How close an exam needs to be before it's flagged "Priority" — harder subjects get flagged
 // further out, easier ones only once they're actually imminent.
-export function priorityWindowDays(difficultyKey) {
+function priorityWindowDays(difficultyKey) {
   switch (difficultyKey) {
     case 'hard':
     case 'very_hard':

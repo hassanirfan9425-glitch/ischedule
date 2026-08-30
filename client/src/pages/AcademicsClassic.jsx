@@ -14,7 +14,6 @@ import AcademicsUpload from './AcademicsUpload.jsx';
 import { useBackHandler } from '../hooks/useBackButton.js';
 
 export default function Academics({
-  user,
   greeting,
   onLogout,
   onRetakeQuiz,

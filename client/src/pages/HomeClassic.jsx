@@ -17,7 +17,6 @@ import { useBackHandler } from '../hooks/useBackButton.js';
 import { useStreakAnimation } from '../hooks/useStreakAnimation.js';
 
 export default function Home({
-  user,
   greeting,
   onLogout,
   onRetakeQuiz,

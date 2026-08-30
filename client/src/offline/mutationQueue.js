@@ -25,10 +25,6 @@ function matchRule(method, path) {
   return ALLOWLIST.find((rule) => rule.method === method && rule.re.test(path));
 }
 
-export function isQueueable(method, path) {
-  return !!matchRule(method, path);
-}
-
 function tempId() {
   return `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }

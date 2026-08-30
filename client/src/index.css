@@ -2076,125 +2076,6 @@ h2 {
   max-width: 340px;
 }
 
-.preview-card {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font-family: var(--font-family);
-  cursor: pointer;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1.5px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 18px;
-  color: inherit;
-  transition: transform 0.15s;
-}
-
-.preview-card:hover {
-  transform: translateY(-2px);
-}
-
-.preview-card-title {
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--brand-text);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 3px solid var(--brand-fill);
-  display: inline-block;
-}
-
-.preview-card-empty {
-  color: var(--text-subtle);
-  font-size: 0.95rem;
-}
-
-.preview-exam-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.preview-exam-row:last-child {
-  border-bottom: none;
-}
-
-.preview-exam-subject {
-  font-weight: 700;
-  color: var(--text);
-}
-
-.preview-exam-days {
-  font-size: 0.8rem;
-  color: var(--text-subtle);
-  white-space: nowrap;
-}
-
-.preview-average-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.preview-average {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.preview-average-value {
-  font-family: var(--font-display);
-  font-size: 2.6rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--brand-text);
-}
-
-.preview-average-label {
-  color: var(--text-subtle);
-  font-size: 0.9rem;
-}
-
-.suggestions-section {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1.5px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 18px;
-}
-
-.suggestions-section ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.suggestions-section li {
-  padding: 12px 16px;
-  border-radius: 4px;
-  background: var(--brand-50);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--brand-500);
-  font-family: var(--font-display);
-  font-size: 0.98rem;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--text);
-}
-
 .grade-table-section {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -2562,12 +2443,6 @@ h2 {
   white-space: normal;
   text-align: right;
   font-size: 0.8rem;
-}
-
-/* .preview-average is a wrapping row (value, label) — force the streak line below both rather
-   than letting it wrap mid-sentence into the leftover space next to the label. */
-.preview-average .streak-badge-full {
-  flex-basis: 100%;
 }
 
 /* Groups a term average with the streak line as one right-aligned unit (Technical/Orbit's

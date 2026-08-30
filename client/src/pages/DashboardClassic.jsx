@@ -68,7 +68,6 @@ function AllExamsSection({ exams, onExamClick, onBack }) {
 }
 
 export default function Dashboard({
-  user,
   greeting,
   onLogout,
   onReupload,

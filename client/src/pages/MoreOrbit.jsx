@@ -10,7 +10,6 @@ import { useBackHandler } from '../hooks/useBackButton.js';
 // App) — Orbit's dial only carries the 4 top-level tabs, so these live here as the 4th tab, same
 // split as Technical's More.jsx, just its own chrome instead of reusing that file's ledger classes.
 export default function More({
-  user,
   greeting,
   onLogout,
   onRetakeQuiz,

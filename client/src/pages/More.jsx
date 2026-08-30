@@ -10,7 +10,6 @@ import { useBackHandler } from '../hooks/useBackButton.js';
 // Settings / Log Out / Delete Account / Download App, listed as ledger line items instead of
 // hidden behind a drawer.
 export default function More({
-  user,
   greeting,
   onLogout,
   onRetakeQuiz,
