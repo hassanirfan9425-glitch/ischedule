@@ -66,6 +66,10 @@ export const SUBJECTS = [
   { key: 'a_business', label: 'A Level Business', category: 'A Level', scheduleCode: 'BST' },
   { key: 'a_chemistry', label: 'A Level Chemistry', category: 'A Level', scheduleCode: 'AS Chemistry' },
   { key: 'a_biology', label: 'A Level Biology', category: 'A Level', scheduleCode: 'AS Bio' },
+  // No scheduleCode yet — this document's only mention is buried in a combined Saturday cell
+  // ("Phys :A'Lvl. / AP 2 / Phy C") shared with AP Physics 2 and AP Physics C, same as those two
+  // below — left to the AI's free-text matching per the same "leave unmapped for now" call.
+  { key: 'a_physics', label: 'A Level Physics', category: 'A Level' },
   { key: 'ap_physics_2', label: 'AP Physics 2', category: 'AP' },
   { key: 'ap_physics_c_mechanics', label: 'AP Physics C: Mechanics', category: 'AP' },
   { key: 'ap_physics_c_electricity', label: 'AP Physics C: Electricity and Magnetism', category: 'AP' },
