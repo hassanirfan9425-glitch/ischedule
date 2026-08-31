@@ -15,7 +15,6 @@ import { SUBJECT_BY_KEY, AUTO_SUBJECTS } from '../constants/subjects.js';
 import { parseSchedule } from '../services/scheduleParser.js';
 import { classifyScheduleDocument } from '../services/scheduleClassifier.js';
 import { parseFinalExamSchedule } from '../services/finalExamParser.js';
-import { shiftScheduleDate } from '../utils/scheduleYearShift.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
@@ -89,11 +88,7 @@ async function processScheduleUpload({ userId, uploadId, file }) {
       }
 
       const exams = Array.isArray(result.exams) ? result.exams : [];
-      // Shifted up front so the review screen (and the eventual insert) always agree on the real
-      // date — nothing downstream of this needs to know about the beta year-shift at all.
-      const usableExams = exams
-        .filter((e) => e.subjectLabel && e.date)
-        .map((e) => ({ ...e, date: shiftScheduleDate(e.date) }));
+      const usableExams = exams.filter((e) => e.subjectLabel && e.date);
 
       // Final-exam extraction is prone to the AI misattributing a cell to the wrong subject or
       // column (dense, non-uniform grid documents) — rather than committing straight to the
@@ -140,8 +135,8 @@ async function processScheduleUpload({ userId, uploadId, file }) {
           userId,
           uploadId,
           h.label ?? null,
-          shiftScheduleDate(h.dateStart),
-          shiftScheduleDate(h.dateEnd),
+          h.dateStart,
+          h.dateEnd,
           h.term ?? null,
           h.weekNumber ?? null
         );
@@ -163,9 +158,9 @@ async function processScheduleUpload({ userId, uploadId, file }) {
           examType,
           e.term ?? null,
           e.weekNumber ?? null,
-          shiftScheduleDate(e.date ?? null),
-          shiftScheduleDate(e.dateStart ?? null),
-          shiftScheduleDate(e.dateEnd ?? null),
+          e.date ?? null,
+          e.dateStart ?? null,
+          e.dateEnd ?? null,
           e.time ?? null,
           e.notes ?? null
         );

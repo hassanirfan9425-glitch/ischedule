@@ -31,11 +31,12 @@ export const CONDITIONAL_CORE_SUBJECTS = [
 // that burying them in the Part 2 elective picker (alongside AP Chemistry/AP Macroeconomics below,
 // which are the distinct AP course variants) made them easy to miss. These show pre-checked next to
 // the true core subjects, with a toggle to uncheck for students who don't take them. Added 2026-08.
-// No scheduleCode yet, same reasoning as Statistics above — not matched against a real schedule
-// sample yet.
+// scheduleCode confirmed 2026-08 against the 2026-2027 Grade 12S UAE calendar: the bare "Chem"/"Eco"
+// periodic codes are these general courses, distinct from the "Sat: A Level Chem"/"Sat: AP Micro-Eco"
+// Saturday elective sessions (a_chemistry/ap_microeconomics below).
 export const OPTIONAL_CORE_SUBJECTS = [
-  { key: 'core_chemistry', label: 'Chemistry' },
-  { key: 'core_economics', label: 'Economics' },
+  { key: 'core_chemistry', label: 'Chemistry', scheduleCode: 'Chem' },
+  { key: 'core_economics', label: 'Economics', scheduleCode: 'Eco' },
 ];
 
 // Automatically included for every student (administrative/school-wide blocks, not something
@@ -60,7 +61,7 @@ export const AUTO_SUBJECTS = [
 // AP French needs both: displays under Languages, but should still count for almost nothing
 // toward the overall average like every other AP subject.
 export const SUBJECTS = [
-  { key: 'a_math', label: 'A Level Math', category: 'A Level' },
+  { key: 'a_math', label: 'A Level Math', category: 'A Level', scheduleCode: 'AL Math' },
   { key: 'a_further_maths', label: 'A Level Further Math', category: 'A Level' },
   { key: 'a_business', label: 'A Level Business', category: 'A Level', scheduleCode: 'BST' },
   { key: 'a_chemistry', label: 'A Level Chemistry', category: 'A Level', scheduleCode: 'AS Chemistry' },
@@ -78,7 +79,9 @@ export const SUBJECTS = [
   { key: 'ap_human_geography', label: 'AP Human Geography', category: 'AP' },
   { key: 'ap_microeconomics', label: 'AP Microeconomics', category: 'AP' },
   { key: 'ap_macroeconomics', label: 'AP Macroeconomics', category: 'AP' },
-  { key: 'arabic_2', label: 'Arabic 2', category: 'Languages' },
+  // scheduleCode confirmed 2026-08 against the 2026-2027 calendar: "Sat: A Level Arabic" is this
+  // year's wording for the same elective, not a separate untracked course.
+  { key: 'arabic_2', label: 'Arabic 2', category: 'Languages', scheduleCode: 'A Level Arabic' },
   { key: 'ap_french', label: 'AP French', category: 'Languages', weightCategory: 'AP' },
 ];
 

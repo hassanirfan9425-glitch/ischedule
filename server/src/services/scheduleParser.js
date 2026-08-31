@@ -39,6 +39,10 @@ Known subject-code glossary — when you see one of these exact codes (or an obv
 of it) on the schedule, map it to the given key:
 ${subjectGlossaryLines().join('\n')}
 
+Physics periodic cells specifically say "Phys (Mech)" or "Phys (Elect)" (mechanics vs electricity unit) —
+both map to matchedSubjectKey "core_physics" as usual, but set subjectLabel to "Physics (Mech)" or
+"Physics (Elec)" respectively (not just "Physics"), so the student can tell which unit's exam it is.
+
 Only ever set matchedSubjectKey to one of the keys above, or null if genuinely nothing matches. Work
 carefully and take your time — precision on dates and week alignment matters far more than speed. Think
 step by step at each turn. Do not skip ahead to JSON until explicitly asked.`;

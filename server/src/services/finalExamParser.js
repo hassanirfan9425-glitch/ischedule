@@ -100,12 +100,10 @@ course (key "arabic_2") — it is explicitly the non-Arab-student's Arabic elect
 mappings only within this document; match against the student's own subjects exactly as usual.
 
 Match against the FULL code text on each glossary line, not just a keyword that happens to overlap with
-part of it — e.g. "Applied Math" is explicitly listed as an alternate name for "Mech(M1)" (key
-"core_mechanics"), so it must map there, NOT to "AMS" (key "ams") just because the words superficially
-share letters. "AMS" itself only ever means the literal three-letter administrative code "AMS" written
-exactly as such — never match it against any subject whose name merely contains "math". When in doubt
-between two glossary lines, re-read both lines' full code text carefully before deciding, and prefer null
-over a guess you're not confident in.
+part of it. "AMS" only ever means the literal three-letter administrative code "AMS" written exactly as
+such — never match it against any subject whose name merely contains "math". When in doubt between two
+glossary lines, re-read both lines' full code text carefully before deciding, and prefer null over a guess
+you're not confident in.
 
 CRITICAL "A Level"/"AS"/"AP" prefix warning — a documented, repeated failure mode: a cell prefixed with "A
 Level", "AS", or "AP" names a COMPLETELY DIFFERENT course from its plain, unprefixed name, even when the
